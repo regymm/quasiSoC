@@ -1,0 +1,222 @@
+# constraint for the unknown spartan6 board
+# xc6slx16 ftg256
+
+TIMESPEC "ts_clk1" = PERIOD "clk1" 25 MHz HIGH 50 %;
+NET "clk1" LOC="E7" | IOSTANDARD=LVCMOS33 | TNM_NET="clk1";
+NET "led[0]" LOC="A3";
+NET "led[1]" LOC="E3";
+NET "btn[0]" LOC="R3";
+NET "uart_tx" LOC="E4";
+NET "uart_rx" LOC="C5";
+// F1
+//NET "clk2" LOC="E1";
+
+//NET "B5" LOC="B5";
+//NET "C5" LOC="C5";
+// GND
+// norch
+//NET "R3" LOC="R3";
+// GND
+//NET "T3" LOC="T3";
+//NET "E3" LOC="E3";
+
+//NET "A2" LOC="A2";
+////NET "A3" LOC="A3";
+//NET "A4" LOC="A4";
+//NET "A5" LOC="A5";
+//NET "A6" LOC="A6";
+//NET "A7" LOC="A7";
+//NET "A8" LOC="A8";
+//NET "A9" LOC="A9";
+//NET "A10" LOC="A10";
+//NET "A11" LOC="A11";
+//NET "A12" LOC="A12";
+//NET "A13" LOC="A13";
+//NET "A14" LOC="A14";
+//
+//NET "B1" LOC="B1";
+//NET "B2" LOC="B2";
+//NET "B3" LOC="B3";
+//NET "B5" LOC="B5";
+//NET "B6" LOC="B6";
+//NET "B8" LOC="B8";
+//NET "B10" LOC="B10";
+//NET "B12" LOC="B12";
+//NET "B14" LOC="B14";
+//NET "B15" LOC="B15";
+//NET "B16" LOC="B16";
+//
+//NET "C1" LOC="C1";
+//NET "C2" LOC="C2";
+//NET "C3" LOC="C3";
+//NET "C4" LOC="C4";
+//NET "C5" LOC="C5";
+//NET "C6" LOC="C6";
+//NET "C7" LOC="C7";
+//NET "C8" LOC="C8";
+//NET "C9" LOC="C9";
+//NET "C10" LOC="C10";
+//NET "C11" LOC="C11";
+//NET "C13" LOC="C13";
+//NET "C15" LOC="C15";
+//NET "C16" LOC="C16";
+//
+//NET "D1" LOC="D1";
+//NET "D3" LOC="D3";
+//NET "D5" LOC="D5";
+//NET "D6" LOC="D6";
+//NET "D8" LOC="D8";
+//NET "D9" LOC="D9";
+//NET "D11" LOC="D11";
+//NET "D12" LOC="D12";
+//NET "D14" LOC="D14";
+//NET "D16" LOC="D16";
+//
+//NET "E1" LOC="E1";
+//NET "E2" LOC="E2";
+//NET "E3" LOC="E3";
+//NET "E4" LOC="E4";
+//NET "E6" LOC="E6";
+////NET "E7" LOC="E7";
+//NET "E8" LOC="E8";
+//NET "E10" LOC="E10";
+//NET "E11" LOC="E11";
+//NET "E12" LOC="E12";
+//NET "E13" LOC="E13";
+//NET "E15" LOC="E15";
+//NET "E16" LOC="E16";
+//
+//NET "F1" LOC="F1";
+//NET "F2" LOC="F2";
+//NET "F3" LOC="F3";
+//NET "F4" LOC="F4";
+//NET "F5" LOC="F5";
+//NET "F6" LOC="F6";
+//NET "F7" LOC="F7";
+//NET "F9" LOC="F9";
+//NET "F10" LOC="F10";
+//NET "F12" LOC="F12";
+//NET "F13" LOC="F13";
+//NET "F14" LOC="F14";
+//NET "F15" LOC="F15";
+//NET "F16" LOC="F16";
+//
+//NET "G1" LOC="G1";
+//NET "G3" LOC="G3";
+//NET "G5" LOC="G5";
+//NET "G6" LOC="G6";
+//NET "G11" LOC="G11";
+//NET "G12" LOC="G12";
+//NET "G14" LOC="G14";
+//NET "G16" LOC="G16";
+//
+//NET "H1" LOC="H1";
+//NET "H2" LOC="H2";
+//NET "H3" LOC="H3";
+//NET "H4" LOC="H4";
+//NET "H5" LOC="H5";
+//NET "H11" LOC="H11";
+//NET "H13" LOC="H13";
+//NET "H14" LOC="H14";
+//NET "H15" LOC="H15";
+//NET "H16" LOC="H16";
+//
+//NET "J1" LOC="J1";
+//NET "J3" LOC="J3";
+//NET "J4" LOC="J4";
+//NET "J6" LOC="J6";
+//NET "J11" LOC="J11";
+//NET "J12" LOC="J12";
+//NET "J13" LOC="J13";
+//NET "J14" LOC="J14";
+//NET "J16" LOC="J16";
+//
+//NET "K1" LOC="K1";
+//NET "K2" LOC="K2";
+//NET "K3" LOC="K3";
+//NET "K5" LOC="K5";
+//NET "K6" LOC="K6";
+//NET "K11" LOC="K11";
+//NET "K12" LOC="K12";
+//NET "K14" LOC="K14";
+//NET "K15" LOC="K15";
+//NET "K16" LOC="K16";
+//
+//NET "L1" LOC="L1";
+//NET "L3" LOC="L3";
+//NET "L4" LOC="L4";
+//NET "L5" LOC="L5";
+//NET "L7" LOC="L7";
+//NET "L8" LOC="L8";
+//NET "L10" LOC="L10";
+//NET "L12" LOC="L12";
+//NET "L13" LOC="L13";
+//NET "L14" LOC="L14";
+//NET "L16" LOC="L16";
+//
+//NET "M1" LOC="M1";
+//NET "M2" LOC="M2";
+//NET "M3" LOC="M3";
+//NET "M4" LOC="M4";
+//NET "M5" LOC="M5";
+//NET "M6" LOC="M6";
+//NET "M7" LOC="M7";
+//NET "M9" LOC="M9";
+//NET "M10" LOC="M10";
+//NET "M11" LOC="M11";
+//NET "M12" LOC="M12";
+//NET "M13" LOC="M13";
+//NET "M14" LOC="M14";
+//NET "M15" LOC="M15";
+//NET "M16" LOC="M16";
+//
+//NET "N1" LOC="N1";
+//NET "N3" LOC="N3";
+//NET "N4" LOC="N4";
+//NET "N5" LOC="N5";
+//NET "N6" LOC="N6";
+//NET "N8" LOC="N8";
+//NET "N9" LOC="N9";
+//NET "N11" LOC="N11";
+//NET "N12" LOC="N12";
+//NET "N14" LOC="N14";
+//NET "N16" LOC="N16";
+//
+//NET "P1" LOC="P1";
+//NET "P2" LOC="P2";
+//NET "P4" LOC="P4";
+//NET "P5" LOC="P5";
+//NET "P6" LOC="P6";
+//NET "P7" LOC="P7";
+//NET "P8" LOC="P8";
+//NET "P9" LOC="P9";
+//NET "P10" LOC="P10";
+//NET "P11" LOC="P11";
+//NET "P12" LOC="P12";
+//NET "P15" LOC="P15";
+//NET "P16" LOC="P16";
+//
+//NET "R1" LOC="R1";
+//NET "R2" LOC="R2";
+//NET "R3" LOC="R3";
+//NET "R5" LOC="R5";
+//NET "R7" LOC="R7";
+//NET "R9" LOC="R9";
+//NET "R11" LOC="R11";
+//NET "R12" LOC="R12";
+//NET "R14" LOC="R14";
+//NET "R15" LOC="R15";
+//NET "R16" LOC="R16";
+//
+//NET "T3" LOC="T3";
+//NET "T4" LOC="T4";
+//NET "T5" LOC="T5";
+//NET "T7" LOC="T7";
+//NET "T8" LOC="T8";
+//NET "T9" LOC="T9";
+//NET "T10" LOC="T10";
+//NET "T11" LOC="T11";
+//NET "T12" LOC="T12";
+//NET "T13" LOC="T13";
+//NET "T14" LOC="T14";
+//NET "T15" LOC="T15";
