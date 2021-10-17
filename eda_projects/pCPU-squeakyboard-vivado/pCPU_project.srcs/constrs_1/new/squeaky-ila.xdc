@@ -1,0 +1,42 @@
+create_debug_core u_ila_0 ila
+set_property ALL_PROBE_SAME_MU true [get_debug_cores u_ila_0]
+set_property ALL_PROBE_SAME_MU_CNT 1 [get_debug_cores u_ila_0]
+set_property C_ADV_TRIGGER false [get_debug_cores u_ila_0]
+set_property C_DATA_DEPTH 1024 [get_debug_cores u_ila_0]
+set_property C_EN_STRG_QUAL false [get_debug_cores u_ila_0]
+set_property C_INPUT_PIPE_STAGES 0 [get_debug_cores u_ila_0]
+set_property C_TRIGIN_EN false [get_debug_cores u_ila_0]
+set_property C_TRIGOUT_EN false [get_debug_cores u_ila_0]
+set_property port_width 1 [get_debug_ports u_ila_0/clk]
+connect_debug_port u_ila_0/clk [get_nets [list clock_wizard_inst/inst/clk_main]]
+set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe0]
+set_property port_width 32 [get_debug_ports u_ila_0/probe0]
+connect_debug_port u_ila_0/probe0 [get_nets [list {riscv_multicyc_inst/instruction[0]} {riscv_multicyc_inst/instruction[1]} {riscv_multicyc_inst/instruction[2]} {riscv_multicyc_inst/instruction[3]} {riscv_multicyc_inst/instruction[4]} {riscv_multicyc_inst/instruction[5]} {riscv_multicyc_inst/instruction[6]} {riscv_multicyc_inst/instruction[7]} {riscv_multicyc_inst/instruction[8]} {riscv_multicyc_inst/instruction[9]} {riscv_multicyc_inst/instruction[10]} {riscv_multicyc_inst/instruction[11]} {riscv_multicyc_inst/instruction[12]} {riscv_multicyc_inst/instruction[13]} {riscv_multicyc_inst/instruction[14]} {riscv_multicyc_inst/instruction[15]} {riscv_multicyc_inst/instruction[16]} {riscv_multicyc_inst/instruction[17]} {riscv_multicyc_inst/instruction[18]} {riscv_multicyc_inst/instruction[19]} {riscv_multicyc_inst/instruction[20]} {riscv_multicyc_inst/instruction[21]} {riscv_multicyc_inst/instruction[22]} {riscv_multicyc_inst/instruction[23]} {riscv_multicyc_inst/instruction[24]} {riscv_multicyc_inst/instruction[25]} {riscv_multicyc_inst/instruction[26]} {riscv_multicyc_inst/instruction[27]} {riscv_multicyc_inst/instruction[28]} {riscv_multicyc_inst/instruction[29]} {riscv_multicyc_inst/instruction[30]} {riscv_multicyc_inst/instruction[31]}]]
+create_debug_port u_ila_0 probe
+set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe1]
+set_property port_width 32 [get_debug_ports u_ila_0/probe1]
+connect_debug_port u_ila_0/probe1 [get_nets [list {riscv_multicyc_inst/pc[0]} {riscv_multicyc_inst/pc[1]} {riscv_multicyc_inst/pc[2]} {riscv_multicyc_inst/pc[3]} {riscv_multicyc_inst/pc[4]} {riscv_multicyc_inst/pc[5]} {riscv_multicyc_inst/pc[6]} {riscv_multicyc_inst/pc[7]} {riscv_multicyc_inst/pc[8]} {riscv_multicyc_inst/pc[9]} {riscv_multicyc_inst/pc[10]} {riscv_multicyc_inst/pc[11]} {riscv_multicyc_inst/pc[12]} {riscv_multicyc_inst/pc[13]} {riscv_multicyc_inst/pc[14]} {riscv_multicyc_inst/pc[15]} {riscv_multicyc_inst/pc[16]} {riscv_multicyc_inst/pc[17]} {riscv_multicyc_inst/pc[18]} {riscv_multicyc_inst/pc[19]} {riscv_multicyc_inst/pc[20]} {riscv_multicyc_inst/pc[21]} {riscv_multicyc_inst/pc[22]} {riscv_multicyc_inst/pc[23]} {riscv_multicyc_inst/pc[24]} {riscv_multicyc_inst/pc[25]} {riscv_multicyc_inst/pc[26]} {riscv_multicyc_inst/pc[27]} {riscv_multicyc_inst/pc[28]} {riscv_multicyc_inst/pc[29]} {riscv_multicyc_inst/pc[30]} {riscv_multicyc_inst/pc[31]}]]
+create_debug_port u_ila_0 probe
+set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe2]
+set_property port_width 32 [get_debug_ports u_ila_0/probe2]
+connect_debug_port u_ila_0/probe2 [get_nets [list {mmapper_inst/d[0]} {mmapper_inst/d[1]} {mmapper_inst/d[2]} {mmapper_inst/d[3]} {mmapper_inst/d[4]} {mmapper_inst/d[5]} {mmapper_inst/d[6]} {mmapper_inst/d[7]} {mmapper_inst/d[8]} {mmapper_inst/d[9]} {mmapper_inst/d[10]} {mmapper_inst/d[11]} {mmapper_inst/d[12]} {mmapper_inst/d[13]} {mmapper_inst/d[14]} {mmapper_inst/d[15]} {mmapper_inst/d[16]} {mmapper_inst/d[17]} {mmapper_inst/d[18]} {mmapper_inst/d[19]} {mmapper_inst/d[20]} {mmapper_inst/d[21]} {mmapper_inst/d[22]} {mmapper_inst/d[23]} {mmapper_inst/d[24]} {mmapper_inst/d[25]} {mmapper_inst/d[26]} {mmapper_inst/d[27]} {mmapper_inst/d[28]} {mmapper_inst/d[29]} {mmapper_inst/d[30]} {mmapper_inst/d[31]}]]
+create_debug_port u_ila_0 probe
+set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe3]
+set_property port_width 32 [get_debug_ports u_ila_0/probe3]
+connect_debug_port u_ila_0/probe3 [get_nets [list {mmapper_inst/a[0]} {mmapper_inst/a[1]} {mmapper_inst/a[2]} {mmapper_inst/a[3]} {mmapper_inst/a[4]} {mmapper_inst/a[5]} {mmapper_inst/a[6]} {mmapper_inst/a[7]} {mmapper_inst/a[8]} {mmapper_inst/a[9]} {mmapper_inst/a[10]} {mmapper_inst/a[11]} {mmapper_inst/a[12]} {mmapper_inst/a[13]} {mmapper_inst/a[14]} {mmapper_inst/a[15]} {mmapper_inst/a[16]} {mmapper_inst/a[17]} {mmapper_inst/a[18]} {mmapper_inst/a[19]} {mmapper_inst/a[20]} {mmapper_inst/a[21]} {mmapper_inst/a[22]} {mmapper_inst/a[23]} {mmapper_inst/a[24]} {mmapper_inst/a[25]} {mmapper_inst/a[26]} {mmapper_inst/a[27]} {mmapper_inst/a[28]} {mmapper_inst/a[29]} {mmapper_inst/a[30]} {mmapper_inst/a[31]}]]
+create_debug_port u_ila_0 probe
+set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe4]
+set_property port_width 1 [get_debug_ports u_ila_0/probe4]
+connect_debug_port u_ila_0/probe4 [get_nets [list mmapper_inst/rd]]
+create_debug_port u_ila_0 probe
+set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe5]
+set_property port_width 1 [get_debug_ports u_ila_0/probe5]
+connect_debug_port u_ila_0/probe5 [get_nets [list mmapper_inst/ready]]
+create_debug_port u_ila_0 probe
+set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe6]
+set_property port_width 1 [get_debug_ports u_ila_0/probe6]
+connect_debug_port u_ila_0/probe6 [get_nets [list mmapper_inst/we]]
+set_property C_CLK_INPUT_FREQ_HZ 300000000 [get_debug_cores dbg_hub]
+set_property C_ENABLE_CLK_DIVIDER false [get_debug_cores dbg_hub]
+set_property C_USER_SCAN_CHAIN 1 [get_debug_cores dbg_hub]
+connect_debug_port dbg_hub/clk [get_nets clk_main]
