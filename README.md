@@ -10,13 +10,15 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Always half-baked
 - [x] M-mode CSR (partial but enough)
 - [x] Interrupt (timer, external, software)
 - [x] Exception (ecall, break, partial invalid instructions)
-- [ ] Basic/Custom memory protection, Sv32 MMU
-- [ ] GDB debug over openocd JTAG
+- [ ] Atomic extention (hardware or trap-based)
+- [ ] Sv32 MMU
+- [ ] S-mode CSR
 - [x] Memory-mapped IO (1 host, multiple guests)
 - [ ] Bus arbitration (multiple hosts, graphics unit or debugger)
 - [ ] Formal verification (not planned)
 - [ ] Pipeline (not planned)
-- [ ] Supervisor/User privilege level support (not planned)
+- [ ] Supervisor/User privilege level support (not planned
+- [ ] GDB debug over openocd JTAG
 
 #### Peripherals
 
@@ -34,7 +36,8 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Always half-baked
 - [ ] LAN8720 ethernet module w/ RGMII (Hard)
 - [ ] ESP8266/ESP32 Wifi module (Boring)
 - [x] Interrupt Timer
-- [ ] Bus converter to use AXI/Wishbone peripherals, **high priority**
+- [ ] Bus converter to use AXI/Wishbone peripherals
+- [ ] **Hart transplant**: use other RISC-V cores with Quasi SoC peripherals
 
 #### Software
 
@@ -43,6 +46,7 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Always half-baked
 - [x] CoreMark performance approx. 0.27 CoreMark/MHz
 - [x] MicroPython [port](https://github.com/regymm/micropython/tree/master/ports/pComputer), deprecated, TODO: update
 - [x] Fancy but very slow [soft renderer](https://github.com/fededevi/pingo/)
+- [ ] Linux-capable **long-term**
 
 #### Boards & FPGAs
 
