@@ -204,8 +204,9 @@ module sdcard
 	reg [31:0]blockaspo;
 	reg [31:0]blockcounterspo;
 	always @ (*) begin
-		if (a[15:12] == 0) blockaspo <= block[a[8:2]];
-		blockcounterspo <= block[counter[8:2]];
+		//if (a[15:12] == 0) blockaspo = block[a[8:2]];
+		blockaspo = block[a[8:2]];
+		blockcounterspo = block[counter[8:2]];
 	end
     always @ (*) begin
         regspo = 0;

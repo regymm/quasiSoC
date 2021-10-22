@@ -41,9 +41,9 @@ module riscv_multicyc
 	reg [31:0]ALUOut;
 	reg [31:0]ALUOut2;
 	reg [31:0]RV32MOut;
-	reg [31:0]mar;
-	reg [31:0]mwr;
-	reg [31:0]mdr;
+	(*mark_debug = "true"*)reg [31:0]mar;
+	(*mark_debug = "true"*)reg [31:0]mwr;
+	(*mark_debug = "true"*)reg [31:0]mdr;
 
 	// control signals
 	reg PCWrite;
@@ -93,7 +93,7 @@ module riscv_multicyc
 	reg [31:0]memwrite_data;
 	reg [31:0]memread_data;
 	always @ (*) begin
-		a = mem_addr;
+		a = {mem_addr[31:2], 2'b0};
 		d = {memwrite_data[7:0], memwrite_data[15:8], memwrite_data[23:16], memwrite_data[31:24]};
 		we = MemWrite;
 		rd = MemRead;
@@ -222,7 +222,7 @@ module riscv_multicyc
 	wire [31:0]loadhalf;
 	reg [31:0]storebyte;
 	reg [31:0]storehalf;
-	reg [7:0]loadbyte_byte;
+	(*mark_debug = "true"*)reg [7:0]loadbyte_byte;
 	reg [15:0]loadhalf_half;
 	always @ (*) begin case (mar[1:0])
 		2'b00: begin

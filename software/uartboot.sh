@@ -15,7 +15,7 @@ for i in `seq 0 9`; do
 		echo "reset board ..."
 		echo 'RRRRRRRRRRR' > /dev/ttyUSB$i
 		sync
-		sleep 1
+		sleep 2
 		echo 'Hope SD boot has finished'
 		sleep 0.1
 		echo "boot ..."

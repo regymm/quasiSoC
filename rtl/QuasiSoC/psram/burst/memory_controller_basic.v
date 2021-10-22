@@ -41,7 +41,11 @@ module memory_controller_basic
 	//assign spo = {regspo[7:0], regspo[15:8], regspo[23:16], regspo[31:24]};
 
 	reg ready_r = 0;
-	assign ready = ready_r & !(rd | we);
+	assign ready = ready_clk & !(rd | we);
+	reg ready_clk = 0;
+	always @ (posedge clk) begin
+		ready_clk <= ready_r;
+	end
 
 	reg [23:0]rega;
 	/*(*mark_debug = "true"*)*/reg [7:0]regbuf[3:0];

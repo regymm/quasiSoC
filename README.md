@@ -1,6 +1,6 @@
 ## Quasi SoC
 
-Crappy RISC-V CPU and fancy peripherals designed to be useful. Always half-baked. Prioritize compatibility over performance. 
+Crappy RISC-V CPU and fancy peripherals designed to be useful. Always half-baked. Prioritize compatibility over performance. Free-software toolchain ready. 
 
 ![](doc/design.png)
 
@@ -17,7 +17,7 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Always half-baked
 - [ ] Bus arbitration (multiple hosts, graphics unit or debugger)
 - [ ] Formal verification (not planned)
 - [ ] Pipeline (not planned)
-- [ ] Supervisor/User privilege level support (not planned
+- [ ] Supervisor/User privilege level support (not planned)
 - [ ] GDB debug over openocd JTAG
 
 #### Peripherals
@@ -55,13 +55,21 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Always half-baked
 - [x] xc7k325t @ Memblaze PBlaze 3 w/ extension board  [ref](https://www.tweaktown.com/reviews/6797/memblaze-pblaze3l-1-2tb-enterprise-pcie-ssd-review/index.html)
 - [x] xc6slx16 @ Nameless LED controller module, UART only
 - [ ] ep2c35 @ Cisco HWIC-3G-CDMA router module [ref](https://github.com/tomverbeure/cisco-hwic-3g-cdma), plan to buy
-- [ ] Xilinx 7-series w/ free software toolchain(Symbiflow), **high priority**
+- [x] Xilinx 7-series w/ Symbiflow (partial)
 - [ ] lfe5u or iCE40 w/ free software toolchain(Symbiflow, icestorm)
 - [ ] K210 or some other hardcore RISCV
 
 #### Build & Run
 
-**[Instructions here](BuildnRun.md)**
+**[Build & run instructions](BuildnRun.md)**
+
+**[Free software toolchain -- SymbiFlow(Vivado-free!)](SymbiFlow.md)**
+
+#### Alternative RISC-V Cores
+
+Use other RISC-V cores with Quasi SoC peripherals. 
+
+**[Hard Transplant](HartTransplant.md)**
 
 #### Gallery
 

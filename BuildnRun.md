@@ -10,7 +10,9 @@ Then run `make` in `firmware/` to generate SoC boot ROM.
 
 If error occurs, probably it's just some minor path problems or environment variables, just export variables, modify `Makefile`, and fix according your own case. 
 
-Use `eda_projects/pCPU-squeakyboard-vivado/proj.tcl` to re-create Vivado project. Of course you should modify files in `rtl/board-specific/squeakyboard/` to your own board and peripherals(you can just disconnect input/output wires without disabling modules, no problem). 
+Use `eda_projects/pCPU-squeakyboard-vivado/proj.tcl` to re-create Vivado project. Or just create a new project and add all verilog files and constraints. That's it, because no IP core is used. Clocking is (by default) instantiated via PLLE2_ADV directly instead of clocking_wizard. 
+
+Of course you should modify files in `rtl/board-specific/squeakyboard/` according to your own board and peripherals(you can just disconnect input/output wires without disabling modules, no problem). 
 
 Then run synthesis/implementation/bitstream as usual -- just take special care that no critical warnings about `result_bootrom.dat` occur -- boot ROM must be compiled into bitstream, while RAM and register inital values usually don't matter. It's recommended to have ILA hooked up to ∂CPU program counter(PC) and memory buses, in case memory hangs or PC flies away. 
 
@@ -45,6 +47,6 @@ See `software/uartboot.sh` for program downloading details. Make sure you have a
 
 In `software/`, run `make run_tests`, `make run_coremark`, or `make run_renderer` for RISC-V tests, CoreMark, or the renderer. They'll be automatically compiled and downloaded via UART to Quasi SoC. You'll need HDMI for renderer. 
 
-I think these three examples can cover most of the software flows required in cross-compiling(Makefile, linker script, volatile int* MMIO, ODR, inline assembly, transfer to C in assembly, objcopy to binary, patch BSS, ...). My coding habit is bad but they work(at least for now). 
+I think these three examples can cover most of the software flows required in cross-compiling(Makefile, linker script, volatile int* MMIO, ODR, inline assembly, call C in assembly, objcopy, patch BSS, ...). My coding habit is bad but they work(at least for now). 
 
 Things like printf, string operation, float-point, and basic C++ will all work. 

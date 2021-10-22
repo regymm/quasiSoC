@@ -71,15 +71,22 @@ module quasi_main
 	wire clk_2x;
     wire clk_hdmi_25;
     wire clk_hdmi_250;
-	//wire clk_slow = clk_hdmi_25;
-    clock_wizard clock_wizard_inst(
-        .clk_in1(sysclk),
-        .clk_main(clk_main),
-		.clk_mem(clk_mem),
-		.clk_hdmi_25(clk_hdmi_25),
-		.clk_hdmi_250(clk_hdmi_250),
-		.clk_hdmi_50(clk_2x)
-    );
+	//clock_wizard clock_wizard_inst(
+		//.clk_in1(sysclk),
+		//.clk_main(clk_main),
+		//.clk_mem(clk_mem),
+		//.clk_hdmi_25(clk_hdmi_25),
+		//.clk_hdmi_250(clk_hdmi_250),
+		//.clk_hdmi_50(clk_2x)
+	//);
+	clocking_xc7 clocking_xc7_inst (
+		.clk_50(sysclk),
+		.clk1_62d5(clk_main),
+		.clk2_125(clk_mem),
+		.clk3_25(clk_hdmi_25),
+		.clk4_250(clk_hdmi_250),
+		.clk5_50(clk_2x)
+	);
 
 
     wire [1:0]sw_d;
@@ -288,7 +295,7 @@ module quasi_main
         .irq(irq_sd) // nc
     );
 `else
-	assign sd_spo = 0;
+	assign sd_spo = {7'b0, 1'b1, 24'b0}; // indicate SD not deteced
 	assign irq_sd = 0;
 	assign sd_dat1 = 1'bZ;
 	assign sd_dat2 = 1'bZ;
@@ -338,6 +345,7 @@ module quasi_main
 	wire mainm_ready_m;
 	wire mainm_irq;
 `ifdef PSRAM_EN
+	`ifdef CACHE_EN
 	memory_controller_burst memory_controller_inst
 	//memory_controller memory_controller_inst
 	(
@@ -364,6 +372,30 @@ module quasi_main
 		.psram_sio3(psram_sio3),
 		.psram_sclk(psram_sclk)
 	);
+	`else
+	memory_controller_basic memory_controller_inst
+	(
+		.clk(clk_main),
+		.clk_mem(clk_mem),
+		.rst(rst_psram),
+
+		.a(mainm_a_m),
+		.d(mainm_d_m),
+		.we(mainm_we_m),
+		.rd(mainm_rd_m),
+		.spo(mainm_spo_m),
+		.ready(mainm_ready_m), 
+
+		.irq(mainm_irq),
+
+		.psram_ce(psram_ce), 
+		.psram_mosi(psram_mosi), 
+		.psram_miso(psram_miso), 
+		.psram_sio2(psram_sio2), 
+		.psram_sio3(psram_sio3),
+		.psram_sclk(psram_sclk)
+	);
+	`endif
 `else
 `endif
 
@@ -458,8 +490,8 @@ module quasi_main
 		// hit & miss
 	);
 `else
-	assign mainm_burst_en_c = 0;
-	assign mainm_burst_length_c = 0;
+	//assign mainm_burst_en_c = 1;
+	//assign mainm_burst_length_c = 1;
 	assign mainm_a_c = cache_a;
 	assign mainm_d_c = cache_d;
 	assign mainm_we_c = cache_we;

@@ -2,10 +2,22 @@
 
 ## sysclk
 set_property -dict {PACKAGE_PIN K17 IOSTANDARD LVCMOS33} [get_ports sysclk]
-create_clock -period 20.000 [get_nets sysclk]
-set_property PHASESHIFT_MODE WAVEFORM [get_cells -hierarchical *adv*]
+#create_clock -period 20.000 [get_nets sysclk]
 #create_generated_clock -name c62d5 -source [get_pins clocking_xc7_inst/clk1_62d5] -divide_by 16 -multiply_by 20 -add -master_clock sysclk [get_pins clocking_xc7_inst/clk1_62d5]
 #create_generated_clock -name c125 -source [get_pins clocking_xc7_inst/clk2_125] -divide_by 8 -multiply_by 20 -add -master_clock sysclk [get_pins clocking_xc7_inst/clk2_125]
+#set_property PHASESHIFT_MODE WAVEFORM [get_cells -hierarchical *adv*]
+#create_clock -period 20.000 -name sysclk -add [get_nets sysclk]
+#create_clock -period 16.000 -name clk_62d5 -add [get_nets clk_main]
+#create_clock -period 8.000 -name clk_125 -add [get_nets clk_mem]
+#create_clock -period 40.000 -name clk_25 -add [get_nets clk_hdmi_25]
+#create_clock -period 4.000 -name clk_250 -add [get_nets clk_hdmi_250]
+#create_clock -period 20.000 -name clk_50 -add [get_nets clk_2x]
+#create_clock -name clk_62d5 -period 16.000 -waveform {0.000, 8.000} [get_nets clk_main]
+#create_clock -name clk_125 -period 8.000 -waveform {0.000, 4.000} [get_nets clk_mem]
+#create_clock -name clk_25 -period 40.000 -waveform {0.000, 20.000} [get_nets clk_hdmi_25]
+#create_clock -name clk_250 -period 4.000 -waveform {0.000, 2.000} [get_nets clk_hdmi_250]
+#create_clock -name clk_50 -period 20.000 -waveform {0.000, 10.000} [get_nets clk_2x]
+#create_clock -period 20.000 -name clk_50M -waveform {0.000 10.000} -add [get_ports sysclk]
 
 ## buttons, switches and LEDs
 set_property -dict {PACKAGE_PIN L15 IOSTANDARD LVCMOS33} [get_ports {btn[0]}]
