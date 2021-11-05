@@ -13,6 +13,9 @@
 `include "quasi.vh"
 
 module riscv_multicyc
+	#(
+		parameter START_ADDR = 32'hf0000000
+	)
 	(
 		input clk,
 		input rst,
@@ -29,7 +32,6 @@ module riscv_multicyc
 		input ready
     );
 
-	localparam START_ADDR = 32'hf0000000;
 	localparam INVALID_ADDR =32'hffffffff;
 
 	(*mark_debug = "true"*) reg [31:0]pc;
@@ -52,7 +54,7 @@ module riscv_multicyc
 	reg MemRead;
 	reg MemWrite;
 	reg MemReady;
-	reg [1:0]MemSrc;
+	reg [2:0]MemSrc;
 	reg IRWrite;
 	reg IRLate;
 	reg [3:0]ALUm;
@@ -139,8 +141,6 @@ module riscv_multicyc
 
 	// privilege 
 `ifdef IRQ_EN
-	//reg csrsrc;
-
 	reg [31:0]csr_a;
 	reg [31:0]csr_d;
 	reg csr_we;
@@ -190,8 +190,6 @@ module riscv_multicyc
 `else
 `endif
 
-	// RV32A not on todo list now
-
 	localparam OP_LUI	=	7'b0110111;
 	localparam OP_AUIPC	=	7'b0010111;
 	localparam OP_JAL	=	7'b1101111;
@@ -203,8 +201,7 @@ module riscv_multicyc
 	localparam OP_R		=	7'b0110011; // including RV32M
 	localparam OP_FENCE	=	7'b0001111; // FENCE(nop), FENCE.I(nop)
 	localparam OP_PRIV	=	7'b1110011; // ENV(ecall, ebreak), CSR, WFI(aka nop), SFENCE.VMA(aka nop), MRET
-	localparam OP_AMO	=	7'b0101111;
-	// TODO: ECALL, EBREAK(?), 
+	localparam OP_AMO	=	7'b0101111; // amoxxx.w.xx, lr.xx, sc.xx
 	// TODO: simplify this
 	wire inst_srai = instruction[14:12] == 3'b101 & op == OP_R_I & instruction[30] == 1'b1;
 	wire [6:0]op = instruction[6:0];
@@ -271,12 +268,34 @@ module riscv_multicyc
 	assign RV32Mm = instruction[14:12];
 	wire is_RV32M = instruction[25];
 	`endif
+	`ifdef RV32A
+	wire op_a_lr  = (op == OP_AMO) & instruction[31:27] == 5'b00010;
+	wire op_a_sc  = (op == OP_AMO) & instruction[31:27] == 5'b00011;
+	wire op_a_amo = (op == OP_AMO) & instruction[31:28] != 4'b0001;
+	reg [31:0]amo_temp = 0;
+	always @ (posedge clk) begin
+		if (rst)
+			amo_temp <= 0;
+		else if (state == RV32A_WTEMP) // one cycle only!
+			amo_temp <= mdr;
+	end
+	// TODO
+	wire [31:0]amo_t_op_rs2;
+	always @ (*) begin case (instruction[31:27])
+		default: amo_t_op_rs2 = 0;
+	endcase end
+	`else
+	wire op_a_lr  = 0;
+	wire op_a_sc  = 0;
+	wire op_a_amo = 0;
+	`endif
 	always @ (*) begin
 		if (op == OP_LUI | op == OP_AUIPC) imm = imm_u;
 		else if (op == OP_R_I | op == OP_LOAD | op == OP_JALR) imm = imm_i;
 		else if (op == OP_BR) imm = imm_b;
 		else if (op == OP_JAL) imm = imm_j;
 		else if (op == OP_STORE) imm = imm_s;
+		else if (op == OP_AMO) imm = 0;
 		else imm = 0;
 	end
 	reg [7:0]phase;
@@ -295,6 +314,12 @@ module riscv_multicyc
 	localparam MEM_WAIT		=	70;
 	`ifdef RV32M
 	localparam RV32M_WAIT	=	80;
+	`endif
+	`ifdef RV32A
+	localparam RV32A_MEM1	=	81;
+	localparam RV32A_WTEMP	=	82;
+	localparam RV32A_MEM2	=	83;
+	localparam RV32A_WB		=	84;
 	`endif
 	localparam INTERRUPT	=	150;
 	localparam EXCEPTION	=	160;
@@ -357,7 +382,7 @@ module riscv_multicyc
 					ALUSrcB = 1;
 				end else if (op == OP_BR) begin
 					ALUm = instruction[14] ? {2'b0, instruction[14:13]} : 4'b1000;
-				end else if (op == OP_LOAD | op == OP_STORE) begin
+				end else if (op == OP_LOAD | op == OP_STORE | op_a_lr | op_a_sc | op_a_amo) begin
 					ALUSrcB = 1;
 				end else if (op == OP_PRIV & priv_csr) begin
 					ALUSrcA = instruction[14] ? 2 : 0;
@@ -367,13 +392,28 @@ module riscv_multicyc
 				end
 			end
 			MEM: begin
-				if (op == OP_LOAD | (op == OP_STORE & store_unaligned)) begin
+				if (op == OP_LOAD | (op == OP_STORE & store_unaligned) | op_a_lr) begin
 					MemRead = 1; IorDorW = 1; // Load, SB, SH
-				end else if (op == OP_STORE & !store_unaligned) begin
+				end else if ((op == OP_STORE & !store_unaligned) | op_a_sc) begin
 					MemWrite = 1; IorDorW = 1;
 					MemSrc = 2; // SW
 				end
 			end
+			`ifdef RV32A
+			RV32A_MEM1: begin
+				MemRead = 1; IorDorW = 1;
+			end
+			RV32A_WTEMP: begin
+				ALUSrcB = 1;
+			end
+			RV32A_MEM2: begin
+				MemWrite = 1; IorDorW = 1;
+				MemSrc = 4;
+			end
+			RV32A_WB: begin
+				RegWrite = 1; RegSrc = 9;
+			end
+			`endif
 			EXU: begin
 				IorDorW = 2;
 				ALUSrcB = 1;
@@ -403,11 +443,15 @@ module riscv_multicyc
 				end else if (op == OP_BR) begin
 					PCWrite = (instruction[14] ? instruction[12] : !instruction[12]) ^ |ALUOut; PCSrc = 1;
 					//PCWrite = !instruction[12] ^ |ALUOut; PCSrc = 1;
-				end else if (op == OP_LOAD) begin // LB, LH, LW, LBU, LHU
+				end else if (op == OP_LOAD | op_a_lr) begin // LB, LH, LW, LBU, LHU, LR.W.X
 					RegWrite = 1; RegSrc = {1'b1, instruction[13:12]};
 				end else if (op == OP_PRIV & priv_csr) begin
 					RegWrite = 1; RegSrc = 8;
 					csr_we = 1;
+				`ifdef RV32A
+				end else if (op_a_sc) begin
+					RegWrite = 1; RegSrc = 10;
+				`endif
 				end
 			end
 			MEM_WAIT: begin
@@ -472,20 +516,24 @@ module riscv_multicyc
 				end else if (op == OP_LUI | op == OP_AUIPC | op == OP_JAL) phase_n = WB;
 				else phase_n = EX;
 			EX:
-				if (op == OP_STORE | op == OP_LOAD)
+				if (op == OP_STORE | op == OP_LOAD | op_a_lr | op_a_sc)
 					phase_n = MEM;
 				`ifdef RV32M
 				else if (op == OP_R & is_RV32M)
 					phase_n = RV32M_WAIT;
 				`endif
+				`ifdef RV32A
+				else if (op_a_amo)
+					phase_n = RV32A_MEM1;
+				`endif
 				else phase_n = WB;
 			MEM: begin
 				phase_n = MEM_WAIT;
 				phase_return_set = 1;
-				if (op == OP_LOAD) phase_return_n = WB;
+				if (op == OP_LOAD | op_a_lr | op_a_sc) phase_return_n = WB;
 				else if (op == OP_STORE & store_unaligned)
 					phase_return_n = EXU;
-				else /* op == OP_STORE & !store_unaligned */
+				else /* (op == OP_STORE & !store_unaligned)*/
 					phase_return_n = IF;
 			end
 			EXU:
@@ -509,6 +557,24 @@ module riscv_multicyc
 			RV32M_WAIT: begin
 				if (RV32MReady) phase_n = WB;
 				else phase_n = RV32M_WAIT;
+			end
+			`endif
+			`ifdef RV32A
+			RV32A_MEM1: begin
+				phase_n = MEM_WAIT;
+				phase_return_set = 1;
+				phase_return_n = RV32A_WTEMP;
+			end
+			RV32A_WTEMP: begin
+				phase_n = RV32A_MEM2;
+			end
+			RV32A_MEM2: begin
+				phase_n = MEM_WAIT;
+				phase_return_set = 1;
+				phase_return_n = RV32A_WB;
+			end
+			RV32A_WB: begin
+				phase_n = IF;
 			end
 			`endif
 			INTERRUPT:
@@ -603,6 +669,10 @@ module riscv_multicyc
 		7: WriteData = RV32MOut;
 		`endif
 		8: WriteData = csrr;
+		`ifdef RV32A
+		9: WriteData = amo_temp;
+		10:WriteData = 0;
+		`endif
 		default: WriteData = 0;
 	endcase end
 	always @ (*) begin case (MemSrc)
@@ -611,12 +681,16 @@ module riscv_multicyc
 		1: memwrite_data = storehalf; // half
 		2: memwrite_data = ReadData2; // word
 		3: memwrite_data = mwr; // wait
+		`ifdef RV32A
+		4: memwrite_data = amo_t_op_rs2;
+		`endif
 		default: memwrite_data = 0;
 	endcase end
 	always @ (*) begin case (PCOutSrc)
-		0: pc_out = oldpc; // interrupt -- redo current op
-		1: pc_out = pc; // exception -- go on to next op
-		default: pc_out = 0;
+		//0: pc_out = oldpc; // interrupt -- redo current op
+		//1: pc_out = pc; // exception -- go on to next op
+		//default: pc_out = 0;
+		default: pc_out = oldpc; // shouldn't manual +4 for exception!
 	endcase end
 	always @ (*) begin case (CsrASrc)
 		//0: csr_a = instruction[31:20]; // normal
