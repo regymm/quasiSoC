@@ -23,7 +23,7 @@ module uartreset #(
 		(*mark_debug = "true"*) output uart_rst
 	);
 	reg [7:0]count = 0;
-	reg uart_rst_reg;
+	reg uart_rst_reg = 0;
 	always @ (posedge clk) begin
 		if (uart_ready) begin
 			if (uart_data == RESET_CHARACTER) begin

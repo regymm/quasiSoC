@@ -143,5 +143,5 @@ module serialboot(
 		end
 	end
 
-	assign ready = !transferring;
+	assign ready = !transferring & !we;
 endmodule

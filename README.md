@@ -37,7 +37,7 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Always half-baked
 - [ ] ESP8266/ESP32 Wifi module (Boring)
 - [x] Interrupt Timer
 - [ ] Bus converter to use AXI/Wishbone peripherals
-- [ ] **Hart transplant**: use other RISC-V cores with Quasi SoC peripherals
+- [x] **Hart transplant**: use other RISC-V cores with Quasi SoC peripherals
 
 #### Software
 
@@ -54,7 +54,8 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Always half-baked
 - [x] xc7z020 PL @ PYNQ-Z1 w/ extension PMOD module [ref](https://reference.digilentinc.com/programmable-logic/pynq-z1/start)
 - [x] xc7k325t @ Memblaze PBlaze 3 w/ extension board  [ref](https://www.tweaktown.com/reviews/6797/memblaze-pblaze3l-1-2tb-enterprise-pcie-ssd-review/index.html)
 - [x] xc6slx16 @ Nameless LED controller module, UART only
-- [ ] ep2c35 @ Cisco HWIC-3G-CDMA router module [ref](https://github.com/tomverbeure/cisco-hwic-3g-cdma), plan to buy
+- [ ] ep4ce15 @ QMTech core board w/ SDRAM [ref](http://land-boards.com/blwiki/index.php?title=QMTECH_EP4CE15_FPGA_Card)
+- [ ] ep2c35 @ Cisco HWIC-3G-CDMA router module [ref](https://github.com/tomverbeure/cisco-hwic-3g-cdma)
 - [x] Xilinx 7-series w/ Symbiflow (partial)
 - [ ] lfe5u or iCE40 w/ free software toolchain(Symbiflow, icestorm)
 - [ ] K210 or some other hardcore RISCV
@@ -67,7 +68,7 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Always half-baked
 
 #### Alternative RISC-V Cores
 
-Use other RISC-V cores with Quasi SoC peripherals. 
+Use other RISC-V cores with Quasi SoC peripherals. Currently PicoRV32 supported. 
 
 **[Hard Transplant](HartTransplant.md)**
 

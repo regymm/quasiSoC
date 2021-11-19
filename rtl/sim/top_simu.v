@@ -24,7 +24,7 @@ module top_simu();
 	wire eth_mosi;
 	reg eth_miso = 1;
 
-    pcpu_main pcpu_main_inst
+    quasi_main pcpu_main_inst
     (
         .sysclk(clk),
         .btn(btn),
@@ -42,7 +42,9 @@ module top_simu();
 		.eth_sclk(eth_sclk),
 		.eth_scsn(eth_scsn),
 		.eth_mosi(eth_mosi),
-		.eth_miso(eth_miso)
+		.eth_miso(eth_miso),
+		.uart_rx(1),
+		.uart_rx_2(1)
 		//.ch375_tx(ch375_tx)
 	);
     

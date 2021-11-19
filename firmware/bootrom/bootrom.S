@@ -145,7 +145,7 @@ cont1:
 	jal func_dummy
 
 	# load store tests
-	fence
+	#fence
 	li a1, 0xabcdf2f4
 	la a0, 0x10000000
 	sw zero, 0(a0)
@@ -164,7 +164,7 @@ cont1:
 	li a4, 0x000000f4
 	bne a3, a4, fail
 
-	fence
+	#fence
 	lhu a3, 2(a0)
 	li a4, 0x0000abcd
 	bne a3, a4, fail
@@ -178,14 +178,14 @@ cont1:
 	li a4, 0x000000ab
 	bne a3, a4, fail
 
-	fence
+	#fence
 	li a3, 0xdc
 	sb a3, 1(a0)
 	lbu a3, 1(a0)
 	li a4, 0xdc
 	bne a3, a4, fail
 
-	fence
+	#fence
 	lhu a3, 0(a0)
 	li a4, 0x0000dcf4
 	bne a3, a4, fail
