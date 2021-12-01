@@ -106,4 +106,5 @@ Many peripherals' code are based on other's work. If I miss something please poi
 
 #### License
 
-GPL-V3 except sd_controller.v
+GPL-V3
+
