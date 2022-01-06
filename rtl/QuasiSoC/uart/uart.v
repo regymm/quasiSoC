@@ -43,9 +43,18 @@ module uart
 		output [7:0]rxdata
     );
 
-	localparam SAMPLE_COUNT = 17;
-	localparam SAMPLE_SAMPLE = 6;
-	localparam SAMPLE_REMEDY = 4;
+	// 921600 baud:
+	// by default baud_rate_gen can only generate pulses 2**N times slower
+	// at baud this fast, we need more accurate pulses, so use
+	// SAMPLE_COUNT to fine-tune. You shouldn't tune these! 17, 6, 4
+	// 115200 baud and lower
+	// 31, 10, 5 works for 115200
+	// lower baud untested
+	parameter SAMPLE_COUNT = BAUD_RATE == 921600 ? 17 : 31;
+	parameter SAMPLE_SAMPLE = BAUD_RATE == 921600 ? 6 : 10;
+	parameter SAMPLE_REMEDY = BAUD_RATE == 921600 ? 4 : 5;
+
+
 
 	wire [7:0]data = d[31:24];
 

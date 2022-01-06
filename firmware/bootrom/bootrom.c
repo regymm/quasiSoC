@@ -57,9 +57,29 @@ void c_start()
 		uart_putstr("[bootrom]sdcard not found. boot from UART.\r\n");
 		// clear 0x20000000 to 0x20001000
 		int i;
+		/*for(i = 0; i < 10; i++) {*/
+			/*char c = uart_getchar();*/
+			/*uart_putchar((c >> 8) + '0');*/
+			/*uart_putchar((c & 0xF) + '0');*/
+			/*uart_putchar(c);*/
+		/*}*/
 		for(i = 0; i < 1024; i++) psram_base[i] = 0;
 		*(uart_dma_ctrl + 1) = 0x20001000;
 		*(uart_dma_ctrl + 2) = 1; // wait here
+		for(i = 0; i < 16; i++) {
+			int x = psram_base[1024 + i];
+			int j;
+			char c[8];
+			for(j = 0; j < 8; j++) {
+				c[j] = (x >> (4*j)) & 0xF;
+			}
+			for(j = 7; j >=0; j--) {
+				if (c[j] < 10) uart_putchar(c[j] + '0');
+				if (c[j] >= 10) uart_putchar(c[j] - 10 + 'A');
+			}
+			uart_putchar('\n');
+			uart_putchar('\r');
+		}
 		uart_putstr("[bootrom]xfer ctrl to 0x20001000\n\r\n\r");
 		asm("li t0, 0x20001000; jr t0;" ::: "t0" );
 	}

@@ -24,27 +24,30 @@ module top_simu();
 	wire eth_mosi;
 	reg eth_miso = 1;
 
+	wire tx;
+
     quasi_main pcpu_main_inst
     (
         .sysclk(clk),
         .btn(btn),
         .led(led),
 		.sw(sw),
-        .sd_dat0(sd_dat0),
-		.psram_ce(psram_ce),
-		.psram_mosi(psram_mosi),
-		.psram_miso(psram_miso),
-		.psram_sio2(psram_sio2),
-		.psram_sio3(psram_sio3),
-		.psram_sclk(psram_sclk),
-		.eth_intn(eth_intn),
-		.eth_rstn(eth_rstn),
-		.eth_sclk(eth_sclk),
-		.eth_scsn(eth_scsn),
-		.eth_mosi(eth_mosi),
-		.eth_miso(eth_miso),
+        //.sd_dat0(sd_dat0),
+		//.psram_ce(psram_ce),
+		//.psram_mosi(psram_mosi),
+		//.psram_miso(psram_miso),
+		//.psram_sio2(psram_sio2),
+		//.psram_sio3(psram_sio3),
+		//.psram_sclk(psram_sclk),
+		//.eth_intn(eth_intn),
+		//.eth_rstn(eth_rstn),
+		//.eth_sclk(eth_sclk),
+		//.eth_scsn(eth_scsn),
+		//.eth_mosi(eth_mosi),
+		//.eth_miso(eth_miso),
 		.uart_rx(1),
-		.uart_rx_2(1)
+		.uart_tx(tx)
+		//.uart_rx_2(1)
 		//.ch375_tx(ch375_tx)
 	);
     

@@ -59,6 +59,7 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Always half-baked
 - [x] Xilinx 7-series w/ Symbiflow (partial)
 - [ ] lfe5u or iCE40 w/ free software toolchain(Symbiflow, icestorm)
 - [ ] K210 or some other hardcore RISCV
+- [x] xc7a100t @ Nexys A7 on [USTC FPGAOL](fpgaol.ustc.edu.cn), SW/LED/UART/UARTBOOT **[Instructions](fpgaol.md)**
 
 #### Build & Run
 
