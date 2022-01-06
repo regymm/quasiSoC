@@ -16,5 +16,5 @@ D14 button controls reset, need to slide on then off on start, then you'll see U
 
 LEDs are PWM-driven so look strange.
 
-Paste your "firmware"'s' `xxd -p` result into UART(wait till finish), add a space, then Enter. Now `software/tests/` works. RAM *may* no enough for CoreMark. 
+Paste your "firmware"'s' `xxd -p` result into UART(wait till finish), add a space, then Enter. Now `software/tests/` works. RAM *may* no enough for CoreMark. [RISC-V test ready-to-paste](https://gist.github.com/regymm/8f4c846782605a89368df945b00e7d89)
 
