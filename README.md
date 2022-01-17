@@ -31,10 +31,12 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Always half-baked
 - [x] PS/2 keyboard
 - [x] HDMI character terminal
 - [x] HDMI frame buffer graphics, 320x240 8-bit color or 640x480 2-bit monochrome
+- [ ] HDMI quality of life
 - [x] CH375 Serial, USB disk support
 - [x] W5500 ethernet module
 - [ ] LAN8720 ethernet module w/ RGMII (Hard)
 - [ ] ESP8266/ESP32 Wifi module (Boring)
+- [ ] lwIP? Need MAC + PHY(ENC28J60?) I guess...
 - [x] Interrupt Timer
 - [ ] Bus converter to use AXI/Wishbone peripherals
 - [x] **Hart transplant**: use other RISC-V cores with Quasi SoC peripherals
