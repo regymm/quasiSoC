@@ -13,6 +13,7 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
 
 <details>
 <summary>Future plan</summary>
+
 - [ ] Bus arbitration
 - [ ] Platform-level interrupt controller(PLIC, for external interrupt)
 - [ ] Sv32 MMU
@@ -21,10 +22,13 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
 - [ ] PMP (not planned)
 - [ ] Formal verification (not planned)
 - [ ] Pipeline (not planned)
+
 </details>
 
   \*: except amo(max|min)u?
+
   \*: may not be exactly standard, stuffs like vectored interrupt not supported
+
   \*: stuffs like illegal instruction not supported
 
 #### Peripherals
@@ -48,10 +52,12 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
 
 <details>
 <summary>Future plan</summary>
+
 - [ ] Internet connectivity
   - [ ] LAN8720 ethernet module w/ RGMII (Hard)
   - [ ] ESP8266/ESP32 Wifi module (Boring)
   - [ ] lwIP? Need MAC + PHY(ENC28J60?) I guess...
+
 </details>
 
 #### Software
@@ -63,34 +69,42 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
 
 <details>
 <summary>Misc</summary>
+
 - [x] Standard RISC-V toolchain for RV32IM Newlib
 - [x] Basic RISC-V [tests](https://github.com/cliffordwolf/picorv32/tree/master/tests) 
 - [x] **CoreMark** performance approx. 0.27 CoreMark/MHz
 - [x] Fancy but very slow **[soft renderer](https://github.com/fededevi/pingo/)**
+
 </details>
 
 #### Boards & FPGAs
 
 <details>
 <summary>Xilinx 7 series</summary>
+
 - [x] xc7z010 PL @ SqueakyBoard, main dev platform [ref](https://github.com/ustcpetergu/SqueakyBoard)
 - [x] xc7z020 PL @ PYNQ-Z1 w/ extension PMOD module [ref](https://reference.digilentinc.com/programmable-logic/pynq-z1/start)
 - [x] xc7k325t @ Memblaze PBlaze 3 w/ extension board  [ref](https://www.tweaktown.com/reviews/6797/memblaze-pblaze3l-1-2tb-enterprise-pcie-ssd-review/index.html)
 - [x] xc7a100t @ Nexys A7 on [USTC FPGAOL](fpgaol.ustc.edu.cn), SW/LED/UART/UARTBOOT [Instructions](fpgaol.md)
+
 </details>
 
 - [x] Xilinx 7-series w/ Symbiflow (partial)
 
 <details>
 <summary>Xilinx Spartan 6</summary>
+
 - [x] xc6slx16 @ Nameless LED controller module
+
 </details>
 
 <details>
 <summary>Others</summary>
+
 - [ ] ep4ce15 @ QMTech core board w/ SDRAM [ref](http://land-boards.com/blwiki/index.php?title=QMTECH_EP4CE15_FPGA_Card)
 - [ ] ep2c35 @ Cisco HWIC-3G-CDMA router module [ref](https://github.com/tomverbeure/cisco-hwic-3g-cdma)
 - [ ] K210 or some other hardcore RISCV
+
 </details>
 
 - [ ] lfe5u or iCE40 w/ free software toolchain(Symbiflow, icestorm)
