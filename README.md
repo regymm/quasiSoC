@@ -11,6 +11,10 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
   - [ ] Core local interrupt controller(CLINT, for mtime and software interrupt)
 - [x] Memory-mapped IO bus (1 host, multiple guests)
 
+&nbsp;&nbsp;  \*: except amo(max|min)u? </br>
+&nbsp;&nbsp;  \*: may not be exactly standard, stuffs like vectored interrupt not supported </br>
+&nbsp;&nbsp;  \*: stuffs like illegal instruction not supported </br>
+
 <details>
 <summary>Future plan</summary>
 
@@ -24,10 +28,6 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
 - [ ] Pipeline (not planned)
 
 </details>
-
-  \*: except amo(max|min)u?
-  \*: may not be exactly standard, stuffs like vectored interrupt not supported
-  \*: stuffs like illegal instruction not supported
 
 ### Peripherals
 
@@ -77,17 +77,17 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
 
 ### Boards & FPGAs
 
-<details>
+<details open>
 <summary>Xilinx 7 series</summary>
 
 - [x] xc7z010 PL @ SqueakyBoard, main dev platform [ref](https://github.com/ustcpetergu/SqueakyBoard)
 - [x] xc7z020 PL @ PYNQ-Z1 w/ extension PMOD module [ref](https://reference.digilentinc.com/programmable-logic/pynq-z1/start)
 - [x] xc7k325t @ Memblaze PBlaze 3 w/ extension board  [ref](https://www.tweaktown.com/reviews/6797/memblaze-pblaze3l-1-2tb-enterprise-pcie-ssd-review/index.html)
 - [x] xc7a100t @ Nexys A7 on [USTC FPGAOL](fpgaol.ustc.edu.cn), SW/LED/UART/UARTBOOT [Instructions](fpgaol.md)
+- [x] Xilinx 7-series w/ Symbiflow (partial)
 
 </details>
 
-- [x] Xilinx 7-series w/ Symbiflow (partial)
 
 <details>
 <summary>Xilinx Spartan 6</summary>
@@ -102,32 +102,28 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
 - [ ] ep4ce15 @ QMTech core board w/ SDRAM [ref](http://land-boards.com/blwiki/index.php?title=QMTECH_EP4CE15_FPGA_Card)
 - [ ] ep2c35 @ Cisco HWIC-3G-CDMA router module [ref](https://github.com/tomverbeure/cisco-hwic-3g-cdma)
 - [ ] K210 or some other hardcore RISCV
+- [ ] lfe5u or iCE40 w/ free software toolchain(Symbiflow, icestorm)
 
 </details>
 
-- [ ] lfe5u or iCE40 w/ free software toolchain(Symbiflow, icestorm)
 
 ### Build & Run
 
-*Quick start*
-
+*Quick start*</br>
 [Build & run instructions](BuildnRun.md)
 
-*Free-as-in-freedom*
-
+*Free-as-in-freedom*</br>
 [Free software toolchain -- SymbiFlow(Vivado-free!)](SymbiFlow.md)
 
 ### Linux Kernel
 
-*At least you saw a fancy kernel panic.*
-
+*At least you saw a fancy kernel panic.*</br>
 [It's hacky, dirty, hard, and of no practical use](Linux.md)
 
 ### Alternative RISC-V Cores
 
-*Use other RISC-V cores with Quasi SoC peripherals. Currently supports PicoRV32.*
-
-[Hard Transplant](HartTransplant.md)
+*Use other RISC-V cores with Quasi SoC peripherals. Currently supports PicoRV32.*</br>
+[Hart Transplant](HartTransplant.md)
 
 ### Gallery
 
