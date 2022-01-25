@@ -4,7 +4,7 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
 
 ![](doc/design.png)
 
-#### ∂CPU (partial CPU)
+### ∂CPU (partial CPU)
 
 - [x] Multiple-cycle RISC-V RV32IMA\* Zicsr\* @ 62.5 MHz, ~0.27 CoreMark/MHz
 - [x] M-mode, interrupt, exception\*
@@ -26,12 +26,10 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
 </details>
 
   \*: except amo(max|min)u?
-
   \*: may not be exactly standard, stuffs like vectored interrupt not supported
-
   \*: stuffs like illegal instruction not supported
 
-#### Peripherals
+### Peripherals
 
 - [x] ESP-PSRAM64H as main memory, 8 MB, QPI mode @ 62.5 M, burst R/W
 - [x] ~~Cache, direct mapping 32 KB(configurable)~~ has bugs
@@ -60,7 +58,7 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
 
 </details>
 
-#### Software
+### Software
 
 - [x] **Linux kernel** 32-bit NOMMU uClibc
   - [ ] Drivers for my UART
@@ -77,7 +75,7 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
 
 </details>
 
-#### Boards & FPGAs
+### Boards & FPGAs
 
 <details>
 <summary>Xilinx 7 series</summary>
@@ -109,7 +107,7 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
 
 - [ ] lfe5u or iCE40 w/ free software toolchain(Symbiflow, icestorm)
 
-#### Build & Run
+### Build & Run
 
 *Quick start*
 
@@ -119,19 +117,19 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
 
 [Free software toolchain -- SymbiFlow(Vivado-free!)](SymbiFlow.md)
 
-#### Linux Kernel
+### Linux Kernel
 
 *At least you saw a fancy kernel panic.*
 
 [It's hacky, dirty, hard, and of no practical use](Linux.md)
 
-#### Alternative RISC-V Cores
+### Alternative RISC-V Cores
 
 *Use other RISC-V cores with Quasi SoC peripherals. Currently supports PicoRV32.*
 
 [Hard Transplant](HartTransplant.md)
 
-#### Gallery
+### Gallery
 
 Linux kernel booting, init not ready yet, 8 MB RAM is enough for everything. 
 
@@ -157,7 +155,7 @@ Process switching demo and inter-process communication, early-stage microkernel 
 ![Interrupt based process switching demo(early stage osdev)](doc/IPC.jpg)
 -->
 
-#### Credits
+### Credits
 
 Many peripherals' code are based on other's work. If I miss something please point out. 
 
@@ -171,7 +169,7 @@ Many peripherals' code are based on other's work. If I miss something please poi
 
 [Computer Organization and Design](https://enszhou.github.io/cod/), where everything started
 
-#### License
+### License
 
 GPL-V3
 
