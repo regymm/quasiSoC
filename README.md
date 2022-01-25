@@ -6,35 +6,22 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
 
 #### ∂CPU (partial CPU)
 
-- [x] Multiple-cycle RISC-V RV32IMA* Zicsr* @ 62.5 MHz
-
-- [x] M-mode, interrupt, exception*
-
+- [x] Multiple-cycle RISC-V RV32IMA\* Zicsr\* @ 62.5 MHz
+- [x] M-mode, interrupt, exception\*
   - [ ] Core local interrupt controller(CLINT, for mtime and software interrupt)
-
 - [x] Memory-mapped IO bus (1 host, multiple guests)
-
   - [ ] Bus arbitration
-
 - [ ] Platform-level interrupt controller(PLIC, for external interrupt)
-
 - [ ] Sv32 MMU
-
 - [ ] S-mode and U-mode
-
 - [ ] GDB debug over openocd JTAG
-
 - [ ] PMP (not planned)
-
 - [ ] Formal verification (not planned)
-
 - [ ] Pipeline (not planned)
 
-  *: except amo(max|min)u?
-
-  *: may not be exactly standard, stuffs like vectored interrupt not supported
-
-  *: stuffs like illegal instruction not supported
+  \*: except amo(max|min)u?
+  \*: may not be exactly standard, stuffs like vectored interrupt not supported
+  \*: stuffs like illegal instruction not supported
 
 #### Peripherals
 
@@ -65,36 +52,32 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
 #### Software
 
 - [x] **Linux kernel** 32-bit NOMMU uClibc
-
   - [ ] Drivers for my UART
   - [ ] Busybox "userspace"
-
 - [x] **MicroPython** [port](https://github.com/regymm/micropython/tree/master/ports/QuasiSoC)
 
-  
-
 - [x] Standard RISC-V toolchain for RV32IM Newlib
-
 - [x] Basic RISC-V [tests](https://github.com/cliffordwolf/picorv32/tree/master/tests) 
-
 - [x] **CoreMark** performance approx. 0.27 CoreMark/MHz
-
 - [x] Fancy but very slow **[soft renderer](https://github.com/fededevi/pingo/)**
 
 #### Boards & FPGAs
 
 <details>
-    <summary><p> - [x] Xilinx 7-series</p></summary><p>
-- [x] xc7z010 PL @ SqueakyBoard, main dev platform [ref](https://github.com/ustcpetergu/SqueakyBoard)
-- [x] xc7z020 PL @ PYNQ-Z1 w/ extension PMOD module [ref](https://reference.digilentinc.com/programmable-logic/pynq-z1/start)
-- [x] xc7k325t @ Memblaze PBlaze 3 w/ extension board  [ref](https://www.tweaktown.com/reviews/6797/memblaze-pblaze3l-1-2tb-enterprise-pcie-ssd-review/index.html)
-    </p>
+  <summary>Xilinx</summary>
+  
+  - [x] xc7z010 PL @ SqueakyBoard, main dev platform [ref](https://github.com/ustcpetergu/SqueakyBoard)
+  - [x] xc7z020 PL @ PYNQ-Z1 w/ extension PMOD module [ref](https://reference.digilentinc.com/programmable-logic/pynq-z1/start)
+  - [x] xc7k325t @ Memblaze PBlaze 3 w/ extension board  [ref](https://www.tweaktown.com/reviews/6797/memblaze-pblaze3l-1-2tb-enterprise-pcie-ssd-review/index.html)
+  - [x] xc6slx16 @ Nameless LED controller module
+  
 </details>
 
 
 
 
-- [x] xc6slx16 @ Nameless LED controller module
+Others
+
 - [ ] ep4ce15 @ QMTech core board w/ SDRAM [ref](http://land-boards.com/blwiki/index.php?title=QMTECH_EP4CE15_FPGA_Card)
 - [ ] ep2c35 @ Cisco HWIC-3G-CDMA router module [ref](https://github.com/tomverbeure/cisco-hwic-3g-cdma)
 - [x] Xilinx 7-series w/ Symbiflow (partial)
