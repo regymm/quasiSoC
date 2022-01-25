@@ -3,7 +3,7 @@
  * License           : GPL-3.0-or-later
  * Author            : Peter Gu <github.com/regymm>
  * Date              : 2020.11.25
- * Last Modified Date: 2021.10.17
+ * Last Modified Date: 2021.12.31
  */
 `timescale 1ns / 1ps
 // pComputer main block design
@@ -144,6 +144,7 @@ module quasi_main
 
 
     // bootrom 1024*32
+	// TODO: 2 LSB problem: mmapper or here?
     wire [9:0]bootm_a;
 	wire bootm_rd;
     wire [31:0]bootm_spo;
@@ -151,6 +152,7 @@ module quasi_main
 	clocked_rom #(
 		.WIDTH(32),
 		.DEPTH(10),
+		// te
 		.INIT("/home/petergu/MyHome/quasiSoC/firmware/bootrom/result_bootrom.dat")
 	) bootrom(
 		.clk(clk_main),
@@ -397,6 +399,20 @@ module quasi_main
 	);
 	`endif
 `else
+	// 2**14 * 32 64KB -- have to be w/o cache and ...
+	simple_ram #(
+		.WIDTH(32),
+		.DEPTH(14),
+		.INIT("/home/petergu/MyHome/quasiSoC/rtl/null.dat")
+	) distram_mainm (
+        .clk(clk_main),
+        .a({2'b0, mainm_a_m[31:2]}),
+        .d(mainm_d_m),
+        .we(mainm_we_m),
+		.rd(mainm_rd_m),
+        .spo(mainm_spo_m),
+		.ready(mainm_ready_m)
+    );
 `endif
 
 	// serial boot

@@ -276,12 +276,19 @@ module riscv_multicyc
 	always @ (posedge clk) begin
 		if (rst)
 			amo_temp <= 0;
-		else if (state == RV32A_WTEMP) // one cycle only!
+		else if (phase == RV32A_WTEMP) // one cycle only!
 			amo_temp <= mdr;
 	end
 	// TODO
-	wire [31:0]amo_t_op_rs2;
+	reg [31:0]amo_t_op_rs2;
 	always @ (*) begin case (instruction[31:27])
+		5'b00001: amo_t_op_rs2 = B;
+		5'b00000: amo_t_op_rs2 = amo_temp + B;
+		5'b00100: amo_t_op_rs2 = amo_temp ^ B;
+		5'b01100: amo_t_op_rs2 = amo_temp & B;
+		5'b01000: amo_t_op_rs2 = amo_temp | B;
+		// amomin(u) and amomax(u) not used in kernel
+		// TODO: implement 
 		default: amo_t_op_rs2 = 0;
 	endcase end
 	`else
@@ -387,7 +394,8 @@ module riscv_multicyc
 				end else if (op == OP_PRIV & priv_csr) begin
 					ALUSrcA = instruction[14] ? 2 : 0;
 					ALUSrcB = 2;
-					ALUm = instruction[13] ? {3'b011, instruction[12]} : {4'b1111};
+					ALUm = {instruction[12], instruction[13], 2'b10};
+					//ALUm = instruction[13] ? {3'b011, instruction[12]} : {4'b1111};
 					csrsave = 1;
 				end
 			end

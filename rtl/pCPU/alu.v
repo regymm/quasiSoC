@@ -9,16 +9,18 @@
 // ALU with more operations
 // 4 bit ALUm:
 // 0000: add
-// 1000: sub
 // 0001: sll
-// 0101: srl
-// 1101: sra
-// 0100: xor
-// 0110: or
-// 0111: and
-// 1111: pass a
 // 0010: slt
 // 0011: sltu
+// 0100: xor
+// 0101: srl
+// 0110: or (csrrs)
+// 0111: and
+// 1000: sub
+// 1101: sra
+
+// 1010: pass a (csrrw)
+// 1110: and !a (csrrc)
 
 module alu
     (
@@ -64,8 +66,10 @@ module alu
                 y = a ^ b;
             4'b0110: // or
                 y = a | b;
-			4'b1111: // pass a, for csrrw(i)
+			4'b1010: // pass a, for csrrw(i)
 				y = a; 
+			4'b1110: // for csrrc(i)
+				y = ~a & b; 
             4'b0111: // and
                 y = a & b;
 			4'b0010: // slt

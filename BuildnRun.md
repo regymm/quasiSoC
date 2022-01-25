@@ -18,9 +18,9 @@ Then run synthesis/implementation/bitstream as usual -- just take special care t
 
 **UART**
 
-UART is recommended for interaction, program downloading, and reseting -- instead of hardware buttons, SD card or HDMI. 
+UART is recommended for interaction, program downloading, and reseting -- instead of hardware buttons, SD card, or HDMI. 
 
-Open serial port at 921600-baud with like `sudo picocom -b 921600 -p 1 /dev/ttyUSB1`. Picocom is recommend while screen is not -- while pasting a bunch of characters and transferring at full speed, screen will miss characters, which is fatal when debugging UART boot. 
+Open serial port at 921600-baud with like `sudo picocom -b 921600 -p 1 /dev/ttyUSB1`. Picocom is recommend while screen is not -- when pasting a bunch of characters and transferring at full speed, screen seems to miss characters. 
 
 When system starts, you should see messages like these: 
 
@@ -39,7 +39,7 @@ Or with `firmware/sd_uartbl/uartbl.bin` written to SD card's first sectors:
 [uartbl] started. 
 ```
 
-Input multiple `R` until LED brightness changes to reset the board. Then press `x` (or anything else, but not `0-9a-fA-F`) to de-assert reset. So resetting can be automated without hardware intervention. 
+Input multiple `R` until LED brightness changes to reset the board. Then press `x` (or anything else, but not `0-9a-f`) to de-assert reset. So resetting can be automated without hardware intervention. 
 
 See `software/uartboot.sh` for program downloading details. Make sure you have a 921600-baud picocom running when using `uartboot.sh`, or the `> /dev/ttyUSB?` will suffer wrong baud rate. 
 
