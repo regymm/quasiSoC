@@ -35,14 +35,16 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
 - [x] ~~Cache, direct mapping 32 KB(configurable)~~ has bugs
 - [ ] SDRAM (Easy but not before I get a better board)
 - [x] GPIO (LEDs, buttons, switches)
-- [x] UART (115200/921600 baud), boot from UART, rest from UART
+- [x] UART (115200/921600/1843200 baud), boot from UART, rest from UART
 - [x] SD card (SPI mode, SDHC)
 - [x] PS/2 keyboard
-- [x] HDMI
-  - [x] Character terminal
-  - [x] Frame buffer graphics, 320x240 8-bit color or 640x480 2-bit monochrome
-  - [ ] Quality of life fixes
-- [ ] Old good VGA
+- [ ] PS/2 mouse
+- [x] Graphics
+  - [x] HDMI, character terminal, frame buffer graphics(320x240 8-bit color, 640x480 2-bit monochrome)
+    - [ ] Quality of life fixes
+  - [ ] Old good VGA
+  - [ ] ILI9486 320x480 LCD
+    - [ ] Partial screen update
 - [x] CH375 USB disk
 - [x] W5500 ethernet module
 - [ ] **Bus converter**: Use AXI/Wishbone peripherals
