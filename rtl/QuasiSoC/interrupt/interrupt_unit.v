@@ -1,5 +1,6 @@
 `timescale 1ns / 1ps
 // pComputer interrupt control unit
+// TODO: plic compatible?
 
 module interrupt_unit
     (

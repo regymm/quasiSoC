@@ -50,11 +50,23 @@ module uart
 	// 115200 baud and lower
 	// 31, 10, 5 works for 115200
 	// lower baud untested
-	parameter SAMPLE_COUNT = BAUD_RATE == 921600 ? 17 : 31;
-	parameter SAMPLE_SAMPLE = BAUD_RATE == 921600 ? 6 : 10;
-	parameter SAMPLE_REMEDY = BAUD_RATE == 921600 ? 4 : 5;
-
-
+	parameter SAMPLE_COUNT =
+		BAUD_RATE == 921600 ? 17 :
+		BAUD_RATE == 1843200 ? 16 :
+		BAUD_RATE == 3686400 ? 8 :
+		BAUD_RATE == 115200 ? 31 : -1;
+	parameter SAMPLE_SAMPLE =
+		BAUD_RATE == 921600 ? 6 :
+		BAUD_RATE == 1843200 ? 8 :
+		BAUD_RATE == 3686400 ? 4 :
+		BAUD_RATE == 115200 ? 10 : -1;
+	parameter SAMPLE_REMEDY =
+		BAUD_RATE == 921600 ? 4 :
+		BAUD_RATE == 1843200 ? 4 :
+		BAUD_RATE == 3686400 ? 2 :
+		BAUD_RATE == 115200 ? 5  : -1;
+	parameter SAMPLE_MULTIPLIER = 
+		BAUD_RATE >= 1843200 ? 9999 : 32;
 
 	wire [7:0]data = d[31:24];
 
@@ -69,7 +81,7 @@ module uart
 	#(
 		.CLOCK_FREQ(CLOCK_FREQ),
 		.BAUD_RATE(BAUD_RATE),
-		.SAMPLE_MULTIPLIER(32)
+		.SAMPLE_MULTIPLIER(SAMPLE_MULTIPLIER)
 	) baud_rate_gen_inst (
         .clk(clk),
         .rst(rst),

@@ -12,7 +12,7 @@
 module quasi_main 
 	#(
 		parameter CLOCK_FREQ = 62500000,
-		parameter BAUD_RATE_UART = 921600, // may misbehave if modified
+		parameter BAUD_RATE_UART = 1843200, // may misbehave if modified
 		parameter BAUD_RATE_CH375 = 9600,
 		//parameter TIMER_COUNTER = 4000 // for debugging
 		parameter TIMER_COUNTER = 1000000
@@ -628,7 +628,7 @@ module quasi_main
     wire cpu_eip_istimer;
     wire cpu_eip_reply;
 
-	wire [2:0]timer_a;
+	wire [15:0]timer_a;
 	wire [31:0]timer_d;
 	wire timer_we;
 	wire [31:0]timer_spo;

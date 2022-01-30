@@ -8,8 +8,8 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
 
 - [x] Multiple-cycle RISC-V RV32IMA\* Zicsr\* @ 62.5 MHz, ~0.27 CoreMark/MHz
 - [x] M-mode, interrupt, exception\*
-  - [ ] Core local interrupt controller(CLINT, for mtime and software interrupt)
-- [x] Memory-mapped IO bus (1 host, multiple guests)
+  - [x] Core local interrupt controller(CLINT, for mtime and ~~software~~ interrupt)
+- [x] Memory-mapped IO bus
 
 &nbsp;&nbsp;  \*: except amo(max|min)u? </br>
 &nbsp;&nbsp;  \*: may not be exactly standard, stuffs like vectored interrupt not supported </br>
@@ -42,6 +42,7 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
   - [x] Character terminal
   - [x] Frame buffer graphics, 320x240 8-bit color or 640x480 2-bit monochrome
   - [ ] Quality of life fixes
+- [ ] Old good VGA
 - [x] CH375 USB disk
 - [x] W5500 ethernet module
 - [ ] **Bus converter**: Use AXI/Wishbone peripherals

@@ -48,15 +48,15 @@ module privilege
     );
 
 	// Control State Registers
-	reg [31:0]mstatus = 32'b0_00000000_0000000000_00_00_0_1_;
+	(*mark_debug = "true"*)reg [31:0]mstatus = 32'b0_00000000_0000000000_00_00_0_0_;
 	reg [31:0]misa = 32'b01_0000_00000000000001000100000000;
-	reg [31:0]mie;
-	reg [31:0]mtvec;
-	reg [31:0]mscratch;
-	reg [31:0]mepc;
+	(*mark_debug = "true"*)reg [31:0]mie;
+	(*mark_debug = "true"*)reg [31:0]mtvec;
+	(*mark_debug = "true"*)reg [31:0]mscratch;
+	(*mark_debug = "true"*)reg [31:0]mepc;
 	reg [31:0]mcause;
-	reg [31:0]mtval;
-	reg [31:0]mip;
+	(*mark_debug = "true"*)reg [31:0]mtval;
+	(*mark_debug = "true"*)reg [31:0]mip;
 
 	assign mepc_out = mepc_reg;
 	reg [31:0]mepc_reg;

@@ -85,7 +85,7 @@ module mmapper
 		output reg usb_we,
 		input [31:0]usb_spo,
 
-        // interrupt unit: 0x98000000
+        // interrupt unit(should be plic in future): 0x98000000
         output reg [2:0]int_a,
         output reg [31:0]int_d,
         output reg int_we,
@@ -101,8 +101,8 @@ module mmapper
 		// PS2 keyboard: 0x9a000000
 		input [31:0]ps2_spo,
 
-		// timer control: 0x9b000000
-		output reg [2:0]t_a,
+		// timer control(now clint): 0x9b000000
+		output reg [15:0]t_a,
 		output reg [31:0]t_d,
 		output reg t_we,
 		input [31:0]t_spo,
@@ -139,7 +139,7 @@ module mmapper
 		usb_d = d;
         int_a = a[4:2];
         int_d = d;
-		t_a = a[4:2];
+		t_a = a[15:0];
 		t_d = d;
 		eth_a = a;
 		eth_d = d;
