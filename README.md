@@ -43,10 +43,11 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
   - [x] HDMI, character terminal, frame buffer graphics(320x240 8-bit color, 640x480 2-bit monochrome)
     - [ ] Quality of life fixes
   - [ ] Old good VGA
-  - [ ] ILI9486 320x480 LCD
-    - [ ] Partial screen update
+  - [x] ILI9486 480x320 LCD
+    - [ ] Refresh rate upgrade
 - [x] CH375 USB disk
 - [x] W5500 ethernet module
+  - [ ] W5500 as MAC with LwIP stack
 - [ ] **Bus converter**: Use AXI/Wishbone peripherals
 - [x] **Hart transplant**: Use other RISC-V cores with my peripherals
 
@@ -75,6 +76,7 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
 - [x] Basic RISC-V [tests](https://github.com/cliffordwolf/picorv32/tree/master/tests) 
 - [x] **CoreMark** performance approx. 0.27 CoreMark/MHz
 - [x] Fancy but very slow **[soft renderer](https://github.com/fededevi/pingo/)**
+- [x] Bad Apple!! on LCD(low quality)
 
 </details>
 

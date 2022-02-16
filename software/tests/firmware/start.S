@@ -9,24 +9,24 @@
 .globl uart_putchar
 
 _start:
-	li a0, 0x92000000
-	li a1, 0x0
-	sw a1, 24(a0)
-	sw a1, 28(a0)
-	li a0, 'X'
-	la t2, 0x93000000
+	#li a0, 0x92000000
+	#li a1, 0x0
+	#sw a1, 24(a0)
+	#sw a1, 28(a0)
+	#li a0, 'X'
+	#la t2, 0x93000000
 1:
-    lw t0, 8(t2)
-    beq t0, zero, 1b
-    sw a0, 0(t2) # do the real work
+    #lw t0, 8(t2)
+    #beq t0, zero, 1b
+    #sw a0, 0(t2) # do the real work
 2:
-    lw t0, 8(t2)
-    beq t0, zero, 2b
+    #lw t0, 8(t2)
+    #beq t0, zero, 2b
 
-	li a0, 'O'
-	jal uart_putchar
-	li a0, 'K'
-	jal uart_putchar
+	#li a0, 'O'
+	#jal uart_putchar
+	#li a0, 'K'
+	#jal uart_putchar
 	/* zero-initialize all registers */
 
 	addi x1, zero, 0
@@ -124,7 +124,23 @@ _start:
 	TEST(rem)
 	TEST(remu)
 
+	TEST(csr)
+	TEST(mcsr)
+	TEST(amoadd_w)
+	TEST(amoand_w)
+	TEST(amoor_w)
+	TEST(amoswap_w)
+	TEST(amoxor_w)
+	TEST(amomaxu_w)
+	TEST(amomax_w)
+	TEST(amominu_w)
+	TEST(amomin_w)
+	TEST(lrsc)
+	TEST(scall)
+
 	TEST(simple)
+_theend:
+	j _theend
 
 # void uart_putchar(char c)
 uart_putchar:

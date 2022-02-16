@@ -25,9 +25,12 @@ module privilege
 		output reg [31:0]spo,
 
 		// from interrupt.v
+		// TODO: PLIC!!
 		input eip,
-		input eip_istimer,
 		output reg eip_reply,
+
+		// from timer.v
+		input tip,
 
 		//input mtval_we,
 		//input [31:0]mtval_d,
@@ -43,9 +46,12 @@ module privilege
 		output [31:0]mepc_out,
 
 		// interrupt that goes into CPU directly
+		// reply also by CPU
 		output reg interrupt,
 		input int_reply
     );
+
+	reg mode = 1; // default 11 machine mode, 00 dummy user mode
 
 	// Control State Registers
 	(*mark_debug = "true"*)reg [31:0]mstatus = 32'b0_00000000_0000000000_00_00_0_0_;
@@ -75,14 +81,14 @@ module privilege
 	//reg [63:0]mtimecmp;
 
 	//wire [31:0]mstatus_wpri_mask = 32'b01111111100000000000011001000100; // WPRI otherwise
-	wire [31:0]mstatus_read_mask	= 32'b11111111111111111111111101110111;
-	wire [31:0]mstatus_read_val		= 32'b000000000000000000000000x000x000;
-	wire [31:0]mstatus_write_mask	= 32'b11111111111111111111111101110111;
+	wire [31:0]mstatus_read_mask	= 32'b11111111111111111110011101110111;
+	wire [31:0]mstatus_read_val		= 32'b0000000000000000000xx000x000x000;
+	wire [31:0]mstatus_write_mask	= 32'b11111111111111111110011101110111;
 	wire [31:0]mtvec_read_mask		= 32'b00000000000000000000000000000011;
 	wire [31:0]mtvec_read_val		= 32'bxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx00;
 	wire [31:0]mtvec_write_mask		= 32'b00000000000000000000000000000011;
 	wire [31:0]mip_read_mask		= 32'b11111111111111111111111111110111;
-	wire [31:0]mip_read_val			= {20'b0, (eip&!eip_istimer), 3'b0, (eip&eip_istimer), 3'b0, 1'bx, 3'b0};
+	wire [31:0]mip_read_val			= {20'b0, eip, 3'b0, tip, 3'b0, 1'bx, 3'b0};
 	wire [31:0]mip_write_mask		= 32'b11111111111111111111111111110111; // WARL otherwise
 	wire [31:0]mie_read_mask		= 32'b00000000000000000000100010001000;
 	wire [31:0]mie_read_val			= 32'b00000000000000000000x000x000x000;
@@ -113,6 +119,7 @@ module privilege
 	//wire mstatus_mpie = mstatus[7];
 	
 	wire mstatus_mie = mstatus[3];
+	wire [1:0]mstatus_mpp = mstatus[12:11];
 	wire mip_sip = mip[4];
 	wire meie = mie[11];
 	wire mtie = mie[7];
@@ -149,7 +156,8 @@ module privilege
 
 	always @ (posedge clk) begin
 		if (rst) begin
-			mstatus <= 32'b00000000000000000000000010000000;
+			mode <= 1'b1;
+			mstatus <= 32'b00000000000000000001100010000000;
 			misa <= 32'b01_0000_00000000000001000100000000;
 			mie <= 32'b0;
 			mtvec <= 32'b0;
@@ -173,7 +181,9 @@ module privilege
 			endcase
 			else if (on_exc_enter) begin
 				// interrupt or exception
-				mstatus <= {mstatus[31:8], mstatus[3], mstatus[6:4], 1'b0, mstatus[2:0]};
+				// enter M-mode, MPP to previous mode
+				mstatus <= {mstatus[31:13], mode, mode, mstatus[10:8], mstatus[3], mstatus[6:4], 1'b0, mstatus[2:0]};
+				mode <= 1'b1;
 				mepc <= pc_in;
 				if (on_exc_isint) begin
 					mcause <= {1'b1, 27'b0, mcause_i_code};
@@ -181,8 +191,9 @@ module privilege
 					mcause <= {1'b0, 27'b0, mcause_code_in};
 				end
 			end else if (on_exc_leave) begin
-				// mret
-				mstatus <= {mstatus[31:8], 1'b1, mstatus[6:4], mstatus[7], mstatus[2:0]};
+				// mret, MPP set to 00, mode set to MPP
+				mstatus <= {mstatus[31:13], 2'b0, mstatus[10:8], 1'b1, mstatus[6:4], mstatus[7], mstatus[2:0]};
+				mode <= (mstatus_mpp == 2'b0) ? 1'b0 : 1'b1;
 			end
 		end
 	end
@@ -190,15 +201,15 @@ module privilege
 	reg int_reply_reg;
 	reg int_pending;
 	reg eip_reg;
-	reg eip_istimer_reg;
+	reg tip_reg;
 	reg meie_reg;
 	reg mtie_reg;
 	reg [1:0]int_source;
 	always @ (posedge clk) begin
 		int_reply_reg <= int_reply;
-		int_pending <= mstatus_mie & (eip&!eip_istimer&meie | eip&eip_istimer&mtie | mip_sip&msie);
+		int_pending <= mstatus_mie & (eip&meie | tip&mtie | mip_sip&msie);
 		eip_reg <= eip;
-		eip_istimer_reg <= eip_istimer;
+		tip_reg <= tip;
 		meie_reg <= meie;
 		mtie_reg <= mtie;
 	end
@@ -218,7 +229,7 @@ module privilege
 			case (state)
 				IDLE: begin
 					if (int_pending) begin
-						int_source <= {eip_reg&!eip_istimer_reg&meie_reg, eip_reg&eip_istimer_reg&mtie_reg};
+						int_source <= {eip_reg&meie_reg, tip_reg&mtie_reg};
 						state <= ISSUE;
 					end
 				end
@@ -230,7 +241,6 @@ module privilege
 						mcause_i_code <= 4'd11;
 					end else if (int_source[0]) begin
 						// timer
-						eip_reply <= 1;
 						mcause_i_code <= 4'd7;
 					end else
 						// software

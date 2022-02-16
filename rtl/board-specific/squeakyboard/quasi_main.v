@@ -34,8 +34,8 @@ module quasi_main
         input uart_rx,
         output uart_tx,
 
-		input uart_rx_2,
-		output uart_tx_2,
+		//input uart_rx_2,
+		//output uart_tx_2,
 
         input sd_ncd,
         input sd_wp,
@@ -63,9 +63,24 @@ module quasi_main
         output [2:0]TMDSp,
         output [2:0]TMDSn,
         output TMDSp_clock,
-        output TMDSn_clock
-    );
+        output TMDSn_clock,
 
+		output [7:0]lcd_d,
+		output lcd_rd,
+		output lcd_wr,
+		output lcd_rs,
+		output lcd_cs,
+		output lcd_rst,
+
+		input p1p,
+		input p1n,
+		input p3p,
+		input p3n,
+		input p2p,
+		input p2n,
+		input p4p,
+		input p4n
+    );
     wire clk_main;
 	wire clk_mem;
 	wire clk_2x;
@@ -88,6 +103,10 @@ module quasi_main
 		.clk5_50(clk_2x)
 	);
 
+	(*mark_debug = "true"*)reg [7:0]probe;
+	always @ (posedge clk_main) begin
+		probe <= {p1p, p1n, p3p, p3n, p2p, p2n, p4p, p4n};
+	end
 
     wire [1:0]sw_d;
     debounce #(.N(2)) debounce_inst_0(
@@ -104,8 +123,9 @@ module quasi_main
     );
 
 	// backup serial pins
-	assign uart_tx_2 = uart_tx;
-	wire uart_rx_in = sw_d[1] ? uart_rx : uart_rx_2;
+	//assign uart_tx_2 = uart_tx;
+	//wire uart_rx_in = sw_d[1] ? uart_rx : uart_rx_2;
+	wire uart_rx_in = uart_rx;
 
     // reset signal
 	wire manual_rst = sw_d[0];
@@ -557,7 +577,6 @@ module quasi_main
 		.TMDSn_clock(TMDSn_clock)
 	);
 `else
-	assign video_spo = 0;
 	OBUFDS OBUFDS_red(
 		.I(0),
 		.O(TMDSp[2]),
@@ -578,6 +597,24 @@ module quasi_main
 		.O(TMDSp_clock),
 		.OB(TMDSn_clock)
 	);
+	`ifdef LCD_EN
+		lcd_ili9486 lcd_ili9486_inst(
+			.clk(clk_main),
+			.rst(rst_video),
+			.a(video_a),
+			.d(video_d),
+			.we(video_we),
+			.spo(video_spo),
+			.lcd_d(lcd_d),
+			.rd(lcd_rd),
+			.wr(lcd_wr),
+			.rs(lcd_rs),
+			.cs(lcd_cs),
+			.lcd_rst(lcd_rst)
+		);
+	`else
+		assign video_spo = 0;
+	`endif
 `endif
 
 	wire [31:0]ps2_spo;
@@ -625,8 +662,8 @@ module quasi_main
 
     // interrupt unit
     wire cpu_eip;
-    wire cpu_eip_istimer;
     wire cpu_eip_reply;
+    wire irq_timer_pending;
 
 	wire [15:0]timer_a;
 	wire [31:0]timer_d;
@@ -639,11 +676,12 @@ module quasi_main
     wire [31:0]int_spo;
 `ifdef IRQ_EN
     // timer interrupt
-    wire irq_timer;
     timer #(.TIMER_COUNTER(TIMER_COUNTER)) timer_inst(
         .clk(clk_main),
         .rst(rst_timer),
-        .irq(irq_timer),
+		
+		.s_irq(),
+        .t_irq(irq_timer_pending),
 
 		.a(timer_a),
 		.d(timer_d),
@@ -656,10 +694,8 @@ module quasi_main
         .rst(rst_interrupt),
 
         .interrupt(cpu_eip),
-		.int_istimer(cpu_eip_istimer),
         .int_reply(cpu_eip_reply),
 
-        .i_timer(irq_timer),
         .i_uart(irq_uart),
         .i_gpio(irq_gpio),
 		.i_ps2(irq_ps2),
@@ -670,8 +706,8 @@ module quasi_main
         .spo(int_spo)
     );
 `else
+	assign irq_timer_pending = 0;
 	assign cpu_eip = 0;
-	assign cpu_eip_istimer = 0;
 	assign int_spo = 0;
 	assign timer_spo = 0;
 `endif
@@ -688,8 +724,9 @@ module quasi_main
 		.rst(rst),
 
 		.eip(cpu_eip),
-		.eip_istimer(cpu_eip_istimer),
 		.eip_reply(cpu_eip_reply),
+
+		.tip(irq_timer_pending),
 
 		.spo(spo),
 		.ready(ready),

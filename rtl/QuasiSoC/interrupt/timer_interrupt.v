@@ -19,6 +19,8 @@ module timer
 		parameter TIMER_COUNTER = 4000, // abandoned
 		// default 10 MHz
 		parameter TIMER_RATE = 10000000
+		// slow...
+		//parameter TIMER_RATE = 1000000
 	)
     (
         input clk,
@@ -30,12 +32,12 @@ module timer
 		output reg [31:0]spo,
 
 		output s_irq,
-		output reg irq // t_irq
+		output t_irq // t_irq
     );
 
 	// very crude timer
 	localparam COUNT_RATE = CLOCK_FREQ / TIMER_RATE;
-	reg [3:0]tic_reg = 0;
+	reg [15:0]tic_reg = 0;
 	wire tic = tic_reg == COUNT_RATE - 1;
     always @ (posedge clk) begin
         if (rst) begin
@@ -54,15 +56,16 @@ module timer
 	//assign irq = irq_mode ? irq_cmp : irq_counter;
 	//assign irq = 0;
 
-	reg [31:0]mtimel = 0;
-	reg [31:0]mtimeh = 0;
-	reg [31:0]mtimecmpl = 0;
-	reg [31:0]mtimecmph = 0;
+	(*mark_debug = "true"*)reg [31:0]mtimel = 0;
+	(*mark_debug = "true"*)reg [31:0]mtimeh = 0;
+	(*mark_debug = "true"*)reg [31:0]mtimecmpl = 0;
+	(*mark_debug = "true"*)reg [31:0]mtimecmph = 0;
 	wire t_i_pending = (mtimeh > mtimecmph) | (mtimeh == mtimecmph & mtimel >= mtimecmpl);
+	assign t_irq = t_i_pending;
 
 	wire [31:0]data = {d[7:0], d[15:8], d[23:16], d[31:24]};
 
-	reg t_irq_rst = 0;
+	//reg t_irq_rst = 0;
 
 	always @ (posedge clk) begin
 		if (rst) begin
@@ -70,8 +73,8 @@ module timer
 			mtimeh <= 0;
 			mtimecmpl <= 32'hffffffff;
 			mtimecmph<= 32'hffffffff;
-			t_irq_rst <= 0;
-			irq <= 0;
+			//t_irq_rst <= 0;
+			//irq <= 0;
 		end else begin
 			if (tic) begin
 				if (mtimel == 32'hffffffff) begin
@@ -81,19 +84,20 @@ module timer
 			end
 
 			if (we) begin
-				t_irq_rst <= 1;
+				//t_irq_rst <= 1;
 				case (a)
 					16'h4000: mtimecmpl <= data;
 					16'h4004: mtimecmph <= data;
 					16'hbff8: mtimel <= data;
 					16'hbffc: mtimeh <= data;
 				endcase
-			end else if (t_i_pending & t_irq_rst == 1) begin
-				t_irq_rst <= 0;
-				irq <= 1;
-			end else begin
-				irq <= 0;
 			end
+			//else if (t_i_pending & t_irq_rst == 1) begin
+				//t_irq_rst <= 0;
+				//irq <= 1;
+			//end else begin
+				//irq <= 0;
+			//end
 		end
 	end
 

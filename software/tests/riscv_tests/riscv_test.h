@@ -1,6 +1,8 @@
-// copied from picorv32
+// copied and modified from picorv32
 #ifndef _ENV_PICORV32_TEST_H
 #define _ENV_PICORV32_TEST_H
+
+#include "encoding.h"
 
 #ifndef TEST_FUNC_NAME
 #  define TEST_FUNC_NAME mytest
@@ -9,6 +11,7 @@
 #endif
 
 #define RVTEST_RV32U
+#define RVTEST_RV32M
 #define TESTNUM x28
 
 #define RVTEST_CODE_BEGIN		\
