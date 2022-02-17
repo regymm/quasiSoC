@@ -1,6 +1,6 @@
 ## Quasi SoC
 
-Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capable. Free-software toolchain ready. Prioritize compatibility and easy-to-understand -- if I can write this, you also can. 
+Crappy RISC-V CPU and fancy peripherals designed to be useful. Nommu Linux capable. Free-software toolchain ready. Prioritize compatibility and easy-to-understand -- if I can write this, you also can. 
 
 ![](doc/design.png)
 
@@ -9,11 +9,13 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
 - [x] Multiple-cycle RISC-V RV32IMA\* Zicsr\* @ 62.5 MHz, ~0.27 CoreMark/MHz
 - [x] M-mode, interrupt, exception\*
   - [x] Core local interrupt controller(CLINT, for mtime and ~~software~~ interrupt)
+- [x] Dummy U-mode\*
 - [x] Memory-mapped IO bus
 
 &nbsp;&nbsp;  \*: except amo(max|min)u? </br>
 &nbsp;&nbsp;  \*: may not be exactly standard, stuffs like vectored interrupt not supported </br>
 &nbsp;&nbsp;  \*: stuffs like illegal instruction not supported </br>
+&nbsp;&nbsp;  \*: only MPP field in mstatus, which is enough</br>
 
 <details>
 <summary>Future plan</summary>
@@ -21,7 +23,8 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
 - [ ] Bus arbitration
 - [ ] Platform-level interrupt controller(PLIC, for external interrupt)
 - [ ] Sv32 MMU
-- [ ] S-mode and U-mode
+- [ ] S-mode
+- [ ] more U-mode stuffs
 - [ ] GDB debug over openocd JTAG
 - [ ] PMP (not planned)
 - [ ] Formal verification (not planned)
@@ -65,18 +68,19 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
 ### Software
 
 - [x] **Linux kernel** 32-bit NOMMU uClibc
-  - [ ] Drivers for my UART
-  - [ ] Busybox "userspace"
+  - [x] busybox userspace
+  - [x] driver for my UART
 - [x] **MicroPython** [port](https://github.com/regymm/micropython/tree/master/ports/QuasiSoC)
 
 <details>
 <summary>Misc</summary>
 
-- [x] Standard RISC-V toolchain for RV32IM Newlib
+- [x] Standard RISC-V toolchain and ASM/C programming for RV32IM Newlib
 - [x] Basic RISC-V [tests](https://github.com/cliffordwolf/picorv32/tree/master/tests) 
 - [x] **CoreMark** performance approx. 0.27 CoreMark/MHz
 - [x] Fancy but very slow **[soft renderer](https://github.com/fededevi/pingo/)**
 - [x] Bad Apple!! on LCD(low quality)
+- [x] Bad Apple!! on HDMI
 
 </details>
 
@@ -123,7 +127,7 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
 ### Linux Kernel
 
 *At least you saw a fancy kernel panic.*</br>
-[It's hacky, dirty, hard, and of no practical use](Linux.md)
+[It's hacky and dirty(TODO)](Linux.md)
 
 ### Alternative RISC-V Cores
 
@@ -132,11 +136,11 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Linux kernel capa
 
 ### Gallery
 
-Linux kernel booting, init not ready yet, 8 MB RAM is enough for everything. 
+Linux kernel and busybox, 8 MB RAM is enough for everything. 
 
-![](doc/linux1.png)
+![](doc/linux3.png)
 
-![](doc/linux2.png)
+![](doc/linux4.png)
 
 Pingo soft renderer of Viking room, with testing color strips, on HDMI monitor.
 
