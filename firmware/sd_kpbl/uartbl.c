@@ -19,6 +19,8 @@ volatile int* uart_rx_reset		= (int*) 0x93000004;
 volatile int* uart_rx_new		= (int*) 0x93000004;
 volatile int* uart_rx_data		= (int*) 0x93000000;
 
+volatile int* cache_enable		= (int*) 0x7fffff00;
+
 void uart_putchar(char c)
 {
 	while(! *uart_tx_done);
@@ -50,6 +52,10 @@ void sd_uart_bl()
 	uart_putstr("[kpbl] dtb from UART to 0x20700000... \r\n");
 	*set_start_addr = 0x20700000;
 	*start_dma = 1;
+
+	uart_putstr("[kpbl] enable cache... \r\n");
+	*cache_enable = 1;
+	uart_putstr("[kpbl] cache is up. \r\n");
 
 	volatile int* psram_test1 = (int*) 0x20039a74;
 	volatile int* psram_test2 = (int*) 0x20210a44;

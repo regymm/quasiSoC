@@ -136,11 +136,11 @@ _start:
 	TEST(amominu_w)
 	TEST(amomin_w)
 	TEST(lrsc)
-	TEST(scall)
+	# TEST(scall)
 
 	TEST(simple)
 _theend:
-	j _theend
+	j _start
 
 # void uart_putchar(char c)
 uart_putchar:

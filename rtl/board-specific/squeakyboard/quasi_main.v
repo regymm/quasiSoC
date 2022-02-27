@@ -526,8 +526,8 @@ module quasi_main
 		// hit & miss
 	);
 `else
-	//assign mainm_burst_en_c = 1;
-	//assign mainm_burst_length_c = 1;
+	assign mainm_burst_en_c = 1;
+	assign mainm_burst_length_c = 1;
 	assign mainm_a_c = cache_a;
 	assign mainm_d_c = cache_d;
 	assign mainm_we_c = cache_we;

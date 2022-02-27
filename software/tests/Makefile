@@ -119,8 +119,8 @@ all:
 		-DTEST_FUNC_TXT='"amominu_w"' -DTEST_FUNC_RET=amominu_w_ret $(TESTS_PATH)/amominu_w.S
 	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima -o $(TESTS_PATH)/lrsc.o -DTEST_FUNC_NAME=lrsc \
 		-DTEST_FUNC_TXT='"lrsc_w"' -DTEST_FUNC_RET=lrsc_ret $(TESTS_PATH)/lrsc.S
-	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima -o $(TESTS_PATH)/scall.o -DTEST_FUNC_NAME=scall \
-		-DTEST_FUNC_TXT='"scall"' -DTEST_FUNC_RET=scall_ret $(TESTS_PATH)/scall.S
+	# $(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima -o $(TESTS_PATH)/scall.o -DTEST_FUNC_NAME=scall \
+	#	-DTEST_FUNC_TXT='"scall"' -DTEST_FUNC_RET=scall_ret $(TESTS_PATH)/scall.S
 	\
 	$(RISCV_PATH)/riscv32-unknown-elf-gcc -Os -ffreestanding -nostdlib -o firmware/firmware.elf \
 		-Wl,-Bstatic,-T,firmware/linker.ld \

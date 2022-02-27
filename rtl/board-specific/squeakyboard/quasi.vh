@@ -10,7 +10,7 @@
 `define GPIO_EN
 `define UART_EN
 `define PSRAM_EN
-//`define CACHE_EN
+`define CACHE_EN
 `define SDCARD_EN
 //`define CH375B_EN
 //`define VIDEO_EN

@@ -372,7 +372,7 @@ module quasi_main
 	simple_ram #(
 		.WIDTH(32),
 		.DEPTH(16),
-		.INIT("/home/petergu/MyHome/quasiSoC/rtl/null.dat")
+		.INIT("/home/petergu/MyHome/src/micropython/ports/fpgaol/firmware.dat")
 	) distram_mainm (
         .clk(clk_main),
         .a({2'b0, mainm_a_m[31:2]}),

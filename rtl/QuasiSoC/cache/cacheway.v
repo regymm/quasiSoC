@@ -1,18 +1,17 @@
 /**
  * File              : cacheway.v
  * License           : GPL-3.0-or-later
- * Author            : Peter Gu <github.com/ustcpetergu>
+ * Author            : Peter Gu <github.com/regymm>
  * Date              : 2021.xx.xx
- * Last Modified Date: 2021.06.24
+ * Last Modified Date: 2022.02.27
  */
 `timescale 1ns / 1ps
-// pComputer LED/Switch IO
 
 // one way of cache, 
 // blocks as BRAM, tags as Dist. RAM
 module cacheway
 	#(
-		parameter LINES=128,
+		parameter LINES=2,
 		parameter WORDS_PER_BLOCK=32,
 		parameter TAG_LENGTH=32
 	)
@@ -28,6 +27,8 @@ module cacheway
 		//input rd,
         output [31:0]spo,
 
+		input invalidate,
+
 		input tag_we,
 		input [TAG_LENGTH-1:0]tag_in,
 		(*mark_debug = "true"*)output [TAG_LENGTH-1:0]tag_out,
@@ -37,7 +38,9 @@ module cacheway
 
 	wire [$clog2(WORDS_PER_BLOCK)-1:0]offset = a[$clog2(WORDS_PER_BLOCK)-1+2:2];
 	wire [$clog2(LINES)-1:0]index = a[$clog2(LINES)-1+$clog2(WORDS_PER_BLOCK)+2:$clog2(WORDS_PER_BLOCK)+2];
+	//wire index = 0;
 	wire [$clog2(LINES * WORDS_PER_BLOCK)-1:0]bram_a = {index, offset};
+	//wire [$clog2(LINES * WORDS_PER_BLOCK)-1:0]bram_a = {offset};
 
 	reg [TAG_LENGTH-1:0]tags[LINES-1:0];
 
@@ -45,6 +48,7 @@ module cacheway
 	localparam INIT = 0;
 	localparam INIT_DONE = 1;
 	reg [$clog2(LINES)-1:0]count = 0;
+	//reg count = 0;
 	always @ (posedge clk) begin
 		if (rst) begin
 			state <= INIT;
@@ -54,9 +58,12 @@ module cacheway
 			if (state == INIT) begin
 				count <= count + 1;
 				if (count == {($clog2(LINES)){1'b1}}) state <= INIT_DONE;
+				//if (count == 1) state <= INIT_DONE;
 				tags[count] <= 0;
-			end else
+			end else begin
 				if (en & tag_we) tags[index] <= tag_in;
+				if (invalidate) state <= INIT;
+			end
 		end
 	end
 	assign tag_out = tags[index];

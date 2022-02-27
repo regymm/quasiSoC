@@ -61,8 +61,8 @@ module serialboot(
 	wire sb_we;
 	wire override;
 
-	assign burst_en_mem = override ? 0 : burst_en_cpu;
-	assign burst_length_mem = override ? 0 : burst_length_cpu;
+	assign burst_en_mem = override ? 1 : burst_en_cpu;
+	assign burst_length_mem = override ? 1 : burst_length_cpu;
 	assign a_mem = override ? sb_a : a_cpu;
 	assign d_mem = override ? sb_d : d_cpu;
 	assign we_mem = override ? sb_we : we_cpu;
@@ -76,11 +76,11 @@ module serialboot(
 	always @ (*) begin
 		uart_data_bin = 4'hF;
 		uart_data_valid = 0;
-		if (uart_data >= 8'h30 && uart_data <= 8'h39) begin
+		if (uart_data >= 8'h30 & uart_data <= 8'h39) begin
 			uart_data_bin = uart_data[3:0];
 			uart_data_valid = 1;
 		end
-		else if (uart_data >= 8'h61 && uart_data <= 8'h66) begin
+		else if (uart_data >= 8'h61 & uart_data <= 8'h66) begin
 			uart_data_bin = uart_data[3:0] + 9;
 			uart_data_valid = 1;
 		end
@@ -98,7 +98,7 @@ module serialboot(
 		if (rst) begin
 			uart_byte_cnt <= 0;
 		end else begin
-			if (uart_ready && uart_data_valid) begin
+			if (uart_ready & uart_data_valid) begin
 				uart_byte[uart_byte_cnt] <= uart_data_bin;
 				uart_byte_cnt <= uart_byte_cnt + 1;
 			end
@@ -113,30 +113,31 @@ module serialboot(
 
 	(*mark_debug = "true"*) reg [31:0]mem_start_addr;
 
-	wire transferring = began && !finish;
+	wire transferring = began & !finish;
 	//assign mem_override = transferring;
 	assign override = transferring;
 	// sb_we must be one cycle high
 	// for the last byte, the uart_ready is () when space arrived
-	assign sb_we = uart_byte_cnt == 0 && uart_data_valid && uart_ready_prev && transferring;
+	assign sb_we = uart_byte_cnt == 0 & uart_data_valid & uart_ready_prev & transferring;
 	// mem_d can change -- it's latched in memory controller
 	//assign mem_d = {uart_byte[6], uart_byte[7], uart_byte[4], uart_byte[5], uart_byte[2], uart_byte[3], uart_byte[0], uart_byte[1]};
 	assign sb_d = {uart_byte[0], uart_byte[1], uart_byte[2], uart_byte[3], uart_byte[4], uart_byte[5], uart_byte[6], uart_byte[7]};
 	// mem_a can change, too
 	assign sb_a = mem_start_addr;
 	// mem_ready is not used -- blind optimism
+	// no way to stop incoming unless UART flow control actually
 
 	always @ (posedge clk) begin
 		if (rst) begin
 			began <= 0;
 		end else begin
-			if (we && a == 3'b001)
+			if (we & a == 3'b001)
 				mem_start_addr <= {d[7:0], d[15:8], d[23:16], d[31:24]};
 			else if (sb_we) begin
 				mem_start_addr <= mem_start_addr + 4;
 			end
 
-			if (we && a == 3'b010)
+			if (we & a == 3'b010)
 				began <= 1;
 			else if (finish)
 				began <= 0;

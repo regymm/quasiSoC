@@ -358,6 +358,7 @@ module riscv_multicyc
 	localparam MRET			=	170;
 	//localparam ECALL		=	170;
 	localparam BAD			=	255;
+	(*mark_debug = "true"*) wire exec = phase == EX;
 
 
 	// control signals

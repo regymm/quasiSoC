@@ -40,6 +40,23 @@ _start:
 ##	csrw mie, t0
 	j main_tests
 main_tests:
+	li t0, 0x00
+	csrc mstatus, t0
+	# amo
+	li t0, 0x12
+	la t1, 0x10000000
+	li t2, 0x34
+	li t3, 0xabcd
+	li t4, 0x98
+	sw t4, (t1)
+	lr.w t4, (t1)
+	addi t4, t4, 1
+	sc.w t4, t4, (t1)
+	amoadd.w t3, t2, (t1)
+	#sc.w t3, t1, (t2)
+	li t4, 0xffffffff
+	lw t4, (t1)
+
 ##	j main_tests
 #	li t0, 0
 #	li t1, 127

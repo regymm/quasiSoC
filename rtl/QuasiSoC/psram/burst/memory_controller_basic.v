@@ -1,9 +1,9 @@
 /**
- * File              : memory_controller.v
+ * File              : memory_controller_basic.v
  * License           : GPL-3.0-or-later
- * Author            : Peter Gu <github.com/ustcpetergu>
+ * Author            : Peter Gu <github.com/regymm>
  * Date              : 2020.12.01
- * Last Modified Date: 2021.01.30
+ * Last Modified Date: 2022.02.25
  */
 // Memory controller with burst support -- to integrate with cache
 // clk 62.5M, clk_mem 125M

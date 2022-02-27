@@ -31,7 +31,9 @@ module mmapper
         input [31:0]distm_spo,
 		input distm_ready,
 
-		// cache
+		// cache 0x20000000 to 0x7ffffffc
+		//   8MB PSRAM: 0x20000000 to 0x207ffffc
+		//   cache control: 0x30000000
         output reg [31:0]cache_a,
         output reg [31:0]cache_d,
         output reg cache_we,
@@ -39,7 +41,6 @@ module mmapper
         input [31:0]cache_spo,
         input cache_ready,
 
-		// 8MB PSRAM: 0x20000000 to 0x21fffffc
 
         //// special devices:
         //// counter 0x50000000
@@ -107,7 +108,6 @@ module mmapper
 		output reg t_we,
 		input [31:0]t_spo,
 
-
 		// "ethernet": 0x9c000000
 		output reg [31:0]eth_a,
 		output reg [31:0]eth_d,
@@ -168,7 +168,7 @@ module mmapper
 			distm_rd = rd;
             spo = distm_spo;
 			ready = distm_ready;
-        end else if (a[31:28] == 4'h2) begin
+        end else if (a[31] == 1'h0) begin
             cache_we = we;
             cache_rd = rd;
             spo = cache_spo;

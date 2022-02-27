@@ -1,6 +1,6 @@
 ## Quasi SoC
 
-Crappy RISC-V CPU and fancy peripherals designed to be useful. Nommu Linux capable. Free-software toolchain ready. Prioritize compatibility and easy-to-understand -- if I can write this, you also can. 
+Crappy RISC-V CPU and fancy peripherals designed to be useful. No-MMU Linux capable. Free-software toolchain ready. Prioritize compatibility and easy-to-understand -- if I can write this, you also can. 
 
 ![](doc/design.png)
 
@@ -59,15 +59,20 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Nommu Linux capab
 <summary>Future plan</summary>
 
 - [ ] Internet connectivity
-  - [ ] LAN8720 ethernet module w/ RGMII (Hard)
-  - [ ] ESP8266/ESP32 Wifi module (Boring)
-  - [ ] lwIP? Need MAC + PHY(ENC28J60?) I guess...
+  - [ ] LAN8720 module w/ RGMII PHY (need FPGA MAC)
+  - [ ] ESP8266/ESP32 Wifi module (Boring and assaulting)
+  - [ ] ENC28J60
+  - [ ] LwIP stack
+- [ ] USB capability
+  - [ ] Host controller, like SL811
+  - [ ] USB3300/TUSB1210 ULPI PHY (need FPGA host)
+  - [ ] Driver for classes(HID, HUB, Mass Storage)
 
 </details>
 
 ### Software
 
-- [x] **Linux kernel** 32-bit NOMMU uClibc
+- [x] **Linux kernel** 32-bit No-MMU uClibc
   - [x] busybox userspace
   - [x] driver for my UART
 - [x] **MicroPython** [port](https://github.com/regymm/micropython/tree/master/ports/QuasiSoC)
@@ -80,7 +85,7 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Nommu Linux capab
 - [x] **CoreMark** performance approx. 0.27 CoreMark/MHz
 - [x] Fancy but very slow **[soft renderer](https://github.com/fededevi/pingo/)**
 - [x] Bad Apple!! on LCD(low quality)
-- [x] Bad Apple!! on HDMI
+- [ ] Bad Apple!! on HDMI
 
 </details>
 
@@ -110,6 +115,7 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. Nommu Linux capab
 
 - [ ] ep4ce15 @ QMTech core board w/ SDRAM [ref](http://land-boards.com/blwiki/index.php?title=QMTECH_EP4CE15_FPGA_Card)
 - [ ] ep2c35 @ Cisco HWIC-3G-CDMA router module [ref](https://github.com/tomverbeure/cisco-hwic-3g-cdma)
+- [ ] lfe5u-12f @ mystery module
 - [ ] K210 or some other hardcore RISCV
 - [ ] lfe5u or iCE40 w/ free software toolchain(Symbiflow, icestorm)
 

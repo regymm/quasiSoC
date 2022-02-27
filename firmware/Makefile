@@ -2,19 +2,19 @@
 RISCVDIR=	/opt/riscv32i
 RISCV	=	riscv32-unknown-elf-
 AS		=	$(RISCV)as
-ASFLAGS	=	-march=rv32im -mabi=ilp32
+ASFLAGS	=	-march=rv32ima -mabi=ilp32
 LD 		=	$(RISCV)ld
 #LDFLAGS	=	-m elf32lriscv --nostdlib
 LDFLAGS	=	-m elf32lriscv
 CC		=	$(RISCV)gcc
 CPP		=	$(RISCV)g++
 CC_L_F	=	-march=rv32i -mabi=ilp32 -nostdlib -mstrict-align -O0 -static
-CFLAGS	=	-march=rv32im -mabi=ilp32 -mstrict-align -O0 -static
+CFLAGS	=	-march=rv32ima -mabi=ilp32 -mstrict-align -O0 -static
 CPPFLAGS=	$(CFLAGS) -nostdlib
 OBJCOPY	=	$(RISCV)objcopy
 READELF	=	$(RISCV)readelf
 
-all: sd_uartbl/uartbl.bin bootrom/bootrom.dat 
+all: sd_uartbl/uartbl.bin bootrom/bootrom.dat sd_kpbl/kpbl.bin
 
 bootrom/bootrom.dat: bootrom/bootrom.bin
 	xxd -c 4 -p bootrom/bootrom.bin > bootrom/result_bootrom.dat
@@ -34,6 +34,10 @@ bootrom/bootrom.elf: bootrom/bootrom.o bootrom/bootrom.c_o bootrom/basic.c_o
 
 sd_uartbl/uartbl.elf: sd_uartbl/uartbl.o sd_uartbl/uartbl.c_o
 	$(LD) $(LDFLAGS) $^ -o $@ --script sd_uartbl/linker_uartbl.ld
+
+sd_kpbl/kpbl.elf: sd_kpbl/uartbl.o sd_kpbl/uartbl.c_o
+	$(LD) $(LDFLAGS) $^ -o $@ --script sd_uartbl/linker_uartbl.ld
+
 clean:
 	-rm -f *.elf
 	-rm -f *.bin
@@ -48,3 +52,7 @@ clean:
 	-rm -f bootrom/*.c_o
 	-rm -f bootrom/*.elf
 	-rm -f bootrom/*.bin
+	-rm -f sd_kpbl/*.o
+	-rm -f sd_kpbl/*.c_o
+	-rm -f sd_kpbl/*.elf
+	-rm -f sd_kpbl/*.bin

@@ -1,9 +1,9 @@
 /**
- * File              : memory_controller.v
+ * File              : memory_controller_burst.v
  * License           : GPL-3.0-or-later
- * Author            : Peter Gu <github.com/ustcpetergu>
+ * Author            : Peter Gu <github.com/regymm>
  * Date              : 2020.12.01
- * Last Modified Date: 2021.01.30
+ * Last Modified Date: 2022.02.25
  */
 // Memory controller
 // burst mode: 
@@ -239,7 +239,8 @@ module memory_controller_burst
 						count <= count - 1;
 						//regbuf[count - 1] <= m_dout;
 						// to avoid multidriven
-					end if (count == 1 & 
+					end
+					if (count == 1 & 
 						(!regburst_en | 
 						regburst_en & regburst_length == 1))
 						m_rend <= 1;
