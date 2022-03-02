@@ -9,8 +9,11 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. No-MMU Linux capa
 - [x] Multiple-cycle RISC-V RV32IMA\* Zicsr\* @ 62.5 MHz, ~0.27 CoreMark/MHz
 - [x] M-mode, interrupt, exception\*
   - [x] Core local interrupt controller(CLINT, for mtime and ~~software~~ interrupt)
-- [x] Dummy U-mode\*
+  - [ ] Platform-level interrupt controller(PLIC, for external interrupt)
+- [x] U-mode\*
 - [x] Memory-mapped IO bus
+  - [ ] with arbitration and DMA
+- [x] Cache, direct mapping(configurable, 32 KB default)
 
 &nbsp;&nbsp;  \*: except amo(max|min)u? </br>
 &nbsp;&nbsp;  \*: may not be exactly standard, stuffs like vectored interrupt not supported </br>
@@ -20,12 +23,17 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. No-MMU Linux capa
 <details>
 <summary>Future plan</summary>
 
-- [ ] Bus arbitration
-- [ ] Platform-level interrupt controller(PLIC, for external interrupt)
+- [ ] Illegal instruction/load/store exception
+- [ ] Bus arbitrationDMA
+- [ ] DMA
+- [ ] Optimize memory access cycles
+- [ ] U-mode memory protection (like PMP?)
 - [ ] Sv32 MMU
 - [ ] S-mode
-- [ ] more U-mode stuffs
 - [ ] GDB debug over openocd JTAG
+- [ ] faster M instructions
+- [ ] amo(max|min)u? (Linux doesn't use, not planned)
+- [ ] IO bus w/ burst (hard, not planned)
 - [ ] PMP (not planned)
 - [ ] Formal verification (not planned)
 - [ ] Pipeline (not planned)
@@ -34,9 +42,8 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. No-MMU Linux capa
 
 ### Peripherals
 
-- [x] ESP-PSRAM64H as main memory, 8 MB, QPI mode @ 62.5 M, burst R/W
-- [x] ~~Cache, direct mapping 32 KB(configurable)~~ has bugs
-- [ ] SDRAM (Easy but not before I get a better board)
+- [x] ESP-PSRAM64H (8 MB) QPI mode @ 62.5 M, burst R/W
+- [ ] SDRAM
 - [x] GPIO (LEDs, buttons, switches)
 - [x] UART (115200/921600/1843200 baud), boot from UART, rest from UART
 - [x] SD card (SPI mode, SDHC)
