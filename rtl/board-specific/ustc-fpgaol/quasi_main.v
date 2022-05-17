@@ -369,10 +369,11 @@ module quasi_main
 	`endif
 `else
 	// 2**16 * 32 256KB
+	// need manual patching: 1024x 00000000 before xxd -p firmware.bin
 	simple_ram #(
 		.WIDTH(32),
 		.DEPTH(16),
-		.INIT("/home/petergu/MyHome/src/micropython/ports/fpgaol/firmware.dat")
+		.INIT("/home/petergu/MyHome/src/micropython/ports/fpgaol/firmware.txt")
 	) distram_mainm (
         .clk(clk_main),
         .a({2'b0, mainm_a_m[31:2]}),
@@ -657,8 +658,9 @@ module quasi_main
 		.rst(rst),
 
 		.eip(cpu_eip),
-		.eip_istimer(cpu_eip_istimer),
 		.eip_reply(cpu_eip_reply),
+
+		.tip(irq_timer_pending),
 
 		.spo(spo),
 		.ready(ready),

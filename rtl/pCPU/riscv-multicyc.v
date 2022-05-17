@@ -66,11 +66,8 @@ module riscv_multicyc
 	reg PCOutSrc;
 	reg CsrASrc;
 	reg CsrDSrc;
-	//wire RegDst;
-
 
     // register file
-    //reg [4:0]WriteRegister;
     reg [31:0]WriteData;
     wire [31:0]ReadData1;
     wire [31:0]ReadData2;
@@ -80,9 +77,6 @@ module riscv_multicyc
 		.ra0(instruction[19:15]), // rs1
 		.ra1(instruction[24:20]), // rs2
 		.wa(instruction[11:7]),   // rd
-		//.ra0(instr_new[19:15]), // rs1
-		//.ra1(instr_new[24:20]), // rs2
-		//.wa(instr_new[11:7]),   // rd
         .we(RegWrite),
         .wd(WriteData),
         .rd0(ReadData1),
@@ -214,6 +208,15 @@ module riscv_multicyc
 	wire [31:0]imm_j = {{12{instruction[31]}}, instruction[19:12], instruction[20], instruction[30:21], 1'b0};
 	wire [31:0]imm_u = {instruction[31:12], 12'b0};
 	wire [31:0]imm_s = {{21{instruction[31]}}, instruction[30:25], instruction[11:7]};
+	always @ (*) begin
+		if (op == OP_LUI | op == OP_AUIPC) imm = imm_u;
+		else if (op == OP_R_I | op == OP_LOAD | op == OP_JALR) imm = imm_i;
+		else if (op == OP_BR) imm = imm_b;
+		else if (op == OP_JAL) imm = imm_j;
+		else if (op == OP_STORE) imm = imm_s;
+		else if (op == OP_AMO) imm = 0;
+		else imm = 0;
+	end
 
 	// unaligned memory access
 	wire store_unaligned = ~instruction[13];
@@ -321,15 +324,6 @@ module riscv_multicyc
 	wire op_a_sc  = 0;
 	wire op_a_amo = 0;
 	`endif
-	always @ (*) begin
-		if (op == OP_LUI | op == OP_AUIPC) imm = imm_u;
-		else if (op == OP_R_I | op == OP_LOAD | op == OP_JALR) imm = imm_i;
-		else if (op == OP_BR) imm = imm_b;
-		else if (op == OP_JAL) imm = imm_j;
-		else if (op == OP_STORE) imm = imm_s;
-		else if (op == OP_AMO) imm = 0;
-		else imm = 0;
-	end
 	reg [7:0]phase;
 	reg [7:0]phase_n;
 	reg [7:0]phase_return;
@@ -360,7 +354,6 @@ module riscv_multicyc
 	localparam BAD			=	255;
 	(*mark_debug = "true"*) wire exec = phase == EX;
 
-
 	// control signals
 	always @ (*) begin
 		PCWrite = 0;
@@ -377,19 +370,20 @@ module riscv_multicyc
 		ALUSrcB = 0;
 		RegWrite = 0;
 		RegSrc = 0;
-		//RegDst = 0;
 		PCOutSrc = 0;
 		CsrASrc = 0;
 		CsrDSrc = 0;
 		`ifdef RV32M
 		RV32MStart = 0;
 		`endif
+		`ifdef IRQ_EN
 		csr_we = 0;
 		csrsave = 0;
 		on_exc_enter = 0;
 		on_exc_leave = 0;
 		on_exc_isint = 0;
 		int_reply = 0;
+		`endif
 		case (phase)
 			IF: begin
 				MemRead = 1;
@@ -422,7 +416,9 @@ module riscv_multicyc
 					ALUSrcB = 2;
 					ALUm = {instruction[12], instruction[13], 2'b10};
 					//ALUm = instruction[13] ? {3'b011, instruction[12]} : {4'b1111};
+					`ifdef IRQ_EN
 					csrsave = 1;
+					`endif
 				end
 			end
 			MEM: begin
@@ -431,9 +427,11 @@ module riscv_multicyc
 				end else if (op == OP_STORE & !store_unaligned) begin
 					MemWrite = 1; IorDorW = 1;
 					MemSrc = 2; // SW
+				`ifdef RV32A
 				end else if (op_a_sc) begin
 					MemWrite = sc_success; IorDorW = 1;
 					MemSrc = 2;
+				`endif
 				end
 			end
 			`ifdef RV32A
@@ -482,9 +480,11 @@ module riscv_multicyc
 					//PCWrite = !instruction[12] ^ |ALUOut; PCSrc = 1;
 				end else if (op == OP_LOAD | op_a_lr) begin // LB, LH, LW, LBU, LHU, LR.W
 					RegWrite = 1; RegSrc = {1'b1, instruction[13:12]};
+				`ifdef IRQ_EN
 				end else if (op == OP_PRIV & priv_csr) begin
 					RegWrite = 1; RegSrc = 8;
 					csr_we = 1;
+				`endif
 				`ifdef RV32A
 				end else if (op_a_sc) begin
 					RegWrite = 1; RegSrc = 10;
@@ -496,6 +496,7 @@ module riscv_multicyc
 				MemSrc = 3;
 				if (MemReady & phase_return == ID_RF) IRWrite = 1;
 			end
+			`ifdef IRQ_EN
 			INTERRUPT: begin
 				on_exc_enter = 1;
 				on_exc_isint = 1;
@@ -512,9 +513,11 @@ module riscv_multicyc
 				on_exc_leave = 1;
 				PCWrite = 1; PCSrc = 5;
 			end
+			`endif
 		endcase
 	end
 
+	`ifdef IRQ_EN
 	// TODO: generalize and improve
 	always @ (posedge clk) begin
 		if (op == OP_PRIV)
@@ -523,6 +526,7 @@ module riscv_multicyc
 			else if (priv_ecall)
 				mcause_code_out <= EXC_ECALL_FROM_M_MODE;
 	end
+	`endif
 
 	// phase control
 	always @ (*) begin
@@ -541,8 +545,11 @@ module riscv_multicyc
 				//phase_n = ID_RF;
 			ID_RF:
 				// FENCE, SFENCE.VMA, and WFI does nothing in our simple architecture
+				`ifdef IRQ_EN
 				if (interrupt) phase_n = INTERRUPT;
-				else if (op == OP_FENCE | op == OP_PRIV & (priv_wfi | priv_sfencevma)) phase_n = IF;
+				else
+				`endif
+				if (op == OP_FENCE | op == OP_PRIV & (priv_wfi | priv_sfencevma)) phase_n = IF;
 				else if (op == OP_PRIV & (priv_mret)) phase_n = MRET;
 				else if (op == OP_PRIV & (priv_ebreak)) begin
 					phase_n = EXCEPTION;
@@ -677,20 +684,26 @@ module riscv_multicyc
 		1: newpc = ALUOut2; // Branch
 		2: newpc = ALUOut; // JAL
 		3: newpc = ALUOut & ~1; // JALR
+		`ifdef IRQ_EN
 		4: newpc = {mtvec_in[31:2], 2'b0}; // exception, interrupt
 		5: newpc = mepc_in;
+		`endif
 		default: newpc = INVALID_ADDR;
 	endcase end
 	always @ (*) begin case (ALUSrcA)
 		0: ALUIn1 = A;
 		1: ALUIn1 = pc; // haven't +4
+		`ifdef IRQ_EN
 		2: ALUIn1 = csrimm;
+		`endif
 		default: ALUIn1 = 0;
 	endcase end
 	always @ (*) begin case (ALUSrcB)
 		0: ALUIn2 = B;
 		1: ALUIn2 = imm;
+		`ifdef IRQ_EN
 		2: ALUIn2 = csr_spo;
+		`endif
 		default: ALUIn2 = B;
 	endcase end
 	always @ (*) begin case (RegSrc)
@@ -705,7 +718,9 @@ module riscv_multicyc
 		`ifdef RV32M
 		7: WriteData = RV32MOut;
 		`endif
+		`ifdef IRQ_EN
 		8: WriteData = csrr;
+		`endif
 		`ifdef RV32A
 		9: WriteData = amo_temp;
 		10:WriteData = sc_succeeded ? 0 : 1;
@@ -723,6 +738,7 @@ module riscv_multicyc
 		`endif
 		default: memwrite_data = 0;
 	endcase end
+	`ifdef IRQ_EN
 	always @ (*) begin case (PCOutSrc)
 		//0: pc_out = oldpc; // interrupt -- redo current op
 		//1: pc_out = pc; // exception -- go on to next op
@@ -739,6 +755,7 @@ module riscv_multicyc
 		//1:
 		default: csr_d = ALUOut;
 	endcase end
+	`endif
 	always @ (*) begin case (IRLate)
 		1: instr_new = mdr;
 		0: instr_new = memread_data;
@@ -761,7 +778,9 @@ module riscv_multicyc
 			mwr <= memwrite_data;
 			mar <= mem_addr;
 
+			`ifdef IRQ_EN
 			if (csrsave) csrr <= csr_spo;
+			`endif
 
 			if (PCWrite) begin
 				pc <= newpc; oldpc <= pc;

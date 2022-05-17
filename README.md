@@ -60,6 +60,7 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. No-MMU Linux capa
   - [ ] W5500 as MAC with LwIP stack
 - [ ] **Bus converter**: Use AXI/Wishbone peripherals
 - [x] **Hart transplant**: Use other RISC-V cores with my peripherals
+- [ ] **Xeno transplant**: Use ARM or x86 cores with my peripherals
 
 
 <details>

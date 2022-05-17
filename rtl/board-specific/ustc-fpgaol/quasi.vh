@@ -13,7 +13,7 @@
 //`define SDCARD_EN
 //`define CH375B_EN
 //`define VIDEO_EN
-`define IRQ_EN
+//`define IRQ_EN
 //`define PS2_EN
 //`define ETH_EN
 //`define MMU_EN
