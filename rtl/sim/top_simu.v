@@ -25,6 +25,7 @@ module top_simu();
 	reg eth_miso = 1;
 
 	wire tx;
+	reg rx = 1;
 
     quasi_main pcpu_main_inst
     (
@@ -45,7 +46,7 @@ module top_simu();
 		//.eth_scsn(eth_scsn),
 		//.eth_mosi(eth_mosi),
 		//.eth_miso(eth_miso),
-		.uart_rx(1),
+		.uart_rx(rx),
 		.uart_tx(tx)
 		//.uart_rx_2(1)
 		//.ch375_tx(ch375_tx)
@@ -75,6 +76,9 @@ module top_simu();
         //btn = 4'b0010;
 
         #22000
+		rx = 0;
+		#30
+		rx = 1;
 		#200000;
 		$finish;
         #50000

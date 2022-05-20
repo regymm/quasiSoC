@@ -12,6 +12,7 @@
 module quasi_main 
 	#(
 		parameter CLOCK_FREQ = 62500000,
+		//parameter CLOCK_FREQ = 75000000,
 		parameter BAUD_RATE_UART = 1843200,
 		//parameter BAUD_RATE_UART = 3686400,
 		parameter BAUD_RATE_CH375 = 9600,
