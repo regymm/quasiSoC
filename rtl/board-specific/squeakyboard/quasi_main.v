@@ -12,7 +12,8 @@
 module quasi_main 
 	#(
 		parameter CLOCK_FREQ = 62500000,
-		parameter BAUD_RATE_UART = 1843200, // may misbehave if modified
+		parameter BAUD_RATE_UART = 1843200,
+		//parameter BAUD_RATE_UART = 3686400,
 		parameter BAUD_RATE_CH375 = 9600,
 		//parameter TIMER_COUNTER = 4000 // for debugging
 		parameter TIMER_COUNTER = 1000000
@@ -158,7 +159,7 @@ module quasi_main
 		.rst_psram(rst_psram),
 		.rst_interrupt(rst_interrupt),
 		.rst_sb(rst_sb),
-		.rst_timer(rst_timer),
+		.rst_timer(rst_aclint),
 		.rst_mmu(rst_mmu)
 	);
 
@@ -243,7 +244,7 @@ module quasi_main
 	wire sb_rxnew;
     wire irq_uart;
 `ifdef UART_EN
-	uart #(
+	uart_new #(
 		.CLOCK_FREQ(CLOCK_FREQ),
 		.BAUD_RATE(BAUD_RATE_UART)
 	) uart_inst (
@@ -660,33 +661,34 @@ module quasi_main
 	assign irq_eth = 0;
 `endif
 
-    // interrupt unit
+    // interrupt
     wire cpu_eip;
     wire cpu_eip_reply;
     wire irq_timer_pending;
+    wire irq_soft_pending;
 
-	wire [15:0]timer_a;
-	wire [31:0]timer_d;
-	wire timer_we;
-	wire [31:0]timer_spo;
+	wire [15:0]aclint_a;
+	wire [31:0]aclint_d;
+	wire aclint_we;
+	wire [31:0]aclint_spo;
 
     wire [2:0]int_a;
     wire [31:0]int_d;
     wire int_we;
     wire [31:0]int_spo;
 `ifdef IRQ_EN
-    // timer interrupt
-    timer #(.TIMER_COUNTER(TIMER_COUNTER)) timer_inst(
+    // RISC-V advanced core-local interrupt controller
+    aclint #(.TIMER_COUNTER(TIMER_COUNTER)) aclint_inst(
         .clk(clk_main),
-        .rst(rst_timer),
+        .rst(rst_aclint),
 		
-		.s_irq(),
+		.s_irq(irq_soft_pending),
         .t_irq(irq_timer_pending),
 
-		.a(timer_a),
-		.d(timer_d),
-		.we(timer_we),
-		.spo(timer_spo)
+		.a(aclint_a),
+		.d(aclint_d),
+		.we(aclint_we),
+		.spo(aclint_spo)
     );
 
     interrupt_unit interrupt_unit_inst(
@@ -707,9 +709,10 @@ module quasi_main
     );
 `else
 	assign irq_timer_pending = 0;
+	assign irq_soft_pending = 0;
 	assign cpu_eip = 0;
 	assign int_spo = 0;
-	assign timer_spo = 0;
+	assign aclint_spo = 0;
 `endif
 
     // cpu-multi-cycle
@@ -844,10 +847,10 @@ module quasi_main
 
 		.ps2_spo(ps2_spo),
 
-		.t_a(timer_a),
-		.t_d(timer_d),
-		.t_we(timer_we),
-		.t_spo(timer_spo),
+		.t_a(aclint_a),
+		.t_d(aclint_d),
+		.t_we(aclint_we),
+		.t_spo(aclint_spo),
 
 		.eth_a(eth_a),
 		.eth_d(eth_d),
