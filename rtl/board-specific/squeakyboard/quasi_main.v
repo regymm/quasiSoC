@@ -134,6 +134,7 @@ module quasi_main
     (*mark_debug = "true"*) wire rst = manual_rst | uart_rst;
 
 	// reset module
+	// TODO: improve or remove
 	wire [31:0]rst_d = 0;
 	wire rst_we = 0;
 	wire rst_gpio;
@@ -211,26 +212,100 @@ module quasi_main
     wire [3:0]gpio_a;
     wire [31:0]gpio_d;
     wire gpio_we;
+    wire gpio_rd;
     wire [31:0]gpio_spo;
+	wire gpio_ready;
 	wire irq_gpio;
 `ifdef GPIO_EN
-    gpio gpio_inst(
-        .clk(clk_main),
-        .rst(rst_gpio),
+	`ifdef AXI_GPIO_TEST
+		wire [8:0]gpio_axi_araddr;
+		wire [8:0]gpio_axi_awaddr;
+		wire [1:0]gpio_axi_bresp;
+		wire [31:0]gpio_axi_rdata;
+		wire [1:0]gpio_axi_rresp;
+		wire [31:0]gpio_axi_wdata;
+		wire [3:0]gpio_axi_wstrb;
+		axi_gpio_0 axi_gpio_inst(
+			.gpio_io_i({28'b0, sw_d, btn_d}),
+			.gpio_io_o(led),
+			.gpio_io_t(),
 
-        .a(gpio_a),
-        .d(gpio_d),
-        .we(gpio_we),
-        .spo(gpio_spo),
+			.s_axi_araddr(gpio_axi_araddr),
+			.s_axi_arready(gpio_axi_arready),
+			.s_axi_arvalid(gpio_axi_arvalid),
+			.s_axi_awaddr(gpio_axi_awaddr),
+			.s_axi_awready(gpio_axi_awready),
+			.s_axi_awvalid(gpio_axi_awvalid),
+			.s_axi_bready(gpio_axi_bready),
+			.s_axi_bresp(gpio_axi_bresp),
+			.s_axi_bvalid(gpio_axi_bvalid),
+			.s_axi_rdata(gpio_axi_rdata),
+			.s_axi_rready(gpio_axi_rready),
+			.s_axi_rresp(gpio_axi_rresp),
+			.s_axi_rvalid(gpio_axi_rvalid),
+			.s_axi_wdata(gpio_axi_wdata),
+			.s_axi_wstrb(gpio_axi_wstrb),
+			.s_axi_wvalid(gpio_axi_wvalid),
+			.s_axi_wready(gpio_axi_wready),
 
-        .btn(btn_d),
-        .sw(sw_d),
-        .led(led),
+			.s_axi_aclk(clk_main),
+			.s_axi_aresetn(!rst)
+		);
 
-		.irq(irq_gpio)
-    );
+		mm2axi4 mm2axi4_gpio_inst (
+			.clk(clk_main),
+			.rst(rst),
+
+			.a({26'b0, gpio_a, 2'b0}),
+			.d(gpio_d),
+			.we(gpio_we),
+			.rd(gpio_rd),
+			.spo(gpio_spo),
+			.ready(gpio_ready),
+
+			.m_axi_awaddr(gpio_axi_awaddr),
+			.m_axi_awvalid(gpio_axi_awvalid),
+			.m_axi_awready(gpio_axi_awready),
+
+			.m_axi_wdata(gpio_axi_wdata),
+			.m_axi_wstrb(gpio_axi_wstrb),
+			.m_axi_wvalid(gpio_axi_wvalid),
+			.m_axi_wready(gpio_axi_wready),
+
+			.m_axi_bready(gpio_axi_bready),
+			.m_axi_bresp(gpio_axi_bresp),
+			.m_axi_bvalid(gpio_axi_bvalid),
+
+			.m_axi_araddr(gpio_axi_araddr),
+			.m_axi_arvalid(gpio_axi_arvalid),
+			.m_axi_arready(gpio_axi_arready),
+
+			.m_axi_rdata(gpio_axi_rdata),
+			.m_axi_rready(gpio_axi_rready),
+			.m_axi_rresp(gpio_axi_rresp),
+			.m_axi_rvalid(gpio_axi_rvalid)
+		);
+	`else
+		gpio gpio_inst(
+			.clk(clk_main),
+			.rst(rst_gpio),
+
+			.a(gpio_a),
+			.d(gpio_d),
+			.we(gpio_we),
+			.spo(gpio_spo),
+
+			.btn(btn_d),
+			.sw(sw_d),
+			.led(led),
+
+			.irq(irq_gpio)
+		);
+		assign gpio_ready = 1;
+	`endif
 `else
 	assign gpio_spo = 0;
+	assign gpio_ready = 1;
 	assign led = 4'b0;
 	assign irq_gpio = 0;
 `endif
@@ -824,6 +899,8 @@ module quasi_main
         .gpio_a(gpio_a),
         .gpio_d(gpio_d),
         .gpio_we(gpio_we),
+        .gpio_rd(gpio_rd),
+		.gpio_ready(gpio_ready),
 
         .uart_spo(uart_spo),
         .uart_a(uart_a),

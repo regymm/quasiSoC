@@ -3,19 +3,22 @@
  * License           : GPL-3.0-or-later
  * Author            : Peter Gu <github.com/regymm>
  * Date              : 2020.11.25
- * Last Modified Date: 2021.12.31
+ * Last Modified Date: 2022.06.17
  */
 `timescale 1ns / 1ps
-// pComputer main block design
+// For Nexsy 4 DDR @ FPGAOL
 `include "quasi.vh"
+`define SIMULATION
 
 module quasi_main 
 	#(
-		parameter CLOCK_FREQ = 62500000,
+		//parameter CLOCK_FREQ = 62500000,
+		parameter CLOCK_FREQ = 100000000,
 		parameter BAUD_RATE_UART = 115200, // may misbehave if modified
 		parameter BAUD_RATE_CH375 = 9600,
 		//parameter TIMER_COUNTER = 4000 // for debugging
-		parameter TIMER_COUNTER = 1000000
+		parameter TIMER_COUNTER = 1000000,
+		parameter SIMULATION = "TRUE"
 	)
     (
         input sysclk,
@@ -30,7 +33,22 @@ module quasi_main
 		output cts,
 		output rts_led,
 		output uart_tx_led,
-		output uart_rx_led
+		output uart_rx_led,
+
+		inout [15:0]ddr2_dq,
+		inout [1:0]ddr2_dqs_n,
+		inout [1:0]ddr2_dqs_p,
+		output [12:0]ddr2_addr,
+		output [2:0]ddr2_ba,
+		output ddr2_ras_n,
+		output ddr2_cas_n,
+		output ddr2_we_n,
+		output ddr2_ck_p,
+		output ddr2_ck_n,
+		output ddr2_cke,
+		output ddr2_cs_n,
+		output [1:0]ddr2_dm,
+		output ddr2_odt
     );
 
 	assign cts = 0;
@@ -38,27 +56,13 @@ module quasi_main
 	assign uart_tx_led = uart_tx;
 	assign uart_rx_led = uart_rx;
 
-    wire clk_main;
-	wire clk_mem;
-	wire clk_2x;
-    wire clk_hdmi_25;
-    wire clk_hdmi_250;
-	clock_wizard clock_wizard_inst(
+    wire clk_main; // coming from MIG
+	wire clk_mem; // 200 MHz for MIG
+	clk_wiz_0 clk_wiz_0_inst(
 		.clk_in1(sysclk),
-		.clk_main(clk_main),
-		.clk_mem(clk_mem),
-		.clk_hdmi_25(clk_hdmi_25),
-		.clk_hdmi_250(clk_hdmi_250),
-		.clk_hdmi_50(clk_2x)
+		//.clk_main(clk_main),
+		.clk_mem(clk_mem)
 	);
-	//clocking_xc7 clocking_xc7_inst (
-		//.clk_50(sysclk),
-		//.clk1_62d5(clk_main),
-		//.clk2_125(clk_mem),
-		//.clk3_25(clk_hdmi_25),
-		//.clk4_250(clk_hdmi_250),
-		//.clk5_50(clk_2x)
-	//);
 
 
     wire [1:0]sw_d;
@@ -75,12 +79,10 @@ module quasi_main
         .o_state(btn_d)
     );
 
-	// backup serial pins
-	wire uart_rx_in = uart_rx;
-
     // reset signal
 	wire manual_rst = sw_d[0];
-    (*mark_debug = "true"*) wire rst = manual_rst | uart_rst;
+	wire ui_clk_sync_rst;
+    (*mark_debug = "true"*) wire rst = manual_rst | uart_rst | ui_clk_sync_rst;
 
 	// reset module
 	wire [31:0]rst_d = 0;
@@ -192,7 +194,7 @@ module quasi_main
 	wire sb_rxnew;
     wire irq_uart;
 `ifdef UART_EN
-	uart #(
+	uart_new #(
 		.CLOCK_FREQ(CLOCK_FREQ),
 		.BAUD_RATE(BAUD_RATE_UART)
 	) uart_inst (
@@ -205,7 +207,7 @@ module quasi_main
 		`endif
 
         .tx(uart_tx),
-        .rx(uart_rx_in),
+        .rx(uart_rx),
 
         .a(uart_a),
         .d(uart_d),
@@ -245,27 +247,6 @@ module quasi_main
     wire [31:0]sd_spo;
 
     wire irq_sd;
-`ifdef SDCARD_EN
-    sdcard sdcard_inst(
-        .clk(clk_main),
-        .rst(rst_sdcard),
-
-        .a(sd_a),
-        .d(sd_d),
-        .we(sd_we),
-        .spo(sd_spo),
-
-        .sd_dat0(sd_dat0),
-        .sd_ncd(sd_ncd),
-        .sd_dat1(sd_dat1),
-        .sd_dat2(sd_dat2),
-        .sd_dat3(sd_dat3),
-        .sd_cmd(sd_cmd),
-        .sd_sck(sd_sck),
-
-        .irq(irq_sd) // nc
-    );
-`else
 	assign sd_spo = {7'b0, 1'b1, 24'b0}; // indicate SD not deteced
 	assign irq_sd = 0;
 	assign sd_dat1 = 1'bZ;
@@ -273,7 +254,6 @@ module quasi_main
 	assign sd_dat3 = 1'bZ;
 	assign sd_cmd = 1'bZ;
 	assign sd_sck = 1'bZ;
-`endif
 
 	// CH375b
 	wire [2:0]usb_a;
@@ -281,30 +261,8 @@ module quasi_main
 	wire usb_we;
 	wire [31:0]usb_spo;
 	wire irq_usb;
-`ifdef CH375B_EN
-	ch375b #(
-		.CLOCK_FREQ(CLOCK_FREQ),
-		.BAUD_RATE(BAUD_RATE_CH375)
-	) ch375b_inst
-	(
-		.clk(clk_main),
-		.rst(rst_usb),
-
-		.a(usb_a),
-		.d(usb_d),
-		.we(usb_we),
-		.spo(usb_spo),
-
-		.irq(irq_usb),
-
-		.ch375_tx(ch375_tx),
-		.ch375_rx(ch375_rx),
-		.ch375_nint(ch375_nint)
-	);
-`else
 	assign usb_spo = 0;
 	assign ch375_rx = 1;
-`endif
 
 	wire mainm_burst_en_m;
 	wire [7:0]mainm_burst_length_m;
@@ -315,17 +273,44 @@ module quasi_main
 	wire [31:0]mainm_spo_m;
 	wire mainm_ready_m;
 	wire mainm_irq;
-`ifdef PSRAM_EN
-	`ifdef CACHE_EN
-	memory_controller_burst memory_controller_inst
-	//memory_controller memory_controller_inst
+`ifdef DDR_EN
+	//`ifdef CACHE_EN
+	//`else
+	// 1-bit wires are left implicitly declared
+	wire [3:0]ddr_axi_awid;
+	wire [27:0]ddr_axi_awaddr;
+	wire [7:0]ddr_axi_awlen;
+	wire [2:0]ddr_axi_awsize;
+	wire [1:0]ddr_axi_awburst;
+	wire [1:0]ddr_axi_awlock;
+	wire [3:0]ddr_axi_awcache;
+	wire [2:0]ddr_axi_awprot;
+	wire [3:0]ddr_axi_awqos;
+	wire [3:0]ddr_axi_wid;
+	wire [31:0]ddr_axi_wdata;
+	wire [3:0]ddr_axi_wstrb;
+	wire [3:0]ddr_axi_bid;
+	wire [1:0]ddr_axi_bresp;
+	wire [3:0]ddr_axi_arid;
+	wire [27:0]ddr_axi_araddr;
+	wire [7:0]ddr_axi_arlen;
+	wire [2:0]ddr_axi_arsize;
+	wire [1:0]ddr_axi_arburst;
+	wire [1:0]ddr_axi_arlock;
+	wire [3:0]ddr_axi_arcache;
+	wire [2:0]ddr_axi_arprot;
+	wire [3:0]ddr_axi_arqos;
+	wire [3:0]ddr_axi_rid;
+	wire [31:0]ddr_axi_rdata;
+	wire [1:0]ddr_axi_rresp;
+	mm2axi4 #(
+		.AXI4_IDLEN(4),
+		.AXI4_ADDRLEN(27),
+		.AXI4_DATALEN(32)
+	) mm2axi4_ddr
 	(
 		.clk(clk_main),
-		.clk_mem(clk_mem),
-		.rst(rst_psram),
-
-		.burst_en(mainm_burst_en_m),
-		.burst_length(mainm_burst_length_m),
+		.rst(rst),
 
 		.a(mainm_a_m),
 		.d(mainm_d_m),
@@ -334,39 +319,128 @@ module quasi_main
 		.spo(mainm_spo_m),
 		.ready(mainm_ready_m), 
 
-		.irq(mainm_irq),
+		.m_axi_awid(ddr_axi_awid),
+		.m_axi_awaddr(ddr_axi_awaddr),
+		.m_axi_awlen(ddr_axi_awlen),
+		.m_axi_awsize(ddr_axi_awsize),
+		.m_axi_awburst(ddr_axi_awburst),
+		.m_axi_awlock(ddr_axi_awlock),
+		.m_axi_awcache(ddr_axi_awcache),
+		.m_axi_awprot(ddr_axi_awprot),
+		.m_axi_awqos(ddr_axi_awqos),
+		.m_axi_awvalid(ddr_axi_awvalid),
+		.m_axi_awready(ddr_axi_awready),
 
-		.psram_ce(psram_ce), 
-		.psram_mosi(psram_mosi), 
-		.psram_miso(psram_miso), 
-		.psram_sio2(psram_sio2), 
-		.psram_sio3(psram_sio3),
-		.psram_sclk(psram_sclk)
+		.m_axi_wid(ddr_axi_wid),
+		.m_axi_wdata(ddr_axi_wdata),
+		.m_axi_wstrb(ddr_axi_wstrb),
+		.m_axi_wlast(ddr_axi_wlast),
+		.m_axi_wvalid(ddr_axi_wvalid),
+		.m_axi_wready(ddr_axi_wready),
+
+		.m_axi_bid(ddr_axi_bid),
+		.m_axi_bready(ddr_axi_bready),
+		.m_axi_bresp(ddr_axi_bresp),
+		.m_axi_bvalid(ddr_axi_bvalid),
+
+		.m_axi_arid(ddr_axi_arid),
+		.m_axi_araddr(ddr_axi_araddr),
+		.m_axi_arlen(ddr_axi_arlen),
+		.m_axi_arsize(ddr_axi_arsize),
+		.m_axi_arburst(ddr_axi_arburst),
+		.m_axi_arlock(ddr_axi_arlock),
+		.m_axi_arcache(ddr_axi_arcache),
+		.m_axi_arprot(ddr_axi_arprot),
+		.m_axi_arqos(ddr_axi_arqos),
+		.m_axi_arvalid(ddr_axi_arvalid),
+		.m_axi_arready(ddr_axi_arready),
+
+		.m_axi_rid(ddr_axi_rid),
+		.m_axi_rdata(ddr_axi_rdata),
+		.m_axi_rready(ddr_axi_rready),
+		.m_axi_rresp(ddr_axi_rresp),
+		.m_axi_rlast(ddr_axi_rlast),
+		.m_axi_rvalid(ddr_axi_rvalid),
+
+		.irq(mainm_irq)
 	);
-	`else
-	memory_controller_basic memory_controller_inst
-	(
-		.clk(clk_main),
-		.clk_mem(clk_mem),
-		.rst(rst_psram),
 
-		.a(mainm_a_m),
-		.d(mainm_d_m),
-		.we(mainm_we_m),
-		.rd(mainm_rd_m),
-		.spo(mainm_spo_m),
-		.ready(mainm_ready_m), 
+	reg rst_ddr_auto = 0;
+	reg [13:0]rst_ddr_auto_cnt = 0;
+	always @ (posedge clk_mem) begin
+		rst_ddr_auto_cnt <= rst_ddr_auto_cnt + 1;
+		if (rst_ddr_auto_cnt == 2000) rst_ddr_auto <= 1;
+	end
 
-		.irq(mainm_irq),
+	ddr ddr_inst(
+		.ddr2_dq(ddr2_dq),
+		.ddr2_dqs_n(ddr2_dqs_n),
+		.ddr2_dqs_p(ddr2_dqs_p),
+		.ddr2_addr(ddr2_addr),
+		.ddr2_ba(ddr2_ba),
+		.ddr2_ras_n(ddr2_ras_n),
+		.ddr2_cas_n(ddr2_cas_n),
+		.ddr2_we_n(ddr2_we_n),
+		.ddr2_ck_n(ddr2_ck_n),
+		.ddr2_ck_p(ddr2_ck_p),
+		.ddr2_cke(ddr2_cke),
+		.ddr2_cs_n(ddr2_cs_n),
+		.ddr2_dm(ddr2_dm),
+		.ddr2_odt(ddr2_odt),
 
-		.psram_ce(psram_ce), 
-		.psram_mosi(psram_mosi), 
-		.psram_miso(psram_miso), 
-		.psram_sio2(psram_sio2), 
-		.psram_sio3(psram_sio3),
-		.psram_sclk(psram_sclk)
+		.sys_clk_i(clk_mem),
+		.ui_clk(clk_main),
+		.ui_clk_sync_rst(ui_clk_sync_rst),
+		.aresetn(!rst),
+		.app_sr_req(0),
+		.app_ref_req(0),
+		.app_zq_req(0),
+
+		.s_axi_awid(ddr_axi_awid),
+		.s_axi_awaddr(ddr_axi_awaddr),
+		.s_axi_awlen(ddr_axi_awlen),
+		.s_axi_awsize(ddr_axi_awsize),
+		.s_axi_awburst(ddr_axi_awburst),
+		.s_axi_awlock(ddr_axi_awlock),
+		.s_axi_awcache(ddr_axi_awcache),
+		.s_axi_awprot(ddr_axi_awprot),
+		.s_axi_awqos(ddr_axi_awqos),
+		.s_axi_awvalid(ddr_axi_awvalid),
+		.s_axi_awready(ddr_axi_awready),
+
+		.s_axi_wdata(ddr_axi_wdata),
+		.s_axi_wstrb(ddr_axi_wstrb),
+		.s_axi_wlast(ddr_axi_wlast),
+		.s_axi_wvalid(ddr_axi_wvalid),
+		.s_axi_wready(ddr_axi_wready),
+
+		.s_axi_bready(ddr_axi_bready),
+		.s_axi_bid(ddr_axi_bid),
+		.s_axi_bresp(ddr_axi_bresp),
+		.s_axi_bvalid(ddr_axi_bvalid),
+
+		.s_axi_arid(ddr_axi_arid),
+		.s_axi_araddr(ddr_axi_araddr),
+		.s_axi_arlen(ddr_axi_arlen),
+		.s_axi_arsize(ddr_axi_arsize),
+		.s_axi_arburst(ddr_axi_arburst),
+		.s_axi_arlock(ddr_axi_arlock),
+		.s_axi_arcache(ddr_axi_arcache),
+		.s_axi_arprot(ddr_axi_arprot),
+		.s_axi_arqos(ddr_axi_arqos),
+		.s_axi_arvalid(ddr_axi_arvalid),
+		.s_axi_arready(ddr_axi_arready),
+
+		.s_axi_rready(ddr_axi_rready),
+		.s_axi_rid(ddr_axi_rid),
+		.s_axi_rdata(ddr_axi_rdata),
+		.s_axi_rresp(ddr_axi_rresp),
+		.s_axi_rlast(ddr_axi_rlast),
+		.s_axi_rvalid(ddr_axi_rvalid),
+
+		.sys_rst(rst_ddr_auto)
 	);
-	`endif
+	//`endif
 `else
 	// 2**16 * 32 256KB
 	// need manual patching: 1024x 00000000 before xxd -p firmware.bin
@@ -492,106 +566,19 @@ module quasi_main
     wire [31:0]video_d;
     wire video_we;
     wire [31:0]video_spo;
-`ifdef VIDEO_EN
-	//hdmi_demo hdmi_demo_inst(
-		//.clk(clk),
-		//.rst(rst),
-
-		//.a(video_a),
-		//.d(video_d),
-		//.we(video_we),
-		//.spo(video_spo),
-
-		//.clk_pix(clk_hdmi_25),
-		//.clk_tmds(clk_hdmi_250),
-		//.TMDSp(TMDSp),
-		//.TMDSn(TMDSn),
-		//.TMDSp_clock(TMDSp_clock),
-		//.TMDSn_clock(TMDSn_clock)
-	//);
-	mkrvidor4000_top mkrvidor4000_top_inst(
-		.clk(clk_main),
-		.clk_pix(clk_hdmi_25),
-		.clk_tmds(clk_hdmi_250),
-		.clk_2x(clk_2x),
-		.rst(rst_video),
-
-		.a(video_a),
-		.d(video_d),
-		.we(video_we),
-		.spo(video_spo),
-
-		.TMDSp(TMDSp),
-		.TMDSn(TMDSn),
-		.TMDSp_clock(TMDSp_clock),
-		.TMDSn_clock(TMDSn_clock)
-	);
-`else
 	assign video_spo = 0;
-	//OBUFDS OBUFDS_red(
-		//.I(0),
-		//.O(TMDSp[2]),
-		//.OB(TMDSn[2])
-	//);
-	//OBUFDS OBUFDS_green(
-		//.I(0),
-		//.O(TMDSp[1]),
-		//.OB(TMDSn[1])
-	//);
-	//OBUFDS OBUFDS_blue(
-		//.I(0),
-		//.O(TMDSp[0]),
-		//.OB(TMDSn[0])
-	//);
-	//OBUFDS OBUFDS_clock(
-		//.I(0),
-		//.O(TMDSp_clock),
-		//.OB(TMDSn_clock)
-	//);
-`endif
 
 	wire [31:0]ps2_spo;
 	wire irq_ps2;
-`ifdef PS2_EN
-	ps2 ps2_inst(
-		.clk(clk_main),
-		.rst(rst),
-		.spo(ps2_spo),
-		.kclk(ps2_clk),
-		.kdata(ps2_data),
-		.irq(irq_ps2)
-	);
-`else
 	assign irq_ps2 = 0;
-`endif
 
 	wire [31:0]eth_a;
 	wire [31:0]eth_d;
 	wire eth_we;
 	wire [31:0]eth_spo;
 	wire irq_eth;
-`ifdef ETH_EN
-	w5500_fdm w5500_fdm_inst(
-		.clk(clk_main),
-		.rst(rst),
-		.a(eth_a),
-		.d(eth_d),
-		.we(eth_we),
-		.spo(eth_spo),
-
-		.intn(eth_intn),
-		.rstn(eth_rstn),
-		.sclk(eth_sclk),
-		.scsn(eth_scsn),
-		.mosi(eth_mosi),
-		.miso(eth_miso),
-
-		.irq(irq_eth)
-	);
-`else
 	assign eth_spo = 0;
 	assign irq_eth = 0;
-`endif
 
     // interrupt unit
     wire cpu_eip;
@@ -740,15 +727,15 @@ module quasi_main
 		.cache_spo(cache_spo),
 		.cache_ready(cache_ready),
 
-        .sd_spo(sd_spo),
-        .sd_a(sd_a),
-        .sd_d(sd_d),
-        .sd_we(sd_we),
+        .sd_spo({7'b0, 1'b1, 24'b0}),
+        .sd_a(),
+        .sd_d(),
+        .sd_we(),
 
-        .usb_spo(usb_spo),
-        .usb_a(usb_a),
-        .usb_d(usb_d),
-        .usb_we(usb_we),
+        .usb_spo(0),
+        .usb_a(),
+        .usb_d(),
+        .usb_we(),
 
         .gpio_spo(gpio_spo),
         .gpio_a(gpio_a),
@@ -760,10 +747,10 @@ module quasi_main
         .uart_d(uart_d),
         .uart_we(uart_we),
 
-        .video_spo(video_spo),
-        .video_a(video_a),
-        .video_d(video_d),
-        .video_we(video_we),
+        .video_spo(0),
+        .video_a(),
+        .video_d(),
+        .video_we(),
 
         .int_spo(int_spo),
         .int_a(int_a),
@@ -776,17 +763,17 @@ module quasi_main
         .sb_we(sb_we),
 		.sb_ready(sb_ready),
 
-		.ps2_spo(ps2_spo),
+		.ps2_spo(0),
 
 		.t_a(timer_a),
 		.t_d(timer_d),
 		.t_we(timer_we),
 		.t_spo(timer_spo),
 
-		.eth_a(eth_a),
-		.eth_d(eth_d),
-		.eth_we(eth_we),
-		.eth_spo(eth_spo),
+		.eth_a(),
+		.eth_d(),
+		.eth_we(),
+		.eth_spo(0),
 
         .irq(pirq)
     );

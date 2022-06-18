@@ -59,6 +59,10 @@ module mmapper
         output reg [31:0]gpio_d,
         output reg gpio_we,
         input [31:0]gpio_spo,
+		`ifdef AXI_GPIO_TEST
+		output reg gpio_rd,
+		input gpio_ready,
+		`endif
 
         // uart: 0x93000000
         output reg [2:0]uart_a,
@@ -160,6 +164,9 @@ module mmapper
 		bootm_rd = 0;
 		t_we = 0;
 		eth_we = 0;
+		`ifdef AXI_GPIO_TEST
+		gpio_rd = 0;
+		`endif
         irq = 0;
         spo = 0;
         ready = 1;
@@ -178,6 +185,10 @@ module mmapper
                 4'h2: begin
                     spo = gpio_spo;
                     gpio_we = we;
+					`ifdef AXI_GPIO_TEST
+					ready = gpio_ready;
+					gpio_rd = rd;
+					`endif
                 end
                 4'h3: begin
                     spo = uart_spo;

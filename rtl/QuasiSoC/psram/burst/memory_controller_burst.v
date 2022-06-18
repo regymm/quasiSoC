@@ -11,6 +11,7 @@
 //  write: each single-cycle ready pulse means new
 //         data should be sent on d, 1 cycle later at least
 //         TODO: new addr length!![1:0]
+//  TODO: poor timing, reduce clk_mem domain logic
 //  clk 62.5M, clk_mem 125M
 
 `timescale 1ns / 1ps

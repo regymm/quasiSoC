@@ -1,8 +1,8 @@
-`timescale 1ns / 1ps
+`timescale 1ps / 100fs
 // pComputer top simu
 `define SIMULATION
 
-module top_simu();
+module top_simu ();
     reg clk = 0;
     reg [1:0]sw = 0;
     reg [1:0]btn = 0;
@@ -27,19 +27,24 @@ module top_simu();
 	wire tx;
 	reg rx = 1;
 
+	parameter SIMULATION = "TRUE";
+
     quasi_main pcpu_main_inst
     (
         .sysclk(clk),
         .btn(btn),
         .led(led),
 		.sw(sw),
+
         //.sd_dat0(sd_dat0),
-		.psram_ce(psram_ce),
-		.psram_mosi(psram_mosi),
-		.psram_miso(psram_miso),
-		.psram_sio2(psram_sio2),
-		.psram_sio3(psram_sio3),
-		.psram_sclk(psram_sclk),
+
+		//.psram_ce(psram_ce),
+		//.psram_mosi(psram_mosi),
+		//.psram_miso(psram_miso),
+		//.psram_sio2(psram_sio2),
+		//.psram_sio3(psram_sio3),
+		//.psram_sclk(psram_sclk),
+
 		//.eth_intn(eth_intn),
 		//.eth_rstn(eth_rstn),
 		//.eth_sclk(eth_sclk),
@@ -54,7 +59,7 @@ module top_simu();
     
     initial begin
         clk = 0;
-        forever #5 clk = ~clk;
+        forever #5000 clk = ~clk;
     end
 
     initial begin
@@ -65,7 +70,7 @@ module top_simu();
         //btn = 4'b0000;
         //#2000
         //sw = 2'b10;
-        #4000
+        #4000000
         sw = 2'b00;
 		btn = 2'b00;
 
@@ -75,13 +80,14 @@ module top_simu();
         //#1000
         //btn = 4'b0010;
 
-        #22000
+        #22000000
 		rx = 0;
 		#30
 		rx = 1;
-		#200000;
+		//#200000000;
+		#2500000000.0;
 		$finish;
-        #50000
+        #50000000
 
 		ch375_tx = 0;
 		#52088
@@ -107,7 +113,7 @@ module top_simu();
 		//sw = 2'b01;
 		#4000
 		sw = 2'b00;
-		#200000;
+		//#200000;
         $finish;
     end
     
