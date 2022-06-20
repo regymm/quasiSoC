@@ -76,7 +76,7 @@ module mm2axi4
 
 	// WRITE
 	assign m_axi_awid = 0;
-	assign m_axi_awlen = 8'b1;
+	assign m_axi_awlen = 8'b0;
 	assign m_axi_awsize = 3'b010;
 	assign m_axi_awburst = 2'b01;
 	assign m_axi_awlock = 0;
@@ -91,7 +91,7 @@ module mm2axi4
 	//// signal that matters: 
 	////  araddr, rdata
 	assign m_axi_arid = 0;
-	assign m_axi_arlen = 8'b1;
+	assign m_axi_arlen = 8'b0;
 	assign m_axi_arsize = 3'b010; // 32-bit
 	assign m_axi_arburst = 2'b01; // INCR, doesn't matter
 	assign m_axi_arlock = 0;

@@ -18,5 +18,7 @@
 //`define ETH_EN
 //`define MMU_EN
 
+`define DDR_EN
+
 `define SERIALBOOT_EN
 `define UART_RST_EN

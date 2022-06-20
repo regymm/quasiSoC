@@ -82,7 +82,8 @@ module quasi_main
     // reset signal
 	wire manual_rst = sw_d[0];
 	wire ui_clk_sync_rst;
-    (*mark_debug = "true"*) wire rst = manual_rst | uart_rst | ui_clk_sync_rst;
+	wire ddr_calib_complete;
+    (*mark_debug = "true"*) wire rst = manual_rst | uart_rst | ui_clk_sync_rst | !ddr_calib_complete;
 
 	// reset module
 	wire [31:0]rst_d = 0;
@@ -387,6 +388,8 @@ module quasi_main
 		.ddr2_cs_n(ddr2_cs_n),
 		.ddr2_dm(ddr2_dm),
 		.ddr2_odt(ddr2_odt),
+
+		.init_calib_complete(ddr_calib_complete),
 
 		.sys_clk_i(clk_mem),
 		.ui_clk(clk_main),
