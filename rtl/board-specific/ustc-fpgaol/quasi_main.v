@@ -8,7 +8,7 @@
 `timescale 1ns / 1ps
 // For Nexsy 4 DDR @ FPGAOL
 `include "quasi.vh"
-`define SIMULATION
+//`define SIMULATION
 
 module quasi_main 
 	#(
@@ -18,7 +18,7 @@ module quasi_main
 		parameter BAUD_RATE_CH375 = 9600,
 		//parameter TIMER_COUNTER = 4000 // for debugging
 		parameter TIMER_COUNTER = 1000000,
-		parameter SIMULATION = "TRUE"
+		parameter SIMULATION = "FALSE"
 	)
     (
         input sysclk,
@@ -83,7 +83,8 @@ module quasi_main
 	wire manual_rst = sw_d[0];
 	wire ui_clk_sync_rst;
 	wire ddr_calib_complete;
-    (*mark_debug = "true"*) wire rst = manual_rst | uart_rst | ui_clk_sync_rst | !ddr_calib_complete;
+	(*mark_debug = "true"*) wire rst = manual_rst | uart_rst | ui_clk_sync_rst;
+    //(*mark_debug = "true"*) wire rst = manual_rst | uart_rst | ui_clk_sync_rst | !ddr_calib_complete;
 
 	// reset module
 	wire [31:0]rst_d = 0;
