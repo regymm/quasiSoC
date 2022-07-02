@@ -4,6 +4,7 @@
 `define CLOCK_FREQ 62500000;
 // CPU features
 `define RV32M
+`define RV32A
 
 // peripheral features
 `define GPIO_EN
@@ -13,7 +14,7 @@
 //`define SDCARD_EN
 //`define CH375B_EN
 //`define VIDEO_EN
-//`define IRQ_EN
+`define IRQ_EN
 //`define PS2_EN
 //`define ETH_EN
 //`define MMU_EN

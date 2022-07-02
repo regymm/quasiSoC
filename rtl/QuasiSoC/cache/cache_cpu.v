@@ -52,15 +52,17 @@ module cache_cpu
 		//end
 	//end
 	
-	// disable by default
-	reg cache_enbled = 0;
+	// before better everything else, cache remains on to avoid trouble
+	// and cache is invisible to higher levels(CPU, UART boot)
+	// UART boot is having cache so no enable needed
+	reg cache_enabled = 1;
 	wire a_is_cmd = a[31:8] == 24'h7fff_ff;
 	reg [31:0]cmd_spo;
 
 	// cache control
 	always @ (*) begin
 		cmd_spo = 0;
-		if (a[7:0] == 8'h0) cmd_spo = {7'b0, cache_enbled, 24'b0};
+		if (a[7:0] == 8'h0) cmd_spo = {7'b0, cache_enabled, 24'b0};
 	end
 
 	localparam INIT0 = 5;
@@ -71,13 +73,13 @@ module cache_cpu
 	localparam WRITEBACK = 4;
 	(*mark_debug = "true"*)reg [3:0]state = INIT0;
 
-	assign spo = a_is_cmd ? cmd_spo : (cache_enbled ? way_spo[0] : lowmem_spo);
-	assign ready = !(we | rd) & (a_is_cmd ? 1'b1 : (cache_enbled ? state == IDLE : lowmem_ready));
+	assign spo = a_is_cmd ? cmd_spo : (cache_enabled ? way_spo[0] : lowmem_spo);
+	assign ready = !(we | rd) & (a_is_cmd ? 1'b1 : (cache_enabled ? state == IDLE : lowmem_ready));
 
-	assign burst_en = cache_enbled ? 1 : 0;
-	assign burst_length = cache_enbled ? WAY_WORDS_PER_BLOCK : 1;
-	assign lowmem_a = cache_enbled ? {state == WRITEBACK ? burst_wb_base_a : host_a[31:$clog2(WAY_WORDS_PER_BLOCK)+2], {($clog2(WAY_WORDS_PER_BLOCK)+2){1'b0}}} : a;
-	assign lowmem_d = cache_enbled ? way_spo[0] : d; // TODO: set assoc
+	assign burst_en = cache_enabled ? 1 : 0;
+	assign burst_length = cache_enabled ? WAY_WORDS_PER_BLOCK : 1;
+	assign lowmem_a = cache_enabled ? {state == WRITEBACK ? burst_wb_base_a : host_a[31:$clog2(WAY_WORDS_PER_BLOCK)+2], {($clog2(WAY_WORDS_PER_BLOCK)+2){1'b0}}} : a;
+	assign lowmem_d = cache_enabled ? way_spo[0] : d; // TODO: set assoc
 
 	wire quick_hit = (we | rd) & (| way_hit);
 
@@ -99,8 +101,8 @@ module cache_cpu
 		way_iord_in = 0;
 
 		// always stay in idle if cache disabled
-		lowmem_rd = cache_enbled ? 0 : rd;
-		lowmem_we = cache_enbled ? 0 : we;
+		lowmem_rd = cache_enabled ? 0 : rd;
+		lowmem_we = cache_enabled ? 0 : we;
 		case (state)
 			INIT0: begin
 			end
@@ -168,7 +170,7 @@ module cache_cpu
 
     always @ (posedge clk) begin
         if (rst) begin
-			cache_enbled <= 0;
+			cache_enabled <= 1;
 			host_a <= 0;
 			state <= INIT0;
 			xfer_cnt <= 0;
@@ -191,23 +193,24 @@ module cache_cpu
 			IDLE: begin
 				xfer_cnt <= 0;
 				burst_issue <= 1;
-				if (a_is_cmd & a[7:0] == 8'h0 & we) begin
-					if (d == 32'h0) begin
-						// TODO: will quickly disable/enable break anything?
-						// TODO: sync back entries
-						// TODO: currently the only recommended usage is
-						// enable cache after UART loads, then never touch anything
-						// disable cache immediately, invalidate cache
-						// a/d/we/rd/spo/ready directly got connected to lowmem
-						cache_enbled <= 0;
-						state <= INIT0;
-					end else begin
-						// enable cache immediately, if has been disabled
-						// before, all entries are already invalid
-						cache_enbled <= 1;
-					end
-				end
-				if (cache_enbled & (we | rd) & !a_is_cmd) begin
+				// TODO: make cache enable truly work...
+				//if (a_is_cmd & a[7:0] == 8'h0 & we) begin
+					//if (d == 32'h0) begin
+						//// TODO: will quickly disable/enable break anything?
+						//// TODO: sync back entries
+						//// TODO: currently the only recommended usage is
+						//// enable cache after UART loads, then never touch anything
+						//// disable cache immediately, invalidate cache
+						//// a/d/we/rd/spo/ready directly got connected to lowmem
+						//cache_enabled <= 1;
+						//state <= INIT0;
+					//end else begin
+						//// enable cache immediately, if has been disabled
+						//// before, all entries are already invalid
+						//cache_enabled <= 1;
+					//end
+				//end
+				if (cache_enabled & (we | rd) & !a_is_cmd) begin
 					host_a <= a;
 					host_d <= d;
 					host_weorrd <= we;

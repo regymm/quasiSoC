@@ -140,6 +140,7 @@ _start:
 
 	TEST(simple)
 _theend:
+	j _theend
 	j _start
 
 # void uart_putchar(char c)

@@ -97,7 +97,7 @@ module quasi_main
 	wire rst_psram;
 	wire rst_interrupt;
 	wire rst_sb;
-	wire rst_timer;
+	wire rst_aclint;
 	wire rst_mmu;
 	reset reset_unit(
 		.clk(clk_main),
@@ -113,7 +113,7 @@ module quasi_main
 		.rst_psram(rst_psram),
 		.rst_interrupt(rst_interrupt),
 		.rst_sb(rst_sb),
-		.rst_timer(rst_timer),
+		.rst_timer(rst_aclint),
 		.rst_mmu(rst_mmu)
 	);
 
@@ -586,13 +586,14 @@ module quasi_main
 
     // interrupt unit
     wire cpu_eip;
-    wire cpu_eip_istimer;
-    wire cpu_eip_reply;
+	wire cpu_eip_reply;
+	wire irq_timer_pending;
+	wire irq_soft_pending;
 
-	wire [2:0]timer_a;
-	wire [31:0]timer_d;
-	wire timer_we;
-	wire [31:0]timer_spo;
+	wire [15:0]aclint_a;
+	wire [31:0]aclint_d;
+	wire aclint_we;
+	wire [31:0]aclint_spo;
 
     wire [2:0]int_a;
     wire [31:0]int_d;
@@ -601,15 +602,17 @@ module quasi_main
 `ifdef IRQ_EN
     // timer interrupt
     wire irq_timer;
-    timer #(.TIMER_COUNTER(TIMER_COUNTER)) timer_inst(
+    aclint #(.TIMER_COUNTER(TIMER_COUNTER)) aclint_inst(
         .clk(clk_main),
-        .rst(rst_timer),
-        .irq(irq_timer),
+        .rst(rst_aclint),
 
-		.a(timer_a),
-		.d(timer_d),
-		.we(timer_we),
-		.spo(timer_spo)
+        .s_irq(irq_soft_pending),
+        .t_irq(irq_timer_pending),
+
+		.a(aclint_a),
+		.d(aclint_d),
+		.we(aclint_we),
+		.spo(aclint_spo)
     );
 
     interrupt_unit interrupt_unit_inst(
@@ -617,10 +620,8 @@ module quasi_main
         .rst(rst_interrupt),
 
         .interrupt(cpu_eip),
-		.int_istimer(cpu_eip_istimer),
         .int_reply(cpu_eip_reply),
 
-        .i_timer(irq_timer),
         .i_uart(irq_uart),
         .i_gpio(irq_gpio),
 		.i_ps2(irq_ps2),
@@ -631,10 +632,11 @@ module quasi_main
         .spo(int_spo)
     );
 `else
+	assign irq_timer_pending = 0;
+	assign irq_soft_pending = 0;
 	assign cpu_eip = 0;
-	assign cpu_eip_istimer = 0;
 	assign int_spo = 0;
-	assign timer_spo = 0;
+	assign aclint_spo = 0;
 `endif
 
     // cpu-multi-cycle
@@ -769,10 +771,10 @@ module quasi_main
 
 		.ps2_spo(0),
 
-		.t_a(timer_a),
-		.t_d(timer_d),
-		.t_we(timer_we),
-		.t_spo(timer_spo),
+		.t_a(aclint_a),
+		.t_d(aclint_d),
+		.t_we(aclint_we),
+		.t_spo(aclint_spo),
 
 		.eth_a(),
 		.eth_d(),

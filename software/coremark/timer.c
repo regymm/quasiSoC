@@ -9,7 +9,7 @@
 #include "stdint.h"
 #include <stdio.h>
 #include <stdlib.h>
-volatile int* timer_ctrl = (int*) 0x9b000000;
+volatile int* timer_ctrl = (int*) 0x9b00bff8;
 /*volatile int* timel_addr = (int*) 0x9b000000;*/
 /*volatile int* timeh_addr = (int*) 0x9b000004;*/
 /*volatile int* timecmp_addr = (int*) 0x9b000008;*/

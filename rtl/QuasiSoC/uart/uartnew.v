@@ -8,6 +8,7 @@
 `timescale 1ns / 1ps
 // pComputer UART
 // a better version (arbitary input clk freq, fifo, ...)
+// TODO: fifo? fifo w/ uartboot?
 //
 // write 0x00: transmit data -- (tx fifo enqueue)
 // read 0x00: received data -- (first data in rx fifo)
@@ -41,22 +42,6 @@ module uart_new
 		output reg rxnew,
 		output [7:0]rxdata
     );
-
-	//parameter SAMPLE_COUNT =
-		//BAUD_RATE == 921600 ? 17 :
-		//BAUD_RATE == 1843200 ? 16 :
-		//BAUD_RATE == 3686400 ? 8 :
-		//BAUD_RATE == 115200 ? 31 : -1;
-	//parameter SAMPLE_SAMPLE =
-		//BAUD_RATE == 921600 ? 6 :
-		//BAUD_RATE == 1843200 ? 8 :
-		//BAUD_RATE == 3686400 ? 4 :
-		//BAUD_RATE == 115200 ? 10 : -1;
-	//parameter SAMPLE_REMEDY =
-		//BAUD_RATE == 921600 ? 4 :
-		//BAUD_RATE == 1843200 ? 4 :
-		//BAUD_RATE == 3686400 ? 2 :
-		//BAUD_RATE == 115200 ? 5  : -1;
 
 	wire [7:0]data = d[31:24];
 
