@@ -24,13 +24,10 @@ module privilege
 		input we,
 		output reg [31:0]spo,
 
-		// from interrupt.v
-		// TODO: PLIC!!
+		input tip,
+		input sip,
 		input eip,
 		output reg eip_reply,
-
-		// from timer.v
-		input tip,
 
 		//input mtval_we,
 		//input [31:0]mtval_d,
@@ -64,17 +61,17 @@ module privilege
 	(*mark_debug = "true"*)reg [31:0]mtval;
 	(*mark_debug = "true"*)reg [31:0]mip;
 
-	assign mepc_out = mepc_reg;
 	reg [31:0]mepc_reg;
 	always @ (posedge clk) begin
 		mepc_reg <= mepc;
 	end
+	assign mepc_out = mepc_reg;
 
-	assign mtvec_out = mtvec_reg;
 	reg [31:0]mtvec_reg;
 	always @ (posedge clk) begin
 		mtvec_reg <= mtvec;
 	end
+	assign mtvec_out = mtvec_reg;
 	//assign mtvec_out = mtvec;
 
 	//reg [63:0]mtime;
@@ -88,7 +85,7 @@ module privilege
 	wire [31:0]mtvec_read_val		= 32'bxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx00;
 	wire [31:0]mtvec_write_mask		= 32'b00000000000000000000000000000011;
 	wire [31:0]mip_read_mask		= 32'b11111111111111111111111111110111;
-	wire [31:0]mip_read_val			= {20'b0, eip, 3'b0, tip, 3'b0, 1'bx, 3'b0};
+	wire [31:0]mip_read_val			= {20'b0, eip, 3'b0, tip, 3'b0, sip, 3'b0};
 	wire [31:0]mip_write_mask		= 32'b11111111111111111111111111110111; // WARL otherwise
 	wire [31:0]mie_read_mask		= 32'b00000000000000000000100010001000;
 	wire [31:0]mie_read_val			= 32'b00000000000000000000x000x000x000;
@@ -110,17 +107,12 @@ module privilege
 
 	//reg [31:0]satp;
 
-	//reg [31:0]misa;
-	//reg [31:0]timee;
-	//reg [31:0]timeeh;
-
 	//wire mcause_isinterrupt = mcause[31];
 	//wire mstatus_mie = mstatus[3];
 	//wire mstatus_mpie = mstatus[7];
 	
 	wire mstatus_mie = mstatus[3];
 	wire [1:0]mstatus_mpp = mstatus[12:11];
-	wire mip_sip = mip[4];
 	wire meie = mie[11];
 	wire mtie = mie[7];
 	wire msie = mie[3];
@@ -146,9 +138,6 @@ module privilege
 			12'h342: spo = mcause;
 			12'h343: spo = mtval;
 			12'h344: spo = mip_read_val & mip_read_mask + mip & ~mip_read_mask;
-
-			//12'hC01: spo = timee;
-			//12'hC81: spo = timeeh;
 
 			default: spo = 0;
 		endcase
@@ -200,15 +189,16 @@ module privilege
 
 	reg int_reply_reg;
 	reg int_pending;
-	reg eip_reg;
 	reg tip_reg;
+	reg sip_reg;
+	reg eip_reg;
 	reg meie_reg;
 	reg mtie_reg;
-	reg [1:0]int_source;
 	always @ (posedge clk) begin
 		int_reply_reg <= int_reply;
-		int_pending <= mstatus_mie & (eip&meie | tip&mtie | mip_sip&msie);
+		int_pending <= mstatus_mie & (eip&meie | tip&mtie | sip&msie);
 		eip_reg <= eip;
+		sip_reg <= sip;
 		tip_reg <= tip;
 		meie_reg <= meie;
 		mtie_reg <= mtie;
@@ -219,6 +209,7 @@ module privilege
 	localparam REPLY = 2'b10;
 	localparam END = 2'b11;
 	reg [1:0]state = IDLE;
+	reg [1:0]int_source;
 	reg [3:0]mcause_i_code;
 	always @ (posedge clk) begin
 		if (rst) begin

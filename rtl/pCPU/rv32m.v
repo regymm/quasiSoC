@@ -1,9 +1,9 @@
 /**
- * File              : mul.v
+ * File              : rv32m.v
  * License           : GPL-3.0-or-later
  * Author            : Peter Gu <github.com/regymm>
  * Date              : 2020.11.28
- * Last Modified Date: 2020.11.28
+ * Last Modified Date: 2022.07.05
  */
 // a simple 32-bit multiplication and division unit
 // 0 m: 00 mul, 01 mulh, 10 mulhsu, 11 mulhu
@@ -96,14 +96,3 @@ module rv32m
 		end
 	end
 endmodule
-					//r_debug <= result;
-					//aext <= aext[63] ? 
-						//(aext << 1) + 1'b1 :
-						//(aext << 1);
-						//(!mreg[1]) ? aext[31:0]+1 : (aext[63] ? aext[63:32]-bext[63:32] : aext[63:32] + bext[63:32])
-					//r <= divfix ? 
-						////(!mreg[1]) ? aext[31:0]+1 : (aext[63] ? aext[63:32]-bext[63:32] : aext[63:32] + bext[63:32])
-						////(!mreg[1]) ? aext[31:0]+1 : (remfix ? ~aext[63:32]+bext[63:32]+1 : aext[63:32]-bext[63:32])
-						//(!mreg[1]) ? aext[31:0]+1 : (remfix ? ~aext[63:32]+bext[63:32]+1 : aext[63:32]-bext[63:32])
-						//: 
-						//(!mreg[1]) ? aext[31:0] : aext[63:32];
