@@ -28,30 +28,17 @@ module riscv_multicyc
 		output req,
 		input gnt,
 		input hrd,
-		output reg [31:0]a,
-		output reg [31:0]d,
-		output reg we,
-		output reg rd,
+		output [31:0]a,
+		output [31:0]d,
+		output we,
+		output rd,
 		input [31:0]spo,
 		input ready
     );
 
 	localparam INVALID_ADDR =32'hffffffff;
 
-	(*mark_debug = "true"*) reg [31:0]pc;
-	reg [31:0]oldpc;
-	(*mark_debug = "true"*) reg [31:0]instruction;
-
-	reg [31:0]A;
-	reg [31:0]B;
-	reg [31:0]ALUOut;
-	reg [31:0]ALUOut2;
-	reg [31:0]RV32MOut;
-	(*mark_debug = "true"*)reg [31:0]mar;
-	//(*mark_debug = "true"*)reg [31:0]mwr;
-	(*mark_debug = "true"*)reg [31:0]mdr;
-
-	// control signals
+	// basic control signals
 	reg PCWrite;
 	reg [2:0]PCSrc;
 	reg [1:0]IorDorW;
@@ -68,6 +55,38 @@ module riscv_multicyc
 	reg CsrASrc;
 	reg CsrDSrc;
 
+	// program counter
+	(*mark_debug = "true"*) reg [31:0]pc;
+	reg [31:0]oldpc;
+	always @ (posedge clk) begin
+		if (rst) pc <= START_ADDR;
+		else if (PCWrite) begin
+			pc <= newpc;
+			oldpc <= pc;
+		end
+	end
+	// ~~~~datapath~~~~
+	reg [31:0]newpc;
+	always @ (*) begin case (PCSrc)
+		0: newpc = pc + 4;
+		1: newpc = ALUOut2; // Branch
+		2: newpc = ALUOut; // JAL
+		3: newpc = ALUOut & ~1; // JALR
+		`ifdef IRQ_EN
+		4: newpc = {mtvec_in[31:2], 2'b0}; // exception, interrupt
+		5: newpc = mepc_in;
+		`endif
+		default: newpc = INVALID_ADDR;
+	endcase end
+
+	// instruction register
+	(*mark_debug = "true"*) reg [31:0]instruction;
+	always @ (posedge clk) begin
+		if(IRWrite) instruction <= new_instr;
+	end
+	// ~~~~datapath~~~~
+	wire [31:0]new_instr = memread_data;
+
     // register file
     reg [31:0]WriteData;
     wire [31:0]ReadData1;
@@ -83,23 +102,71 @@ module riscv_multicyc
         .rd0(ReadData1),
         .rd1(ReadData2)
     );
+	reg [31:0]A;
+	reg [31:0]B;
+	always @ (posedge clk) begin
+		A <= ReadData1;
+		B <= ReadData2;
+	end
+	// ~~~~datapath~~~~
+	always @ (*) begin case (RegSrc)
+		0: WriteData = ALUOut;
+		//1: WriteData = mdr;
+		2: WriteData = imm;
+		3: WriteData = pc; // already +4
+		// LOAD
+		4: WriteData = loadbyte; // byte
+		5: WriteData = loadhalf; // half
+		6: WriteData = mdr;
+		`ifdef RV32M
+		7: WriteData = RV32MOut;
+		`endif
+		`ifdef IRQ_EN
+		8: WriteData = csrreg;
+		`endif
+		`ifdef RV32A
+		9: WriteData = amo_temp;
+		10:WriteData = sc_succeeded ? 0 : 1;
+		`endif
+		default: WriteData = 0;
+	endcase end
 
-	// memory mapper, little endian
+	// memory(little endian, instr/data)
+	assign a = {mem_addr[31:2], 2'b0};
+	assign d = {memwrite_data[7:0], memwrite_data[15:8], memwrite_data[23:16], memwrite_data[31:24]};
+	assign we = MemWrite;
+	assign rd = MemRead;
+	wire [31:0]memread_data = {spo[7:0], spo[15:8], spo[23:16], spo[31:24]};
+	assign MemReady = ready;
+	reg [31:0]mar;
+	reg [31:0]mdr;
+	always @ (posedge clk) begin
+		mdr <= memread_data;
+		//mwr <= memwrite_data;
+		mar <= mem_addr;
+	end
+	// ~~~~datapath~~~~
 	reg [31:0]mem_addr;
 	reg [31:0]memwrite_data;
-	reg [31:0]memread_data;
-	always @ (*) begin
-		a = {mem_addr[31:2], 2'b0};
-		d = {memwrite_data[7:0], memwrite_data[15:8], memwrite_data[23:16], memwrite_data[31:24]};
-		we = MemWrite;
-		rd = MemRead;
-		memread_data = {spo[7:0], spo[15:8], spo[23:16], spo[31:24]};
-		MemReady = ready;
-	end
+	always @ (*) begin case (IorDorW)
+		0: mem_addr = pc; // instruction
+		1: mem_addr = ALUOut; // data
+		2: mem_addr = mar; // wait, and lr.w // ???
+		default: mem_addr = INVALID_ADDR;
+	endcase end
+	always @ (*) begin case (MemSrc)
+		// STORE
+		0: memwrite_data = storebyte; // byte
+		1: memwrite_data = storehalf; // half
+		2: memwrite_data = ReadData2; // word
+		//3: memwrite_data = mwr; // wait
+		`ifdef RV32A
+		4: memwrite_data = amo_t_op_rs2;
+		`endif
+		default: memwrite_data = 0;
+	endcase end
 
 	// ALU
-	reg [31:0]ALUIn1;
-	reg [31:0]ALUIn2;
 	wire [31:0]ALUResult;
 	alu alu_inst
 	(
@@ -108,9 +175,36 @@ module riscv_multicyc
 		.b(ALUIn2),
 		.y(ALUResult)
 	);
+	reg [31:0]ALUOut;
+	reg [31:0]ALUOut2;
+	always @ (posedge clk) begin
+		ALUOut <= ALUResult;
+		ALUOut2 <= ALUOut;
+	end
+	// ~~~~datapath~~~~
+	reg [31:0]ALUIn1;
+	reg [31:0]ALUIn2;
+	always @ (*) begin case (ALUSrcA)
+		0: ALUIn1 = A;
+		1: ALUIn1 = pc; // haven't +4
+		`ifdef IRQ_EN
+		2: ALUIn1 = csrimm;
+		`endif
+		default: ALUIn1 = 0;
+	endcase end
+	always @ (*) begin case (ALUSrcB)
+		0: ALUIn2 = B;
+		1: ALUIn2 = imm;
+		`ifdef IRQ_EN
+		2: ALUIn2 = csr_spo;
+		`endif
+		default: ALUIn2 = B;
+	endcase end
 
+	// ALU for RV32M
 `ifdef RV32M
 	reg RV32MStart;
+
 	wire [2:0]RV32Mm;
 	wire RV32MReady;
 	wire [31:0]RV32MResult;
@@ -127,26 +221,32 @@ module riscv_multicyc
 		.div0(RV32MException)
 	);
 	assign RV32Mm = instruction[14:12];
-	wire is_RV32M = instruction[25];
+	wire is_RV32M = op == OP_R & instruction[25];
+	reg [31:0]RV32MOut;
+	always @ (posedge clk) begin
+		RV32MOut <= RV32MResult;
+	end
 `endif
 
 	// privilege 
 `ifdef IRQ_EN
-	wire [31:0]csr_a = instruction[31:20];
-	wire [31:0]csr_d = ALUOut;
-	reg csr_we;
-	wire [31:0]csr_spo;
-
-	reg on_exc_enter;
-	reg on_exc_leave;
-	reg on_exc_isint;
+	reg CsrWe;
+	reg CsrSave;
+	reg OnExcEnter;
+	reg OnExcLeave;
+	reg OnExcIsint;
+	reg IntReply;
 
 	reg [3:0]mcause_code_out;
 	wire [31:0]mtvec_in;
 	wire [31:0]mepc_in;
 
+	wire [31:0]csr_a = instruction[31:20];
+	wire [31:0]csr_d = ALUOut;
+	wire csr_we = CsrWe;
+	wire [31:0]csr_spo;
+
 	wire interrupt;
-	reg int_reply;
 	privilege privilege_inst
 	(
 		.clk(clk),
@@ -162,9 +262,9 @@ module riscv_multicyc
 		.eip(eip),
 		.eip_reply(eip_reply),
 
-		.on_exc_enter(on_exc_enter),
-		.on_exc_leave(on_exc_leave),
-		.on_exc_isint(on_exc_isint),
+		.on_exc_enter(OnExcEnter),
+		.on_exc_leave(OnExcLeave),
+		.on_exc_isint(OnExcIsint),
 
 		.pc_in(oldpc),
 		.mcause_code_in(mcause_code_out),
@@ -172,15 +272,87 @@ module riscv_multicyc
 		.mepc_out(mepc_in),
 
 		.interrupt(interrupt),
-		.int_reply(int_reply)
+		.int_reply(IntReply)
 	);
-	reg csrsave;
-	reg [31:0]csrr;
+	reg [31:0]csrreg;
 	always @ (posedge clk) begin
-		if (csrsave) csrr <= csr_spo;
+		if (CsrSave) csrreg <= csr_spo;
 	end
-	//TODO: check width
-	wire [31:0]csrimm = 26'b0, instruction[19:15]};
+	wire [31:0]csrimm = {27'b0, instruction[19:15]};
+
+	// privileged instructions
+	wire priv_csr = op == OP_PRIV & instruction[14:12] != 3'b0;
+	wire priv_wfi = op == OP_PRIV & instruction[14:12] == 3'b0 & instruction[28] & !instruction[25] & !instruction[29];
+	wire priv_mret = op == OP_PRIV & instruction[14:12] == 3'b0 & instruction[28] & !instruction[25] & instruction[29];
+	wire priv_sfencevma = op == OP_PRIV & instruction[14:12] == 3'b0 & instruction[28] & instruction[25];
+	wire priv_ecall = op == OP_PRIV & instruction[14:12] == 3'b0 & !instruction[28] & !instruction[20];
+	wire priv_ebreak = op == OP_PRIV & instruction[14:12] == 3'b0 & !instruction[28] & instruction[20];
+
+	localparam EXC_ILLEGAL_INSTRUCTION = 4'd2;
+	localparam EXC_BREAKPOINT = 4'd3;
+	localparam EXC_LOAD_FAULT = 4'd5;
+	localparam EXC_STORE_FAULT = 4'd7;
+	localparam EXC_ECALL_FROM_M_MODE = 4'd11;
+
+	// TODO: generalize and improve
+	always @ (posedge clk) begin
+		if (op == OP_PRIV)
+			if (priv_ebreak)
+				mcause_code_out <= EXC_BREAKPOINT;
+			else if (priv_ecall)
+				mcause_code_out <= EXC_ECALL_FROM_M_MODE;
+	end
+`endif
+
+`ifdef RV32A
+	wire op_a_lr  = (op == OP_AMO) & instruction[31:27] == 5'b00010;
+	wire op_a_sc  = (op == OP_AMO) & instruction[31:27] == 5'b00011;
+	wire op_a_amo = (op == OP_AMO) & instruction[31:28] != 4'b0001;
+	reg AMOTempWrite;
+	reg [31:0]amo_temp = 0;
+	always @ (posedge clk) begin
+		// one cycle only!
+		if (AMOTempWrite) amo_temp <= mdr;
+	end
+	reg [31:0]amo_t_op_rs2;
+	always @ (*) begin case (instruction[31:27])
+		5'b00001: amo_t_op_rs2 = B;
+		5'b00000: amo_t_op_rs2 = amo_temp + B;
+		5'b00100: amo_t_op_rs2 = amo_temp ^ B;
+		5'b01100: amo_t_op_rs2 = amo_temp & B;
+		5'b01000: amo_t_op_rs2 = amo_temp | B;
+		// amomin(u) and amomax(u) not used in kernel
+		// TODO: implement 
+		default: amo_t_op_rs2 = 0;
+	endcase end
+	// load reserve/store conditional handling
+	reg LRValid;
+	reg LRInvalid;
+	reg lr_valid;
+	reg [31:0]lr_addr = 0;
+	reg [31:0]lr_bytes = 0;
+	wire sc_success = lr_valid & lr_addr == ALUOut;
+	reg sc_succeeded;
+	always @ (posedge clk) begin
+		if (rst) begin
+			lr_valid <= 0;
+		end else begin
+			if (LRValid) begin
+			//if (phase == WB & op_a_lr) begin
+				lr_valid <= 1;
+				lr_addr <= mar;
+			// sc, succeeded or not, invalidates reservation
+			end else if (LRInvalid) begin
+			//end else if (phase == MEM & op_a_sc) begin
+				lr_valid <= 0;
+				sc_succeeded <= sc_success;
+			end
+		end
+	end
+`else
+	wire op_a_lr  = 0;
+	wire op_a_sc  = 0;
+	wire op_a_amo = 0;
 `endif
 
 	// instruction decode
@@ -247,70 +419,6 @@ module riscv_multicyc
 	assign loadbyte = nse ? {24'b0, loadbyte_byte}: {{24{loadbyte_byte[7]}}, loadbyte_byte};
 	assign loadhalf = nse ? {16'b0, loadhalf_half}: {{16{loadhalf_half[15]}}, loadhalf_half};
 
-	// privileged instructions
-	wire priv_csr = op == OP_PRIV & instruction[14:12] != 3'b0;
-	wire priv_wfi = op == OP_PRIV & instruction[14:12] == 3'b0 & instruction[28] & !instruction[25] & !instruction[29];
-	wire priv_mret = op == OP_PRIV & instruction[14:12] == 3'b0 & instruction[28] & !instruction[25] & instruction[29];
-	wire priv_sfencevma = op == OP_PRIV & instruction[14:12] == 3'b0 & instruction[28] & instruction[25];
-	wire priv_ecall = op == OP_PRIV & instruction[14:12] == 3'b0 & !instruction[28] & !instruction[20];
-	wire priv_ebreak = op == OP_PRIV & instruction[14:12] == 3'b0 & !instruction[28] & instruction[20];
-
-	localparam EXC_ILLEGAL_INSTRUCTION = 4'd2;
-	localparam EXC_BREAKPOINT = 4'd3;
-	localparam EXC_LOAD_FAULT = 4'd5;
-	localparam EXC_STORE_FAULT = 4'd7;
-	localparam EXC_ECALL_FROM_M_MODE = 4'd11;
-
-	`ifdef RV32A
-	wire op_a_lr  = (op == OP_AMO) & instruction[31:27] == 5'b00010;
-	wire op_a_sc  = (op == OP_AMO) & instruction[31:27] == 5'b00011;
-	wire op_a_amo = (op == OP_AMO) & instruction[31:28] != 4'b0001;
-	reg [31:0]amo_temp = 0;
-	always @ (posedge clk) begin
-		if (rst)
-			amo_temp <= 0;
-		else if (phase == RV32A_WTEMP) // one cycle only!
-			amo_temp <= mdr;
-	end
-	reg [31:0]amo_t_op_rs2;
-	always @ (*) begin case (instruction[31:27])
-		5'b00001: amo_t_op_rs2 = B;
-		5'b00000: amo_t_op_rs2 = amo_temp + B;
-		5'b00100: amo_t_op_rs2 = amo_temp ^ B;
-		5'b01100: amo_t_op_rs2 = amo_temp & B;
-		5'b01000: amo_t_op_rs2 = amo_temp | B;
-		// amomin(u) and amomax(u) not used in kernel
-		// TODO: implement 
-		default: amo_t_op_rs2 = 0;
-	endcase end
-	// load reserve/store conditional handling
-	reg lr_valid;
-	reg [31:0]lr_addr = 0;
-	reg [31:0]lr_bytes = 0;
-	wire sc_success = lr_valid & lr_addr == ALUOut;
-	reg sc_succeeded;
-	always @ (posedge clk) begin
-		if (rst) begin
-			lr_valid <= 0;
-		end else begin
-			if (phase == WB & op_a_lr) begin
-				lr_valid <= 1;
-				lr_addr <= mar;
-			// sc, succeeded or not, invalidates reservation
-			end else if (phase == MEM & op_a_sc) begin
-				lr_valid <= 0;
-				sc_succeeded <= sc_success;
-			end
-		end
-	end
-	`else
-	wire op_a_lr  = 0;
-	wire op_a_sc  = 0;
-	wire op_a_amo = 0;
-	`endif
-
-	reg [7:0]phase;
-	reg [7:0]phase_n;
 	localparam IF			=	10;
 	localparam ID_RF		=	20;
 	localparam EX			=	30;
@@ -331,43 +439,40 @@ module riscv_multicyc
 	localparam MRET			=	120;
 	//localparam ECALL		=	130;
 	localparam BAD			=	255;
-	//(*mark_debug = "true"*) wire exec = phase == EX;
 
+	// execution phases
+	reg [7:0]phase;
+	reg [7:0]phase_n;
 	reg phase_changed;
 	always @ (posedge clk) begin
+		if (rst) phase <= IF;
+		else phase <= phase_n;
 		phase_changed <= (phase_n != phase);
 	end
 	// the memory fuse, to make sure after bus
 	// handshake, rd/we is only issued one cycle
 	reg mfuse;
 	wire phase_with_mem =
-		phase == IF | 
-		phase == MEM | 
-		phase == MEMU | 
+		phase == IF | phase == MEM | phase == MEMU
 		`ifdef RV32A
-		phase == RV32A_MEM1 | 
-		phase == RV32A_MEM2 |
+		| phase == RV32A_MEM1 | phase == RV32A_MEM2
 		`endif
-		1;
+		;
 	// to avoid multiple handshaking during intense 
 	// memory requests
-	wire phase_need_gnt = phase_with_mem | 
-		phase == EXU |
+	wire phase_need_gnt = phase_with_mem | phase == EXU
 		`ifdef RV32A
-		phase == RV32A_WTEMP | 
+		| phase == RV32A_WTEMP
 		`endif
-		1;
+		;
 	always @ (posedge clk) begin
-		if (!phase_changed & (phase_with_mem & bus_xfer_ok)) mfuse <= 0;
+		// actually phase_with_mem not needed
+		if (!phase_changed & phase_with_mem & bus_xfer_ok) mfuse <= 0;
 		else mfuse <= 1;
 	end
 
 	// bus req/gnt
-	// xfer_ok: can start a xfer right now
 	wire bus_xfer_ok = gnt & !hrd;
-	// will spend multicycle in 
-	//  IF: if bus hrd or !gnt
-	//  ID_RF: if memory not ready
 	assign req = !hrd & phase_need_gnt;
 
 	// control signals
@@ -391,12 +496,17 @@ module riscv_multicyc
 		RV32MStart = 0;
 		`endif
 		`ifdef IRQ_EN
-		csr_we = 0;
-		csrsave = 0;
-		on_exc_enter = 0;
-		on_exc_leave = 0;
-		on_exc_isint = 0;
-		int_reply = 0;
+		CsrWe = 0;
+		CsrSave = 0;
+		OnExcEnter = 0;
+		OnExcLeave = 0;
+		OnExcIsint = 0;
+		IntReply = 0;
+		`endif
+		`ifdef RV32A
+		AMOTempWrite = 0;
+		LRValid = 0;
+		LRInvalid = 0;
 		`endif
 		case (phase)
 			IF: begin
@@ -416,15 +526,16 @@ module riscv_multicyc
 			ID_RF: begin
 				// FENCE, SFENCE.VMA, and WFI does nothing in our simple architecture
 				`ifdef IRQ_EN
-				if (interrupt) phase_n = INTERRUPT; else
-				`endif
-				if (op == OP_FENCE | priv_wfi | priv_sfencevma) phase_n = IF;
+				if (interrupt) phase_n = INTERRUPT;
+				else if (op == OP_FENCE | priv_wfi | priv_sfencevma) phase_n = IF;
 				else if (priv_mret) phase_n = MRET;
 				else if (priv_ebreak) phase_n = EXCEPTION;
 					//mcause_code_out <= EXC_BREAKPOINT;
 				else if (priv_ecall) phase_n = EXCEPTION;
 					//mcause_code_out <= EXC_ECALL_FROM_M_MODE;
-				else if (op == OP_LUI | op == OP_AUIPC | op == OP_JAL) phase_n = WB;
+				else
+				`endif
+				if (op == OP_LUI | op == OP_AUIPC | op == OP_JAL) phase_n = WB;
 				else phase_n = EX;
 				// ~~~~~~~~~~~~~~~~~~~~
 				PCWrite = 1;
@@ -433,7 +544,7 @@ module riscv_multicyc
 			EX: begin
 				if (op == OP_STORE | op == OP_LOAD | op_a_lr | op_a_sc) phase_n = MEM;
 				`ifdef RV32M
-				else if (op == OP_R & is_RV32M) phase_n = RV32M_WAIT;
+				else if (is_RV32M) phase_n = RV32M_WAIT;
 				`endif
 				`ifdef RV32A
 				else if (op_a_amo) phase_n = RV32A_MEM1;
@@ -454,14 +565,13 @@ module riscv_multicyc
 					ALUm = instruction[14] ? {2'b0, instruction[14:13]} : 4'b1000;
 				end else if (op == OP_LOAD | op == OP_STORE | op_a_lr | op_a_sc | op_a_amo) begin
 					ALUSrcB = 1;
-				end else if (op == OP_PRIV & priv_csr) begin
+				`ifdef IRQ_EN
+				end else if (priv_csr) begin
 					ALUSrcA = instruction[14] ? 2 : 0;
 					ALUSrcB = 2;
 					ALUm = {instruction[12], instruction[13], 2'b10};
-					//ALUm = instruction[13] ? {3'b011, instruction[12]} : {4'b1111};
-					`ifdef IRQ_EN
-					csrsave = 1;
-					`endif
+					CsrSave = 1;
+				`endif
 				end
 			end
 			MEM: begin
@@ -479,15 +589,17 @@ module riscv_multicyc
 				// module) in one cycle, we have to keep them correct(at
 				// least until bus handshake & issue rd/we)
 				ALUSrcB = 1;
+				IorDorW = 1;
 				if (op == OP_LOAD | (op == OP_STORE & store_unaligned) | op_a_lr) begin
-					MemRead = mfuse; IorDorW = 1; // Load, SB, SH
+					MemRead = mfuse; // Load, SB, SH
 				end else if (op == OP_STORE & !store_unaligned) begin
-					MemWrite = mfuse; IorDorW = 1;
+					MemWrite = mfuse;
 					MemSrc = 2; // SW
 				`ifdef RV32A
 				end else if (op_a_sc) begin
-					MemWrite = sc_success & mfuse; IorDorW = 1;
+					MemWrite = sc_success & mfuse;
 					MemSrc = 2;
+					LRInvalid = 1;
 				`endif
 				end
 			end
@@ -502,6 +614,7 @@ module riscv_multicyc
 			RV32A_WTEMP: begin
 				phase_n = RV32A_MEM2;
 				// ~~~~~~~~~~~~~~~~~~~~
+				AMOTempWrite = 1;
 				ALUSrcB = 1;
 			end
 			RV32A_MEM2: begin
@@ -512,11 +625,6 @@ module riscv_multicyc
 				MemWrite = mfuse; IorDorW = 1;
 				MemSrc = 4;
 			end
-			//RV32A_WB: begin
-				//phase_n = IF;
-				//// ~~~~~~~~~~~~~~~~~~~~
-				//RegWrite = 1; RegSrc = 9;
-			//end
 			`endif
 			EXU: begin
 				phase_n = MEMU;
@@ -537,7 +645,7 @@ module riscv_multicyc
 				// ~~~~~~~~~~~~~~~~~~~~
 				RegWrite = 1;
 				`ifdef RV32M
-				if (op == OP_R & is_RV32M) RegSrc = 7; else
+				if (is_RV32M) RegSrc = 7; else
 				`endif
 				if (op == OP_R | op == OP_R_I) RegSrc = 0;
 				else if (op == OP_LUI) RegSrc = 2;
@@ -549,6 +657,7 @@ module riscv_multicyc
 					RegSrc = 3;
 					PCWrite = 1; PCSrc = 3;
 				end else if (op == OP_BR) begin
+					// TODO: optimize BR phases
 					RegWrite = 0;
 					PCWrite = (instruction[14] ? instruction[12] : !instruction[12]) ^ |ALUOut; PCSrc = 1;
 					//PCWrite = !instruction[12] ^ |ALUOut; PCSrc = 1;
@@ -557,11 +666,14 @@ module riscv_multicyc
 				`ifdef IRQ_EN
 				end else if (priv_csr) begin
 					RegSrc = 8;
-					csr_we = 1;
+					CsrWe = 1;
 				`endif
 				`ifdef RV32A
 				end else if (op_a_amo) begin RegSrc = 9;
 				end else if (op_a_sc) begin RegSrc = 10;
+				end else if (op_a_lr) begin
+					RegWrite = 0;
+					LRValid = 1;
 				`endif
 				end
 			end
@@ -575,21 +687,21 @@ module riscv_multicyc
 			INTERRUPT: begin
 				phase_n = IF;
 				// ~~~~~~~~~~~~~~~~~~~~
-				on_exc_enter = 1;
-				on_exc_isint = 1;
-				int_reply = 1;
+				OnExcEnter = 1;
+				OnExcIsint = 1;
+				IntReply = 1;
 				PCWrite = 1; PCSrc = 4;
 			end
 			EXCEPTION: begin
 				phase_n = IF;
 				// ~~~~~~~~~~~~~~~~~~~~
-				on_exc_enter = 1;
+				OnExcEnter = 1;
 				PCWrite = 1; PCSrc = 4;
 			end
 			MRET: begin
 				phase_n = IF;
 				// ~~~~~~~~~~~~~~~~~~~~
-				on_exc_leave = 1;
+				OnExcLeave = 1;
 				PCWrite = 1; PCSrc = 5;
 			end
 			`endif
@@ -597,130 +709,5 @@ module riscv_multicyc
 				phase_n = BAD;
 			end
 		endcase
-	end
-
-	`ifdef IRQ_EN
-	// TODO: generalize and improve
-	always @ (posedge clk) begin
-		if (op == OP_PRIV)
-			if (priv_ebreak)
-				mcause_code_out <= EXC_BREAKPOINT;
-			else if (priv_ecall)
-				mcause_code_out <= EXC_ECALL_FROM_M_MODE;
-	end
-	`endif
-
-	// control FSM
-	always @ (posedge clk) begin
-		if (rst) phase <= IF;
-		else phase <= phase_n;
-	end
-
-	// CPU datapath
-	always @ (*) begin case (IorDorW)
-		0: mem_addr = pc; // instruction
-		1: mem_addr = ALUOut; // data
-		2: mem_addr = mar; // wait, and lr.w // ???
-		default: mem_addr = INVALID_ADDR;
-	endcase end
-	reg [31:0]newpc;
-	always @ (*) begin case (PCSrc)
-		0: newpc = pc + 4;
-		1: newpc = ALUOut2; // Branch
-		2: newpc = ALUOut; // JAL
-		3: newpc = ALUOut & ~1; // JALR
-		`ifdef IRQ_EN
-		4: newpc = {mtvec_in[31:2], 2'b0}; // exception, interrupt
-		5: newpc = mepc_in;
-		`endif
-		default: newpc = INVALID_ADDR;
-	endcase end
-	always @ (*) begin case (ALUSrcA)
-		0: ALUIn1 = A;
-		1: ALUIn1 = pc; // haven't +4
-		`ifdef IRQ_EN
-		2: ALUIn1 = csrimm;
-		`endif
-		default: ALUIn1 = 0;
-	endcase end
-	always @ (*) begin case (ALUSrcB)
-		0: ALUIn2 = B;
-		1: ALUIn2 = imm;
-		`ifdef IRQ_EN
-		2: ALUIn2 = csr_spo;
-		`endif
-		default: ALUIn2 = B;
-	endcase end
-	always @ (*) begin case (RegSrc)
-		0: WriteData = ALUOut;
-		//1: WriteData = mdr;
-		2: WriteData = imm;
-		3: WriteData = pc; // already +4
-		// LOAD
-		4: WriteData = loadbyte; // byte
-		5: WriteData = loadhalf; // half
-		6: WriteData = mdr;
-		`ifdef RV32M
-		7: WriteData = RV32MOut;
-		`endif
-		`ifdef IRQ_EN
-		8: WriteData = csrr;
-		`endif
-		`ifdef RV32A
-		9: WriteData = amo_temp;
-		10:WriteData = sc_succeeded ? 0 : 1;
-		`endif
-		default: WriteData = 0;
-	endcase end
-	always @ (*) begin case (MemSrc)
-		// STORE
-		0: memwrite_data = storebyte; // byte
-		1: memwrite_data = storehalf; // half
-		2: memwrite_data = ReadData2; // word
-		//3: memwrite_data = mwr; // wait
-		`ifdef RV32A
-		4: memwrite_data = amo_t_op_rs2;
-		`endif
-		default: memwrite_data = 0;
-	endcase end
-	//`ifdef IRQ_EN
-	//always @ (*) begin case (CsrASrc)
-		////0: csr_a = instruction[31:20]; // normal
-		////1: csr_a = ; // mepc
-		//default: csr_a = instruction[31:20];
-	//endcase end
-	//always @ (*) begin case (CsrDSrc)
-		////0: csr_d = ALUOut; // normal
-		////1:
-		//default: csr_d = ALUOut;
-	//endcase end
-	//`endif
-	// CPU main TODO: move out of if-else
-	always @ (posedge clk) begin
-		if (rst) begin
-			pc <= START_ADDR;
-		end else begin
-			A <= ReadData1;
-			B <= ReadData2;
-			
-			ALUOut <= ALUResult; ALUOut2 <= ALUOut;
-			`ifdef RV32M
-			RV32MOut <= RV32MResult;
-			`endif
-
-			mdr <= memread_data;
-			//mwr <= memwrite_data;
-			mar <= mem_addr;
-
-			//`ifdef IRQ_EN
-			//if (csrsave) csrr <= csr_spo;
-			//`endif
-
-			if (PCWrite) begin
-				pc <= newpc; oldpc <= pc;
-			end
-
-			if (IRWrite) instruction <= memread_data;
-		end
 	end
 endmodule
