@@ -23,11 +23,14 @@ module clocking_xc7 (
 	wire clk5_pll;
 
 	PLLE2_ADV #(
-      .CLKFBOUT_MULT(20),
+	  .CLKFBOUT_MULT(20),
+	  //.CLKFBOUT_MULT(30),
       .CLKIN1_PERIOD(20.0),
-      .CLKOUT0_DIVIDE(16),
+	  .CLKOUT0_DIVIDE(16),
+      //.CLKOUT0_DIVIDE(20),
       .CLKOUT0_PHASE(0),
-      .CLKOUT1_DIVIDE(8),
+	  .CLKOUT1_DIVIDE(8),
+      //.CLKOUT1_DIVIDE(10),
       .CLKOUT1_PHASE(0),
       .CLKOUT2_DIVIDE(40),
       .CLKOUT2_PHASE(0),

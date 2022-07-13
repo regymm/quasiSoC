@@ -19,7 +19,6 @@ module highmapper
         (*mark_debug = "true"*)output reg [31:0]spo,
         (*mark_debug = "true"*)output reg ready,
 
-		// main memory 0x00000000 - 0x7fffffff
         output reg [31:0]mem_a,
         output reg [31:0]mem_d,
         output reg mem_we,
@@ -27,7 +26,6 @@ module highmapper
         input [31:0]mem_spo,
 		input mem_ready,
 
-		// beyond 0x80000000 for MMIO
         output reg [31:0]mmio_a,
         output reg [31:0]mmio_d,
         output reg mmio_we,
@@ -50,7 +48,8 @@ module highmapper
 		mmio_rd = 0;
         spo = 0;
         ready = 1;
-        if (a[31]) begin
+		// TODO: better MMIO address range arrangement
+        if (a[31:28] == 4'hf | !a[31]) begin
             mem_we = we;
 			mem_rd = rd;
             spo = mem_spo;

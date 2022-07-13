@@ -3,5 +3,8 @@
 *.elf
 *.c_o
 *.log
+*.txt
+*.dtb
 work
+eda_projects
 

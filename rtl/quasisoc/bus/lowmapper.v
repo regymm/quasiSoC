@@ -9,17 +9,17 @@
 // low mapper -- mux various MMIO devices
 // should not give burden on timing
 
-module mmapper
+module lowmmapper
     (
 		input clk,
 		input rst,
 
-        (*mark_debug = "true"*)input [31:0]a,
-        (*mark_debug = "true"*)input [31:0]d,
-        (*mark_debug = "true"*)input we,
-        (*mark_debug = "true"*)input rd,
-        (*mark_debug = "true"*)output [31:0]spo,
-        (*mark_debug = "true"*)output ready,
+        input [31:0]a,
+        input [31:0]d,
+        input we,
+        input rd,
+        output [31:0]spo,
+        output ready,
 
         // 1024*32(8KB) boot rom: 0xf0000000 to 0xf00007fc
         output reg [9:0]bootm_a,

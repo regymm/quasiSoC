@@ -3,6 +3,7 @@
 // only major master(CPU) has herald signal
 // asymm processing: major has highest priority
 // priority list: 0 1 2 3
+// TODO: later all signal should have hrd
 
 module arbitrator
 // instead, tie req to 0 if not used
@@ -17,7 +18,7 @@ module arbitrator
 
 		input req0,
 		output gnt0,
-		output hrd,
+		output hrd0,
         input [31:0]a0,
         input [31:0]d0,
         input we0,
@@ -128,7 +129,7 @@ module arbitrator
 	localparam MNR2 = 3;
 	localparam MNR3 = 4;
 	reg [2:0]state = IDLE;
-	assign hrd = (state == IDLE & mnr_req & !mjr_req);
+	assign hrd0 = (state == IDLE & mnr_req & !mjr_req);
 	always @ (*) begin
 		case (state) 
 			MNR1: gnt = 2'b01;
