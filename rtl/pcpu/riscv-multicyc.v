@@ -14,7 +14,8 @@
 
 module riscv_multicyc
 	#(
-		parameter START_ADDR = 32'hf0000000
+		parameter START_ADDR = 32'hf0000000,
+		parameter INVALID_ADDR = 32'hffffffff
 	)
 	(
 		input clk,
@@ -35,8 +36,6 @@ module riscv_multicyc
 		input [31:0]spo,
 		input ready
     );
-
-	localparam INVALID_ADDR =32'hffffffff;
 
 	// basic control signals
 	reg PCWrite;

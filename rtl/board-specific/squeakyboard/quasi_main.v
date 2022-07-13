@@ -3,10 +3,9 @@
  * License           : GPL-3.0-or-later
  * Author            : Peter Gu <github.com/regymm>
  * Date              : 2020.11.25
- * Last Modified Date: 2021.12.31
+ * Last Modified Date: 2022.07.13
  */
 `timescale 1ns / 1ps
-// pComputer main block design
 `include "quasi.vh"
 
 module quasi_main 
@@ -124,47 +123,9 @@ module quasi_main
         .o_state(btn_d)
     );
 
-	// backup serial pins
-	//assign uart_tx_2 = uart_tx;
-	//wire uart_rx_in = sw_d[1] ? uart_rx : uart_rx_2;
-	wire uart_rx_in = uart_rx;
-
     // reset signal
 	wire manual_rst = sw_d[0];
     (*mark_debug = "true"*) wire rst = manual_rst | uart_rst;
-
-	// reset module
-	// TODO: improve or remove
-	wire [31:0]rst_d = 0;
-	wire rst_we = 0;
-	wire rst_gpio;
-	wire rst_uart;
-	wire rst_sdcard;
-	wire rst_video;
-	wire rst_usb;
-	wire rst_psram;
-	wire rst_interrupt;
-	wire rst_sb;
-	wire rst_timer;
-	wire rst_mmu;
-	reset reset_unit(
-		.clk(clk_main),
-		.rst_globl(rst),
-		.d(rst_d),
-		.we(rst_we),
-
-		.rst_gpio(rst_gpio),
-		.rst_uart(rst_uart),
-		.rst_sdcard(rst_sdcard),
-		.rst_video(rst_video),
-		.rst_usb(rst_usb),
-		.rst_psram(rst_psram),
-		.rst_interrupt(rst_interrupt),
-		.rst_sb(rst_sb),
-		.rst_timer(rst_aclint),
-		.rst_mmu(rst_mmu)
-	);
-
 
     // bootrom 1024*32
 	// TODO: 2 LSB problem: mmapper or here?
@@ -175,7 +136,6 @@ module quasi_main
 	clocked_rom #(
 		.WIDTH(32),
 		.DEPTH(10),
-		// te
 		.INIT("/home/petergu/MyHome/quasiSoC/firmware/bootrom/result_bootrom.dat")
 	) bootrom(
 		.clk(clk_main),
@@ -184,7 +144,6 @@ module quasi_main
         .spo(bootm_spo),
 		.ready(bootm_ready)
 	);
-
     
     // distributed ram 4096*32
     wire [31:0]distm_a;
@@ -206,7 +165,6 @@ module quasi_main
         .spo(distm_spo),
 		.ready(distm_ready)
     );
-
     
     // gpio
     wire [3:0]gpio_a;
@@ -288,7 +246,7 @@ module quasi_main
 	`else
 		gpio gpio_inst(
 			.clk(clk_main),
-			.rst(rst_gpio),
+			.rst(rst),
 
 			.a(gpio_a),
 			.d(gpio_d),
@@ -329,11 +287,11 @@ module quasi_main
 			// avoid UART reset dead lock
 			.rst(manual_rst),
 		`else
-			.rst(rst_uart),
+			.rst(rst),
 		`endif
 
         .tx(uart_tx),
-        .rx(uart_rx_in),
+        .rx(uart_rx),
 
         .a(uart_a),
         .d(uart_d),
@@ -371,12 +329,11 @@ module quasi_main
     wire [31:0]sd_d;
     wire sd_we;
     wire [31:0]sd_spo;
-
     wire irq_sd;
 `ifdef SDCARD_EN
     sdcard sdcard_inst(
         .clk(clk_main),
-        .rst(rst_sdcard),
+        .rst(rst),
 
         .a(sd_a),
         .d(sd_d),
@@ -416,7 +373,7 @@ module quasi_main
 	) ch375b_inst
 	(
 		.clk(clk_main),
-		.rst(rst_usb),
+		.rst(rst),
 
 		.a(usb_a),
 		.d(usb_d),
@@ -434,124 +391,29 @@ module quasi_main
 	assign ch375_rx = 1;
 `endif
 
-	wire mainm_burst_en_m;
-	wire [7:0]mainm_burst_length_m;
-	wire [31:0]mainm_a_m;
-	wire [31:0]mainm_d_m;
-	wire mainm_we_m;
-	wire mainm_rd_m;
-	wire [31:0]mainm_spo_m;
-	wire mainm_ready_m;
-	wire mainm_irq;
-`ifdef PSRAM_EN
-	`ifdef CACHE_EN
-	memory_controller_burst memory_controller_inst
-	//memory_controller memory_controller_inst
-	(
-		.clk(clk_main),
-		.clk_mem(clk_mem),
-		.rst(rst_psram),
-
-		.burst_en(mainm_burst_en_m),
-		.burst_length(mainm_burst_length_m),
-
-		.a(mainm_a_m),
-		.d(mainm_d_m),
-		.we(mainm_we_m),
-		.rd(mainm_rd_m),
-		.spo(mainm_spo_m),
-		.ready(mainm_ready_m), 
-
-		.irq(mainm_irq),
-
-		.psram_ce(psram_ce), 
-		.psram_mosi(psram_mosi), 
-		.psram_miso(psram_miso), 
-		.psram_sio2(psram_sio2), 
-		.psram_sio3(psram_sio3),
-		.psram_sclk(psram_sclk)
-	);
-	`else
-	memory_controller_basic memory_controller_inst
-	(
-		.clk(clk_main),
-		.clk_mem(clk_mem),
-		.rst(rst_psram),
-
-		.a(mainm_a_m),
-		.d(mainm_d_m),
-		.we(mainm_we_m),
-		.rd(mainm_rd_m),
-		.spo(mainm_spo_m),
-		.ready(mainm_ready_m), 
-
-		.irq(mainm_irq),
-
-		.psram_ce(psram_ce), 
-		.psram_mosi(psram_mosi), 
-		.psram_miso(psram_miso), 
-		.psram_sio2(psram_sio2), 
-		.psram_sio3(psram_sio3),
-		.psram_sclk(psram_sclk)
-	);
-	`endif
-`else
-	// 2**14 * 32 64KB -- have to be w/o cache and ...
-	simple_ram #(
-		.WIDTH(32),
-		.DEPTH(14),
-		.INIT("/home/petergu/MyHome/quasiSoC/rtl/null.dat")
-	) distram_mainm (
-        .clk(clk_main),
-        .a({2'b0, mainm_a_m[31:2]}),
-        .d(mainm_d_m),
-        .we(mainm_we_m),
-		.rd(mainm_rd_m),
-        .spo(mainm_spo_m),
-		.ready(mainm_ready_m)
-    );
-`endif
-
 	// serial boot
 	wire [2:0]sb_a;
 	wire [31:0]sb_d;
 	wire sb_we;
 	wire sb_ready;
-	wire mainm_burst_en_c;
-	wire [7:0]mainm_burst_length_c;
-	wire [31:0]mainm_a_c;
-	wire [31:0]mainm_d_c;
-	wire mainm_we_c;
-	wire mainm_rd_c;
-	wire [31:0]mainm_spo_c;
-	wire mainm_ready_c;
 `ifdef SERIALBOOT_EN
 	serialboot serialboot_inst(
 		.clk(clk_main),
-		.rst(rst_sb),
+		.rst(rst),
 
-		.a(sb_a),
-		.d(sb_d),
-		.we(sb_we),
-		.ready(sb_ready),
+		.s_a(sb_a),
+		.s_d(sb_d),
+		.s_we(sb_we),
+		.s_ready(sb_ready),
 
-		.burst_en_mem(mainm_burst_en_m),
-		.burst_length_mem(mainm_burst_length_m),
-		.a_mem(mainm_a_m),
-		.d_mem(mainm_d_m),
-		.we_mem(mainm_we_m),
-		.rd_mem(mainm_rd_m),
-		.spo_mem(mainm_spo_m),
-		.ready_mem(mainm_ready_m),
-
-		.burst_en_cpu(mainm_burst_en_c),
-		.burst_length_cpu(mainm_burst_length_c),
-		.a_cpu(mainm_a_c),
-		.d_cpu(mainm_d_c),
-		.we_cpu(mainm_we_c),
-		.rd_cpu(mainm_rd_c),
-		.spo_cpu(mainm_spo_c),
-		.ready_cpu(mainm_ready_c),
+		.m_req(req1),
+		.m_gnt(gnt1),
+		.m_a(a1),
+		.m_d(d1),
+		.m_we(we1),
+		.m_rd(rd1),
+		.m_spo(spo1),
+		.m_ready(ready1),
 
 		.uart_data(sb_rxdata),
 		.uart_ready(sb_rxnew)
@@ -566,82 +428,18 @@ module quasi_main
 	assign ready_mem = mainm_ready_c;
 `endif
 
-	wire [31:0]cache_a;
-	wire [31:0]cache_d;
-	wire cache_we;
-	wire cache_rd;
-	wire [31:0]cache_spo;
-	wire cache_ready;
-`ifdef CACHE_EN
-	cache_cpu
-	//#(
-		//.WAYS(1),
-		//.WAY_LINES(128),
-		//.WAY_WORDS_PER_BLOCK(32),
-		//.WAY_TAG_LENGTH(32)
-	//)
-	cache_cpu_inst(
-		.clk(clk_main),
-		.rst(rst_mmu), // TODO: add a real reset
-
-		.a(cache_a),
-		.d(cache_d),
-		.we(cache_we),
-		.rd(cache_rd),
-		.spo(cache_spo),
-		.ready(cache_ready),
-
-		.burst_en(mainm_burst_en_c),
-		.burst_length(mainm_burst_length_c),
-		.lowmem_a(mainm_a_c),
-		.lowmem_d(mainm_d_c),
-		.lowmem_we(mainm_we_c),
-		.lowmem_rd(mainm_rd_c),
-		.lowmem_spo(mainm_spo_c),
-		.lowmem_ready(mainm_ready_c)
-
-		// hit & miss
-	);
-`else
-	assign mainm_burst_en_c = 1;
-	assign mainm_burst_length_c = 1;
-	assign mainm_a_c = cache_a;
-	assign mainm_d_c = cache_d;
-	assign mainm_we_c = cache_we;
-	assign mainm_rd_c = cache_rd;
-	assign cache_spo = mainm_spo_c;
-	assign cache_ready = mainm_ready_c;
-`endif
-
-
     // video
     wire [31:0]video_a;
     wire [31:0]video_d;
     wire video_we;
     wire [31:0]video_spo;
 `ifdef VIDEO_EN
-	//hdmi_demo hdmi_demo_inst(
-		//.clk(clk),
-		//.rst(rst),
-
-		//.a(video_a),
-		//.d(video_d),
-		//.we(video_we),
-		//.spo(video_spo),
-
-		//.clk_pix(clk_hdmi_25),
-		//.clk_tmds(clk_hdmi_250),
-		//.TMDSp(TMDSp),
-		//.TMDSn(TMDSn),
-		//.TMDSp_clock(TMDSp_clock),
-		//.TMDSn_clock(TMDSn_clock)
-	//);
 	mkrvidor4000_top mkrvidor4000_top_inst(
 		.clk(clk_main),
 		.clk_pix(clk_hdmi_25),
 		.clk_tmds(clk_hdmi_250),
 		.clk_2x(clk_2x),
-		.rst(rst_video),
+		.rst(rst),
 
 		.a(video_a),
 		.d(video_d),
@@ -677,7 +475,7 @@ module quasi_main
 	`ifdef LCD_EN
 		lcd_ili9486 lcd_ili9486_inst(
 			.clk(clk_main),
-			.rst(rst_video),
+			.rst(rst),
 			.a(video_a),
 			.d(video_d),
 			.we(video_we),
@@ -737,6 +535,165 @@ module quasi_main
 	assign irq_eth = 0;
 `endif
 
+	// bus/memory wires
+	// CPU(0) host
+	wire req0;
+	wire gnt0;
+	wire hrd0;
+    wire [31:0]a0;
+    wire [31:0]d0;
+    wire we0;
+    wire rd0;
+    wire [31:0]spo0;
+    wire ready0;
+	// (1) host
+	wire req1;
+	wire gnt1;
+	wire [31:0]a1;
+	wire [31:0]d1;
+	wire we1;
+	wire rd1;
+	wire [31:0]spo1;
+	wire ready1;
+	// arb output(bottleneck)
+    wire [31:0]a;
+    wire [31:0]d;
+    wire we;
+    wire rd;
+    wire [31:0]spo;
+    wire ready;
+	// MMIO
+	wire [31:0]mmio_a;
+	wire [31:0]mmio_d;
+	wire mmio_we;
+	wire mmio_rd;
+	wire [31:0]mmio_spo;
+	wire mmio_ready;
+	// main memory
+	wire [31:0]mem_a;
+	wire [31:0]mem_d;
+	wire mem_we;
+	wire mem_rd;
+	wire [31:0]mem_spo;
+	wire mem_ready;
+	// physical memory
+	wire mainm_burst_en;
+	wire [7:0]mainm_burst_length;
+	wire [31:0]mainm_a;
+	wire [31:0]mainm_d;
+	wire mainm_we;
+	wire mainm_rd;
+	wire [31:0]mainm_spo;
+	wire mainm_ready;
+
+`ifdef CACHE_EN
+	cache_cpu
+	//#(
+		//.WAYS(1),
+		//.WAY_LINES(128),
+		//.WAY_WORDS_PER_BLOCK(32),
+		//.WAY_TAG_LENGTH(32)
+	//)
+	cache_cpu_inst(
+		.clk(clk_main),
+		.rst(rst),
+
+		.a(mem_a),
+		.d(mem_d),
+		.we(mem_we),
+		.rd(mem_rd),
+		.spo(mem_spo),
+		.ready(mem_ready),
+
+		.burst_en(mainm_burst_en),
+		.burst_length(mainm_burst_length),
+		.lowmem_a(mainm_a),
+		.lowmem_d(mainm_d),
+		.lowmem_we(mainm_we),
+		.lowmem_rd(mainm_rd),
+		.lowmem_spo(mainm_spo),
+		.lowmem_ready(mainm_ready)
+	);
+`else
+	assign mainm_burst_en = 1;
+	assign mainm_burst_length = 1;
+	assign mainm_a = mem_a;
+	assign mainm_d = mem_d;
+	assign mainm_we = mem_we;
+	assign mainm_rd = mem_rd;
+	assign mem_spo = mainm_spo;
+	assign mem_ready = mainm_ready;
+`endif
+
+`ifdef PSRAM_EN
+	`ifdef CACHE_EN
+	memory_controller_burst memory_controller_inst
+	//memory_controller memory_controller_inst
+	(
+		.clk(clk_main),
+		.clk_mem(clk_mem),
+		.rst(rst),
+
+		.burst_en(mainm_burst_en),
+		.burst_length(mainm_burst_length),
+
+		.a(mainm_a),
+		.d(mainm_d),
+		.we(mainm_we),
+		.rd(mainm_rd),
+		.spo(mainm_spo),
+		.ready(mainm_ready), 
+
+		.irq(mainm_irq),
+
+		.psram_ce(psram_ce), 
+		.psram_mosi(psram_mosi), 
+		.psram_miso(psram_miso), 
+		.psram_sio2(psram_sio2), 
+		.psram_sio3(psram_sio3),
+		.psram_sclk(psram_sclk)
+	);
+	`else
+	memory_controller_basic memory_controller_inst
+	(
+		.clk(clk_main),
+		.clk_mem(clk_mem),
+		.rst(rst),
+
+		.a(mainm_a),
+		.d(mainm_d),
+		.we(mainm_we),
+		.rd(mainm_rd),
+		.spo(mainm_spo),
+		.ready(mainm_ready), 
+
+		.irq(mainm_irq),
+
+		.psram_ce(psram_ce), 
+		.psram_mosi(psram_mosi), 
+		.psram_miso(psram_miso), 
+		.psram_sio2(psram_sio2), 
+		.psram_sio3(psram_sio3),
+		.psram_sclk(psram_sclk)
+	);
+	`endif
+`else
+	// 2**14 * 32 64KB -- have to be w/o cache and ...
+	simple_ram #(
+		.WIDTH(32),
+		.DEPTH(14),
+		.INIT("/home/petergu/MyHome/quasiSoC/rtl/null.dat")
+	) distram_mainm (
+        .clk(clk_main),
+        .a({2'b0, mainm_a[31:2]}),
+        .d(mainm_d),
+        .we(mainm_we),
+		.rd(mainm_rd),
+        .spo(mainm_spo),
+		.ready(mainm_ready)
+    );
+`endif
+
     // interrupt
     wire cpu_eip;
     wire cpu_eip_reply;
@@ -756,7 +713,7 @@ module quasi_main
     // RISC-V advanced core-local interrupt controller
     aclint #(.TIMER_COUNTER(TIMER_COUNTER)) aclint_inst(
         .clk(clk_main),
-        .rst(rst_aclint),
+        .rst(rst),
 		
 		.s_irq(irq_soft_pending),
         .t_irq(irq_timer_pending),
@@ -769,7 +726,7 @@ module quasi_main
 
     interrupt_unit interrupt_unit_inst(
         .clk(clk_main),
-        .rst(rst_interrupt),
+        .rst(rst),
 
         .interrupt(cpu_eip),
         .int_reply(cpu_eip_reply),
@@ -791,80 +748,135 @@ module quasi_main
 	assign aclint_spo = 0;
 `endif
 
+	// arbitrator
+	arbitrator arb_inst (
+		.clk(clk),
+		.rst(rst),
+
+		.req0(req0),
+		.gnt0(gnt0),
+		.hrd0(hrd0),
+		.a0(a0),
+		.d0(d0),
+		.we0(we0),
+		.rd0(rd0),
+		.spo0(spo0),
+		.ready0(ready0),
+
+		.req1(req1),
+		.gnt1(gnt1),
+		.a1(a1),
+		.d1(d1),
+		.we1(we1),
+		.rd1(rd1),
+		.spo1(spo1),
+		.ready1(ready1),
+
+		.req2(0),
+
+		.req3(0),
+
+		.a(a),
+		.d(d),
+		.we(we),
+		.rd(rd),
+		.spo(spo),
+		.ready(ready)
+	);
+
     // cpu-multi-cycle
-    wire [31:0]spo;
-    wire ready;
-    wire [31:0]a;
-    wire [31:0]d;
-    wire we;
-    wire rd;
 	riscv_multicyc riscv_multicyc_inst(
 		.clk(clk_main),
 		.rst(rst),
 
+		.tip(irq_timer_pending),
+		.sip(irq_soft_pending),
 		.eip(cpu_eip),
 		.eip_reply(cpu_eip_reply),
 
-		.tip(irq_timer_pending),
+		.req(req0),
+		.gnt(gnt0),
+		.hrd(hrd0),
+		.a(a0),
+		.d(d0),
+		.we(we0),
+		.rd(rd0),
+		.spo(spo0),
+		.ready(ready0)
+	);
 
-		.spo(spo),
-		.ready(ready),
+    //// MMU
+    //wire [31:0]vspo;
+    //wire vready;
+    //wire virq;
+    //wire [31:0]va;
+    //wire [31:0]vd;
+    //wire vwe;
+    //wire vrd;
+//`ifdef MMU_EN
+    //mmu mmu_inst(
+        //.clk(clk_main),
+        //.rst(rst),
+
+        //.ring(ring),
+
+        //.va(va),
+        //.vd(vd),
+        //.vwe(vwe),
+        //.vrd(vrd),
+        //.vspo(vspo),
+        //.vready(vready),
+        //.virq(virq), // nc
+
+        //.pspo(spo0),
+        //.pready(ready0),
+        //.pa(a0),
+        //.pd(d0),
+        //.pwe(we0),
+        //.prd(rd0)
+    //);
+//`else
+	//assign virq = 0;
+	//assign a0 = va;
+	//assign d0 = vd;
+	//assign we0 = vwe;
+	//assign rd0 = vrd;
+	//assign spo0 = vspo;
+	//assign ready0 = vready;
+//`endif
+	highmapper highmapper_inst (
 		.a(a),
 		.d(d),
 		.we(we),
-		.rd(rd)
+		.rd(rd),
+		.spo(spo),
+		.ready(ready),
+
+        mem_a(mem_a),
+        mem_d(mem_d),
+        mem_we(mem_we),
+        mem_rd(mem_rd),
+        mem_spo(mem_spo),
+        mem_ready(mem_ready),
+
+        mmio_a(mmio_a),
+        mmio_d(mmio_d),
+        mmio_we(mmio_we),
+        mmio_rd(mmio_rd),
+        mmio_spo(mmio_spo),
+        mmio_ready(mmio_ready)
 	);
 
+	lowmapper lowmapper_inst(
+		.clk(clk),
+		.rst(rst),
 
-    // MMU
-    wire virq;
-    wire [31:0]pspo;
-    wire pready;
-    wire pirq;
-    wire [31:0]pa;
-    wire [31:0]pd;
-    wire pwe;
-    wire prd;
-`ifdef MMU_EN
-    mmu mmu_inst(
-        .clk(clk_main),
-        .rst(rst_mmu),
-
-        .ring(ring),
-
-        .va(a),
-        .vd(d),
-        .vwe(we),
-        .vrd(rd),
-        .vspo(spo),
-        .vready(ready),
-        .virq(virq), // nc
-
-        .pspo(pspo),
-        .pready(pready),
-        .pa(pa),
-        .pd(pd),
-        .pwe(pwe),
-        .prd(prd)
-    );
-`else
-	assign virq = 0;
-	assign pa = a;
-	assign pd = d;
-	assign pwe = we;
-	assign prd = rd;
-	assign spo = pspo;
-	assign ready = pready;
-`endif
-
-    // memory mapper
-    mmapper mmapper_inst(
-        .a(pa),
-        .d(pd),
-        .we(pwe),
-        .rd(prd),
-        .spo(pspo),
-        .ready(pready),
+        a(mmio_a),
+        d(mmio_d),
+        we(mmio_we),
+        rd(mmio_rd),
+        spo(mmio_spo),
+        ready(mmio_ready)
 
         .bootm_a(bootm_a),
 		.bootm_rd(bootm_rd),
@@ -878,22 +890,12 @@ module quasi_main
         .distm_spo(distm_spo),
 		.distm_ready(distm_ready),
 
-		.cache_a(cache_a),
-		.cache_d(cache_d),
-		.cache_we(cache_we),
-		.cache_rd(cache_rd),
-		.cache_spo(cache_spo),
-		.cache_ready(cache_ready),
-
-        .sd_spo(sd_spo),
-        .sd_a(sd_a),
-        .sd_d(sd_d),
-        .sd_we(sd_we),
-
-        .usb_spo(usb_spo),
-        .usb_a(usb_a),
-        .usb_d(usb_d),
-        .usb_we(usb_we),
+		//.cache_a(cache_a),
+		//.cache_d(cache_d),
+		//.cache_we(cache_we),
+		//.cache_rd(cache_rd),
+		//.cache_spo(cache_spo),
+		//.cache_ready(cache_ready),
 
         .gpio_spo(gpio_spo),
         .gpio_a(gpio_a),
@@ -912,15 +914,25 @@ module quasi_main
         .video_d(video_d),
         .video_we(video_we),
 
+        .sd_spo(sd_spo),
+        .sd_a(sd_a),
+        .sd_d(sd_d),
+        .sd_we(sd_we),
+
+        .usb_spo(usb_spo),
+        .usb_a(usb_a),
+        .usb_d(usb_d),
+        .usb_we(usb_we),
+
         .int_spo(int_spo),
         .int_a(int_a),
         .int_d(int_d),
         .int_we(int_we),
 
-        .sb_spo(sb_spo),
         .sb_a(sb_a),
         .sb_d(sb_d),
         .sb_we(sb_we),
+        .sb_spo(sb_spo),
 		.sb_ready(sb_ready),
 
 		.ps2_spo(ps2_spo),

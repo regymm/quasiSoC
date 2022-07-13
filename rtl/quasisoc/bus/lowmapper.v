@@ -9,7 +9,7 @@
 // low mapper -- mux various MMIO devices
 // should not give burden on timing
 
-module lowmmapper
+module lowmapper
     (
 		input clk,
 		input rst,

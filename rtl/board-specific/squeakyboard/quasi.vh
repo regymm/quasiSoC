@@ -5,6 +5,7 @@
 // CPU features
 `define RV32M
 `define RV32A
+`define IRQ_EN
 
 // peripheral features
 `define GPIO_EN
@@ -15,10 +16,11 @@
 //`define CH375B_EN
 //`define VIDEO_EN
 //`define LCD_EN
-`define IRQ_EN
 //`define PS2_EN
 //`define ETH_EN
 //`define MMU_EN
 
 `define SERIALBOOT_EN
 `define UART_RST_EN
+
+//`define AXI_GPIO_TEST
