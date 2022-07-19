@@ -129,7 +129,9 @@ module arbitrator
 	localparam MNR2 = 3;
 	localparam MNR3 = 4;
 	reg [2:0]state = IDLE;
-	assign hrd0 = (state == IDLE & mnr_req & !mjr_req);
+	// TODO: document this, to avoid comb. loop
+	//assign hrd0 = (state == IDLE & mnr_req & !mjr_req);
+	assign hrd0 = (state == IDLE & mnr_req);
 	always @ (*) begin
 		case (state) 
 			MNR1: gnt = 2'b01;

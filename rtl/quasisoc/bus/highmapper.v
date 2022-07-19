@@ -49,7 +49,8 @@ module highmapper
         spo = 0;
         ready = 1;
 		// TODO: better MMIO address range arrangement
-        if (a[31:28] == 4'hf | !a[31]) begin
+		// now: below 0x7ffffffc and above 0xf0000000
+        if (a[31:28] != 4'h1 & !a[31]) begin
             mem_we = we;
 			mem_rd = rd;
             spo = mem_spo;

@@ -58,24 +58,24 @@ module top_simu ();
 
 	wire [ODT_WIDTH-1:0]               ddr2_odt_fpga;
 
-	ddr2_model u_comp_ddr2
-	(
-		.ck      (ddr2_ck_p_fpga),
-		.ck_n    (ddr2_ck_n_fpga),
-		.cke     (ddr2_cke_fpga),
-		.cs_n    (ddr2_cs_n_fpga),
-		.ras_n   (ddr2_ras_n_fpga),
-		.cas_n   (ddr2_cas_n_fpga),
-		.we_n    (ddr2_we_n_fpga),
-		.dm_rdqs (ddr2_dm_fpga),
-		.ba      (ddr2_ba_fpga),
-		.addr    (ddr2_addr_fpga),
-		.dq      (ddr2_dq_fpga),
-		.dqs     (ddr2_dqs_p_fpga),
-		.dqs_n   (ddr2_dqs_n_fpga),
-		.rdqs_n  (),
-		.odt     (ddr2_odt_fpga)
-	);
+//	ddr2_model u_comp_ddr2
+//	(
+//		.ck      (ddr2_ck_p_fpga),
+//		.ck_n    (ddr2_ck_n_fpga),
+//		.cke     (ddr2_cke_fpga),
+//		.cs_n    (ddr2_cs_n_fpga),
+//		.ras_n   (ddr2_ras_n_fpga),
+//		.cas_n   (ddr2_cas_n_fpga),
+//		.we_n    (ddr2_we_n_fpga),
+//		.dm_rdqs (ddr2_dm_fpga),
+//		.ba      (ddr2_ba_fpga),
+//		.addr    (ddr2_addr_fpga),
+//		.dq      (ddr2_dq_fpga),
+//		.dqs     (ddr2_dqs_p_fpga),
+//		.dqs_n   (ddr2_dqs_n_fpga),
+//		.rdqs_n  (),
+//		.odt     (ddr2_odt_fpga)
+//	);
 
     quasi_main #(.SIMULATION("TRUE")) pcpu_main_inst
     (
@@ -84,32 +84,32 @@ module top_simu ();
         .led(led),
 		.sw(sw),
 
-		.ddr2_dq              (ddr2_dq_fpga),
-		.ddr2_dqs_n           (ddr2_dqs_n_fpga),
-		.ddr2_dqs_p           (ddr2_dqs_p_fpga),
+		//.ddr2_dq              (ddr2_dq_fpga),
+		//.ddr2_dqs_n           (ddr2_dqs_n_fpga),
+		//.ddr2_dqs_p           (ddr2_dqs_p_fpga),
 
-		.ddr2_addr            (ddr2_addr_fpga),
-		.ddr2_ba              (ddr2_ba_fpga),
-		.ddr2_ras_n           (ddr2_ras_n_fpga),
-		.ddr2_cas_n           (ddr2_cas_n_fpga),
-		.ddr2_we_n            (ddr2_we_n_fpga),
-		.ddr2_ck_p            (ddr2_ck_p_fpga),
-		.ddr2_ck_n            (ddr2_ck_n_fpga),
-		.ddr2_cke             (ddr2_cke_fpga),
-		.ddr2_cs_n            (ddr2_cs_n_fpga),
+		//.ddr2_addr            (ddr2_addr_fpga),
+		//.ddr2_ba              (ddr2_ba_fpga),
+		//.ddr2_ras_n           (ddr2_ras_n_fpga),
+		//.ddr2_cas_n           (ddr2_cas_n_fpga),
+		//.ddr2_we_n            (ddr2_we_n_fpga),
+		//.ddr2_ck_p            (ddr2_ck_p_fpga),
+		//.ddr2_ck_n            (ddr2_ck_n_fpga),
+		//.ddr2_cke             (ddr2_cke_fpga),
+		//.ddr2_cs_n            (ddr2_cs_n_fpga),
 
-		.ddr2_dm              (ddr2_dm_fpga),
+		//.ddr2_dm              (ddr2_dm_fpga),
 
-		.ddr2_odt             (ddr2_odt_fpga),
+		//.ddr2_odt             (ddr2_odt_fpga),
 
         //.sd_dat0(sd_dat0),
 
-		//.psram_ce(psram_ce),
-		//.psram_mosi(psram_mosi),
-		//.psram_miso(psram_miso),
-		//.psram_sio2(psram_sio2),
-		//.psram_sio3(psram_sio3),
-		//.psram_sclk(psram_sclk),
+		.psram_ce(psram_ce),
+		.psram_mosi(psram_mosi),
+		.psram_miso(psram_miso),
+		.psram_sio2(psram_sio2),
+		.psram_sio3(psram_sio3),
+		.psram_sclk(psram_sclk),
 
 		//.eth_intn(eth_intn),
 		//.eth_rstn(eth_rstn),

@@ -82,27 +82,78 @@ module quasi_main
 		input p4p,
 		input p4n
     );
+	// bus/memory wires
+	// CPU(0) host
+	wire req0;
+	wire gnt0;
+	wire hrd0;
+    wire [31:0]a0;
+    wire [31:0]d0;
+    wire we0;
+    wire rd0;
+    wire [31:0]spo0;
+    wire ready0;
+	// (1) host
+	wire req1;
+	wire gnt1;
+	wire [31:0]a1;
+	wire [31:0]d1;
+	wire we1;
+	wire rd1;
+	wire [31:0]spo1;
+	wire ready1;
+	// arb output(bottleneck)
+    wire [31:0]a;
+    wire [31:0]d;
+    wire we;
+    wire rd;
+    wire [31:0]spo;
+    wire ready;
+	// MMIO
+	wire [31:0]mmio_a;
+	wire [31:0]mmio_d;
+	wire mmio_we;
+	wire mmio_rd;
+	wire [31:0]mmio_spo;
+	wire mmio_ready;
+	// main memory
+	wire [31:0]mem_a;
+	wire [31:0]mem_d;
+	wire mem_we;
+	wire mem_rd;
+	wire [31:0]mem_spo;
+	wire mem_ready;
+	// physical memory
+	wire mainm_burst_en;
+	wire [7:0]mainm_burst_length;
+	wire [31:0]mainm_a;
+	wire [31:0]mainm_d;
+	wire mainm_we;
+	wire mainm_rd;
+	wire [31:0]mainm_spo;
+	wire mainm_ready;
+
     wire clk_main;
 	wire clk_mem;
 	wire clk_2x;
     wire clk_hdmi_25;
     wire clk_hdmi_250;
-	//clock_wizard clock_wizard_inst(
-		//.clk_in1(sysclk),
-		//.clk_main(clk_main),
-		//.clk_mem(clk_mem),
-		//.clk_hdmi_25(clk_hdmi_25),
-		//.clk_hdmi_250(clk_hdmi_250),
-		//.clk_hdmi_50(clk_2x)
-	//);
-	clocking_xc7 clocking_xc7_inst (
-		.clk_50(sysclk),
-		.clk1_62d5(clk_main),
-		.clk2_125(clk_mem),
-		.clk3_25(clk_hdmi_25),
-		.clk4_250(clk_hdmi_250),
-		.clk5_50(clk_2x)
+	clock_wizard clock_wizard_inst(
+		.clk_in1(sysclk),
+		.clk_main(clk_main),
+		.clk_mem(clk_mem),
+		.clk_hdmi_25(clk_hdmi_25),
+		.clk_hdmi_250(clk_hdmi_250),
+		.clk_hdmi_50(clk_2x)
 	);
+	//clocking_xc7 clocking_xc7_inst (
+		//.clk_50(sysclk),
+		//.clk1_62d5(clk_main),
+		//.clk2_125(clk_mem),
+		//.clk3_25(clk_hdmi_25),
+		//.clk4_250(clk_hdmi_250),
+		//.clk5_50(clk_2x)
+	//);
 
 	(*mark_debug = "true"*)reg [7:0]probe;
 	always @ (posedge clk_main) begin
@@ -176,90 +227,90 @@ module quasi_main
 	wire irq_gpio;
 `ifdef GPIO_EN
 	`ifdef AXI_GPIO_TEST
-		wire [8:0]gpio_axi_araddr;
-		wire [8:0]gpio_axi_awaddr;
-		wire [1:0]gpio_axi_bresp;
-		wire [31:0]gpio_axi_rdata;
-		wire [1:0]gpio_axi_rresp;
-		wire [31:0]gpio_axi_wdata;
-		wire [3:0]gpio_axi_wstrb;
-		axi_gpio_0 axi_gpio_inst(
-			.gpio_io_i({28'b0, sw_d, btn_d}),
-			.gpio_io_o(led),
-			.gpio_io_t(),
+	wire [8:0]gpio_axi_araddr;
+	wire [8:0]gpio_axi_awaddr;
+	wire [1:0]gpio_axi_bresp;
+	wire [31:0]gpio_axi_rdata;
+	wire [1:0]gpio_axi_rresp;
+	wire [31:0]gpio_axi_wdata;
+	wire [3:0]gpio_axi_wstrb;
+	axi_gpio_0 axi_gpio_inst(
+		.gpio_io_i({28'b0, sw_d, btn_d}),
+		.gpio_io_o(led),
+		.gpio_io_t(),
 
-			.s_axi_araddr(gpio_axi_araddr),
-			.s_axi_arready(gpio_axi_arready),
-			.s_axi_arvalid(gpio_axi_arvalid),
-			.s_axi_awaddr(gpio_axi_awaddr),
-			.s_axi_awready(gpio_axi_awready),
-			.s_axi_awvalid(gpio_axi_awvalid),
-			.s_axi_bready(gpio_axi_bready),
-			.s_axi_bresp(gpio_axi_bresp),
-			.s_axi_bvalid(gpio_axi_bvalid),
-			.s_axi_rdata(gpio_axi_rdata),
-			.s_axi_rready(gpio_axi_rready),
-			.s_axi_rresp(gpio_axi_rresp),
-			.s_axi_rvalid(gpio_axi_rvalid),
-			.s_axi_wdata(gpio_axi_wdata),
-			.s_axi_wstrb(gpio_axi_wstrb),
-			.s_axi_wvalid(gpio_axi_wvalid),
-			.s_axi_wready(gpio_axi_wready),
+		.s_axi_araddr(gpio_axi_araddr),
+		.s_axi_arready(gpio_axi_arready),
+		.s_axi_arvalid(gpio_axi_arvalid),
+		.s_axi_awaddr(gpio_axi_awaddr),
+		.s_axi_awready(gpio_axi_awready),
+		.s_axi_awvalid(gpio_axi_awvalid),
+		.s_axi_bready(gpio_axi_bready),
+		.s_axi_bresp(gpio_axi_bresp),
+		.s_axi_bvalid(gpio_axi_bvalid),
+		.s_axi_rdata(gpio_axi_rdata),
+		.s_axi_rready(gpio_axi_rready),
+		.s_axi_rresp(gpio_axi_rresp),
+		.s_axi_rvalid(gpio_axi_rvalid),
+		.s_axi_wdata(gpio_axi_wdata),
+		.s_axi_wstrb(gpio_axi_wstrb),
+		.s_axi_wvalid(gpio_axi_wvalid),
+		.s_axi_wready(gpio_axi_wready),
 
-			.s_axi_aclk(clk_main),
-			.s_axi_aresetn(!rst)
-		);
+		.s_axi_aclk(clk_main),
+		.s_axi_aresetn(!rst)
+	);
 
-		mm2axi4 mm2axi4_gpio_inst (
-			.clk(clk_main),
-			.rst(rst),
+	mm2axi4 mm2axi4_gpio_inst (
+		.clk(clk_main),
+		.rst(rst),
 
-			.a({26'b0, gpio_a, 2'b0}),
-			.d(gpio_d),
-			.we(gpio_we),
-			.rd(gpio_rd),
-			.spo(gpio_spo),
-			.ready(gpio_ready),
+		.a({26'b0, gpio_a, 2'b0}),
+		.d(gpio_d),
+		.we(gpio_we),
+		.rd(gpio_rd),
+		.spo(gpio_spo),
+		.ready(gpio_ready),
 
-			.m_axi_awaddr(gpio_axi_awaddr),
-			.m_axi_awvalid(gpio_axi_awvalid),
-			.m_axi_awready(gpio_axi_awready),
+		.m_axi_awaddr(gpio_axi_awaddr),
+		.m_axi_awvalid(gpio_axi_awvalid),
+		.m_axi_awready(gpio_axi_awready),
 
-			.m_axi_wdata(gpio_axi_wdata),
-			.m_axi_wstrb(gpio_axi_wstrb),
-			.m_axi_wvalid(gpio_axi_wvalid),
-			.m_axi_wready(gpio_axi_wready),
+		.m_axi_wdata(gpio_axi_wdata),
+		.m_axi_wstrb(gpio_axi_wstrb),
+		.m_axi_wvalid(gpio_axi_wvalid),
+		.m_axi_wready(gpio_axi_wready),
 
-			.m_axi_bready(gpio_axi_bready),
-			.m_axi_bresp(gpio_axi_bresp),
-			.m_axi_bvalid(gpio_axi_bvalid),
+		.m_axi_bready(gpio_axi_bready),
+		.m_axi_bresp(gpio_axi_bresp),
+		.m_axi_bvalid(gpio_axi_bvalid),
 
-			.m_axi_araddr(gpio_axi_araddr),
-			.m_axi_arvalid(gpio_axi_arvalid),
-			.m_axi_arready(gpio_axi_arready),
+		.m_axi_araddr(gpio_axi_araddr),
+		.m_axi_arvalid(gpio_axi_arvalid),
+		.m_axi_arready(gpio_axi_arready),
 
-			.m_axi_rdata(gpio_axi_rdata),
-			.m_axi_rready(gpio_axi_rready),
-			.m_axi_rresp(gpio_axi_rresp),
-			.m_axi_rvalid(gpio_axi_rvalid)
-		);
+		.m_axi_rdata(gpio_axi_rdata),
+		.m_axi_rready(gpio_axi_rready),
+		.m_axi_rresp(gpio_axi_rresp),
+		.m_axi_rvalid(gpio_axi_rvalid)
+	);
 	`else
-		gpio gpio_inst(
-			.clk(clk_main),
-			.rst(rst),
+	gpio gpio_inst(
+		.clk(clk_main),
+		.rst(rst),
 
-			.a(gpio_a),
-			.d(gpio_d),
-			.we(gpio_we),
-			.spo(gpio_spo),
+		.a(gpio_a),
+		.d(gpio_d),
+		.we(gpio_we),
+		.spo(gpio_spo),
 
-			.btn(btn_d),
-			.sw(sw_d),
-			.led(led),
+		.btn(btn_d),
+		.sw(sw_d),
+		.led(led),
 
-			.irq(irq_gpio)
-		);
-		assign gpio_ready = 1;
+		.irq(irq_gpio)
+	);
+	assign gpio_ready = 1;
 	`endif
 `else
 	assign gpio_spo = 0;
@@ -473,20 +524,20 @@ module quasi_main
 		.OB(TMDSn_clock)
 	);
 	`ifdef LCD_EN
-		lcd_ili9486 lcd_ili9486_inst(
-			.clk(clk_main),
-			.rst(rst),
-			.a(video_a),
-			.d(video_d),
-			.we(video_we),
-			.spo(video_spo),
-			.lcd_d(lcd_d),
-			.rd(lcd_rd),
-			.wr(lcd_wr),
-			.rs(lcd_rs),
-			.cs(lcd_cs),
-			.lcd_rst(lcd_rst)
-		);
+	lcd_ili9486 lcd_ili9486_inst(
+		.clk(clk_main),
+		.rst(rst),
+		.a(video_a),
+		.d(video_d),
+		.we(video_we),
+		.spo(video_spo),
+		.lcd_d(lcd_d),
+		.rd(lcd_rd),
+		.wr(lcd_wr),
+		.rs(lcd_rs),
+		.cs(lcd_cs),
+		.lcd_rst(lcd_rst)
+	);
 	`else
 		assign video_spo = 0;
 	`endif
@@ -534,57 +585,6 @@ module quasi_main
 	assign eth_spo = 0;
 	assign irq_eth = 0;
 `endif
-
-	// bus/memory wires
-	// CPU(0) host
-	wire req0;
-	wire gnt0;
-	wire hrd0;
-    wire [31:0]a0;
-    wire [31:0]d0;
-    wire we0;
-    wire rd0;
-    wire [31:0]spo0;
-    wire ready0;
-	// (1) host
-	wire req1;
-	wire gnt1;
-	wire [31:0]a1;
-	wire [31:0]d1;
-	wire we1;
-	wire rd1;
-	wire [31:0]spo1;
-	wire ready1;
-	// arb output(bottleneck)
-    wire [31:0]a;
-    wire [31:0]d;
-    wire we;
-    wire rd;
-    wire [31:0]spo;
-    wire ready;
-	// MMIO
-	wire [31:0]mmio_a;
-	wire [31:0]mmio_d;
-	wire mmio_we;
-	wire mmio_rd;
-	wire [31:0]mmio_spo;
-	wire mmio_ready;
-	// main memory
-	wire [31:0]mem_a;
-	wire [31:0]mem_d;
-	wire mem_we;
-	wire mem_rd;
-	wire [31:0]mem_spo;
-	wire mem_ready;
-	// physical memory
-	wire mainm_burst_en;
-	wire [7:0]mainm_burst_length;
-	wire [31:0]mainm_a;
-	wire [31:0]mainm_d;
-	wire mainm_we;
-	wire mainm_rd;
-	wire [31:0]mainm_spo;
-	wire mainm_ready;
 
 `ifdef CACHE_EN
 	cache_cpu
@@ -644,7 +644,7 @@ module quasi_main
 		.spo(mainm_spo),
 		.ready(mainm_ready), 
 
-		.irq(mainm_irq),
+		//.irq(mainm_irq),
 
 		.psram_ce(psram_ce), 
 		.psram_mosi(psram_mosi), 
@@ -667,7 +667,7 @@ module quasi_main
 		.spo(mainm_spo),
 		.ready(mainm_ready), 
 
-		.irq(mainm_irq),
+		//.irq(mainm_irq),
 
 		.psram_ce(psram_ce), 
 		.psram_mosi(psram_mosi), 
@@ -750,7 +750,7 @@ module quasi_main
 
 	// arbitrator
 	arbitrator arb_inst (
-		.clk(clk),
+		.clk(clk_main),
 		.rst(rst),
 
 		.req0(req0),
@@ -852,31 +852,31 @@ module quasi_main
 		.spo(spo),
 		.ready(ready),
 
-        mem_a(mem_a),
-        mem_d(mem_d),
-        mem_we(mem_we),
-        mem_rd(mem_rd),
-        mem_spo(mem_spo),
-        mem_ready(mem_ready),
+        .mem_a(mem_a),
+        .mem_d(mem_d),
+        .mem_we(mem_we),
+        .mem_rd(mem_rd),
+        .mem_spo(mem_spo),
+        .mem_ready(mem_ready),
 
-        mmio_a(mmio_a),
-        mmio_d(mmio_d),
-        mmio_we(mmio_we),
-        mmio_rd(mmio_rd),
-        mmio_spo(mmio_spo),
-        mmio_ready(mmio_ready)
+        .mmio_a(mmio_a),
+        .mmio_d(mmio_d),
+        .mmio_we(mmio_we),
+        .mmio_rd(mmio_rd),
+        .mmio_spo(mmio_spo),
+        .mmio_ready(mmio_ready)
 	);
 
 	lowmapper lowmapper_inst(
-		.clk(clk),
+		.clk(clk_main),
 		.rst(rst),
 
-        a(mmio_a),
-        d(mmio_d),
-        we(mmio_we),
-        rd(mmio_rd),
-        spo(mmio_spo),
-        ready(mmio_ready)
+        .a(mmio_a),
+        .d(mmio_d),
+        .we(mmio_we),
+        .rd(mmio_rd),
+        .spo(mmio_spo),
+        .ready(mmio_ready),
 
         .bootm_a(bootm_a),
 		.bootm_rd(bootm_rd),

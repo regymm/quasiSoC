@@ -43,7 +43,7 @@ module riscv_multicyc
 	reg [1:0]IorDorW;
 	reg MemRead;
 	reg MemWrite;
-	reg MemReady;
+	wire MemReady;
 	reg [2:0]MemSrc;
 	reg IRWrite;
 	reg [3:0]ALUm;
@@ -442,11 +442,10 @@ module riscv_multicyc
 	// execution phases
 	reg [7:0]phase;
 	reg [7:0]phase_n;
-	reg phase_changed;
+	wire phase_changing = phase_n != phase;
 	always @ (posedge clk) begin
 		if (rst) phase <= IF;
 		else phase <= phase_n;
-		phase_changed <= (phase_n != phase);
 	end
 	// the memory fuse, to make sure after bus
 	// handshake, rd/we is only issued one cycle
@@ -464,15 +463,16 @@ module riscv_multicyc
 		| phase == RV32A_WTEMP
 		`endif
 		;
-	always @ (posedge clk) begin
-		// actually phase_with_mem not needed
-		if (!phase_changed & phase_with_mem & bus_xfer_ok) mfuse <= 0;
-		else mfuse <= 1;
-	end
-
 	// bus req/gnt
 	wire bus_xfer_ok = gnt & !hrd;
 	assign req = !hrd & phase_need_gnt;
+	always @ (posedge clk) begin
+		if (rst) mfuse <= 1;
+		// actually phase_with_mem not needed
+		else if (!phase_changing & phase_with_mem & bus_xfer_ok) mfuse <= 0;
+		else mfuse <= 1;
+	end
+
 
 	// control signals
 	always @ (*) begin
@@ -519,7 +519,7 @@ module riscv_multicyc
 				// make sure read is issued
 				// if bus is not ready, rd will have no effect
 				// have to make sure only one valid rd cycle
-				MemRead = memfuse;
+				MemRead = mfuse;
 				IRWrite = 1;
 			end
 			ID_RF: begin

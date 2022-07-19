@@ -3,6 +3,22 @@
 .globl c_start
 
 _start:
+#	j _start
+# AXI4 DDR2
+#	la a0, 0x20000084
+#	li a1, 0x12345678
+#	sw a1, 0(a0)
+#	lw t0, 0(a0)
+#	sw zero, 0(a0)
+
+# AXI GPIO tests
+#	la a0, 0x92000000
+#	li a1, 0xffffffff
+#	sw a1, 0(a0)
+#	lw t0, 0(a0)
+#	sw zero, 0(a0)
+
+
 ##	la a0, 0x97000000
 ##	li a1, 1
 ##	sw a1, 0(a0)

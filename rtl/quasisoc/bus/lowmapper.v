@@ -50,10 +50,10 @@ module lowmapper
         output reg [31:0]gpio_d,
         output gpio_we,
         input [31:0]gpio_spo,
-		`ifdef AXI_GPIO_TEST
+		//`ifdef AXI_GPIO_TEST
 		output gpio_rd,
 		input gpio_ready,
-		`endif
+		//`endif
 
         // uart: 0x93000000
         output reg [2:0]uart_a,

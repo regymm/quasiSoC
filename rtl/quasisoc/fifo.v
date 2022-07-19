@@ -35,13 +35,15 @@ module myfifo
 		if (rst) begin
 			head <= 0;
 			tail <= 0;
-		end
-		if (enq & (!full | deq)) begin
-			tail <= tail + 1;
-			d[tail] <= din;
-		end
-		if (deq & !empty) begin
-			head <= head + 1;
+		end else begin
+			// ignore illegal requests
+			if (enq & (!full | deq)) begin
+				tail <= tail + 1;
+				d[tail] <= din;
+			end
+			if (deq & !empty) begin
+				head <= head + 1;
+			end
 		end
 	end
 endmodule
