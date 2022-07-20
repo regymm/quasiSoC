@@ -3,7 +3,8 @@
 #include "coremark.h"
 #include "timer.h"
 
-#define CPU_FREQ_HZ 62500000
+// aclint timer 10MHz
+#define CPU_FREQ_HZ 10000000
 
 #if VALIDATION_RUN
 	volatile ee_s32 seed1_volatile=0x3415;
@@ -59,4 +60,7 @@ secs_ret time_in_secs(CORE_TICKS ticks)
 void portable_init(core_portable *p, int *argc, char *argv[])
 {
 	printf("portable init\r\n");
+	/*volatile int* c_en = (int*)0x7fffff00;*/
+	/**c_en = 1;*/
+	/*printf("cache up\r\n");*/
 }

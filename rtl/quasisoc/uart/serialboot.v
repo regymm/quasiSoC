@@ -111,7 +111,7 @@ module serialboot
 	wire finish = uart_data == 8'h20;
 	wire transferring = (began & !finish) | !fifoempty | state == 1;
 
-	assign fifoenq = began & uart_ready_prev & uart_byte_cnt == 0 & uart_data_valid;
+	assign fifoenq = began & uart_ready_prev_prev & uart_byte_cnt == 0 & uart_data_valid;
 	assign fifodin = {uart_byte[0], uart_byte[1], uart_byte[2], uart_byte[3],
 		uart_byte[4], uart_byte[5], uart_byte[6], uart_byte[7]};
 

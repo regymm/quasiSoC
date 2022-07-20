@@ -3,7 +3,7 @@
  * License           : GPL-3.0-or-later
  * Author            : Peter Gu <github.com/regymm>
  * Date              : 2020.10.21
- * Last Modified Date: 2021.10.17
+ * Last Modified Date: 2022.07.20
  */
 // pComputer multicycle RISC-V processor
 // currently supported: RV32IM
@@ -295,11 +295,10 @@ module riscv_multicyc
 
 	// TODO: generalize and improve
 	always @ (posedge clk) begin
-		if (op == OP_PRIV)
-			if (priv_ebreak)
-				mcause_code_out <= EXC_BREAKPOINT;
-			else if (priv_ecall)
-				mcause_code_out <= EXC_ECALL_FROM_M_MODE;
+		if (priv_ebreak)
+			mcause_code_out <= EXC_BREAKPOINT;
+		else if (priv_ecall)
+			mcause_code_out <= EXC_ECALL_FROM_M_MODE;
 	end
 `endif
 
@@ -329,7 +328,6 @@ module riscv_multicyc
 	reg LRInvalid;
 	reg lr_valid;
 	reg [31:0]lr_addr = 0;
-	reg [31:0]lr_bytes = 0;
 	wire sc_success = lr_valid & lr_addr == ALUOut;
 	reg sc_succeeded;
 	always @ (posedge clk) begin
@@ -598,7 +596,7 @@ module riscv_multicyc
 				end else if (op_a_sc) begin
 					MemWrite = sc_success & mfuse;
 					MemSrc = 2;
-					LRInvalid = 1;
+					LRInvalid = mfuse;
 				`endif
 				end
 			end
@@ -660,7 +658,7 @@ module riscv_multicyc
 					RegWrite = 0;
 					PCWrite = (instruction[14] ? instruction[12] : !instruction[12]) ^ |ALUOut; PCSrc = 1;
 					//PCWrite = !instruction[12] ^ |ALUOut; PCSrc = 1;
-				end else if (op == OP_LOAD | op_a_lr) begin // LB, LH, LW, LBU, LHU, LR.W
+				end else if (op == OP_LOAD) begin // LB, LH, LW, LBU, LHU, LR.W
 					RegSrc = {1'b1, instruction[13:12]};
 				`ifdef IRQ_EN
 				end else if (priv_csr) begin
@@ -671,7 +669,7 @@ module riscv_multicyc
 				end else if (op_a_amo) begin RegSrc = 9;
 				end else if (op_a_sc) begin RegSrc = 10;
 				end else if (op_a_lr) begin
-					RegWrite = 0;
+					RegSrc = 6;
 					LRValid = 1;
 				`endif
 				end
