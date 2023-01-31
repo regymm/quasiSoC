@@ -73,6 +73,7 @@ amoadd.w x0, a1, (a0)
 blt a1, a3, 1b
 fence
 
+
 # expected result is 512*ncores*(ncores+1)
 TEST_CASE( 5, a0, 0, \
   lw a0, foo; \
@@ -81,6 +82,7 @@ TEST_CASE( 5, a0, 0, \
   addi a3, a3, -1; \
   bgez a3, 1b
 )
+# j abort_lrsc
 
 # make sure that sc-after-successful-sc fails.
 TEST_CASE( 6, a1, 1, \
@@ -90,6 +92,8 @@ TEST_CASE( 6, a1, 1, \
   bnez a1, 1b; \
   sc.w a1, x0, (a0)
 )
+
+abort_lrsc:
 
 TEST_PASSFAIL
 

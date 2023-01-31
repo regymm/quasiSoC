@@ -80,9 +80,12 @@ module riscv_multicyc
 
 	// instruction register
 	(*mark_debug = "true"*) reg [31:0]instruction;
+	//reg [31:0]instr_reg;
 	always @ (posedge clk) begin
 		if(IRWrite) instruction <= new_instr;
+		//if(IRWrite) instr_reg <= new_instr;
 	end
+	//assign instruction = IRWrite ? new_instr : instruction;
 	// ~~~~datapath~~~~
 	wire [31:0]new_instr = memread_data;
 
@@ -141,7 +144,6 @@ module riscv_multicyc
 	reg [31:0]mdr;
 	always @ (posedge clk) begin
 		mdr <= memread_data;
-		//mwr <= memwrite_data;
 		mar <= mem_addr;
 	end
 	// ~~~~datapath~~~~
@@ -335,12 +337,10 @@ module riscv_multicyc
 			lr_valid <= 0;
 		end else begin
 			if (LRValid) begin
-			//if (phase == WB & op_a_lr) begin
 				lr_valid <= 1;
 				lr_addr <= mar;
 			// sc, succeeded or not, invalidates reservation
 			end else if (LRInvalid) begin
-			//end else if (phase == MEM & op_a_sc) begin
 				lr_valid <= 0;
 				sc_succeeded <= sc_success;
 			end
@@ -447,7 +447,8 @@ module riscv_multicyc
 	end
 	// the memory fuse, to make sure after bus
 	// handshake, rd/we is only issued one cycle
-	reg mfuse;
+	reg mfuse_r;
+	wire mfuse = mfuse_r & !hrd;
 	wire phase_with_mem =
 		phase == IF | phase == MEM | phase == MEMU
 		`ifdef RV32A
@@ -465,14 +466,12 @@ module riscv_multicyc
 	wire bus_xfer_ok = gnt & !hrd;
 	assign req = !hrd & phase_need_gnt;
 	always @ (posedge clk) begin
-		if (rst) mfuse <= 1;
+		if (rst) mfuse_r <= 1;
 		// actually phase_with_mem not needed
-		else if (!phase_changing & phase_with_mem & bus_xfer_ok) mfuse <= 0;
-		else mfuse <= 1;
+		else if (!phase_changing & phase_with_mem & bus_xfer_ok) mfuse_r <= 0;
+		else mfuse_r <= 1;
 	end
 
-
-	// control signals
 	always @ (*) begin
 		phase_n = BAD;
 		PCWrite = 0;

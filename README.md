@@ -42,6 +42,7 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. No-MMU Linux capa
 
 ### Peripherals
 
+- [x] AXI MIG DDR2/DDR3
 - [x] ESP-PSRAM64H (8 MB) QPI mode @ 62.5 M, burst R/W
 - [ ] SDRAM
 - [x] GPIO (LEDs, buttons, switches)
@@ -58,7 +59,7 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. No-MMU Linux capa
 - [x] CH375 USB disk
 - [x] W5500 ethernet module
   - [ ] W5500 as MAC with LwIP stack
-- [ ] **Bus converter**: Use AXI/Wishbone peripherals
+- [x] **Bus converter**: Use AXI peripherals
 - [x] **Hart transplant**: Use other RISC-V cores with my peripherals
 - [ ] **Xeno transplant**: Use ARM or x86 cores with my peripherals
 
@@ -102,7 +103,8 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. No-MMU Linux capa
 <details open>
 <summary>Xilinx 7 series</summary>
 
-- [x] xc7z010 PL @ SqueakyBoard, main dev platform [ref](https://github.com/ustcpetergu/SqueakyBoard)
+- [x] xc7a200t @ Nexys Video, main dev platform [ref](https://digilent.com/reference/programmable-logic/nexys-video/start)
+- [x] xc7z010 PL @ SqueakyBoard, previous main dev platform [ref](https://github.com/ustcpetergu/SqueakyBoard)
 - [x] xc7z020 PL @ PYNQ-Z1 w/ extension PMOD module [ref](https://reference.digilentinc.com/programmable-logic/pynq-z1/start)
 - [x] xc7k325t @ Memblaze PBlaze 3 w/ extension board  [ref](https://www.tweaktown.com/reviews/6797/memblaze-pblaze3l-1-2tb-enterprise-pcie-ssd-review/index.html)
 - [x] xc7a100t @ Nexys A7 on [USTC FPGAOL](fpgaol.ustc.edu.cn), SW/LED/UART/UARTBOOT [Instructions](fpgaol.md)
