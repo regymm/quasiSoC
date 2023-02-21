@@ -139,6 +139,7 @@ module riscv_multicyc
 	assign we = MemWrite;
 	assign rd = MemRead;
 	wire [31:0]memread_data = {spo[7:0], spo[15:8], spo[23:16], spo[31:24]};
+	// TODO: lift zero-cycle ready mechanism to ease timing
 	assign MemReady = ready;
 	reg [31:0]mar;
 	reg [31:0]mdr;
@@ -275,7 +276,7 @@ module riscv_multicyc
 		.interrupt(interrupt),
 		.int_reply(IntReply)
 	);
-	reg [31:0]csrreg;
+	reg [31:0]csrreg = 0;
 	always @ (posedge clk) begin
 		if (CsrSave) csrreg <= csr_spo;
 	end
@@ -297,7 +298,8 @@ module riscv_multicyc
 
 	// TODO: generalize and improve
 	always @ (posedge clk) begin
-		if (priv_ebreak)
+		if (rst) mcause_code_out <= 0;
+		else if (priv_ebreak)
 			mcause_code_out <= EXC_BREAKPOINT;
 		else if (priv_ecall)
 			mcause_code_out <= EXC_ECALL_FROM_M_MODE;
@@ -445,6 +447,8 @@ module riscv_multicyc
 		if (rst) phase <= IF;
 		else phase <= phase_n;
 	end
+
+	// memory bus hassles
 	// the memory fuse, to make sure after bus
 	// handshake, rd/we is only issued one cycle
 	reg mfuse_r;
@@ -466,9 +470,7 @@ module riscv_multicyc
 	wire bus_xfer_ok = gnt & !hrd;
 	assign req = !hrd & phase_need_gnt;
 	always @ (posedge clk) begin
-		if (rst) mfuse_r <= 1;
-		// actually phase_with_mem not needed
-		else if (!phase_changing & phase_with_mem & bus_xfer_ok) mfuse_r <= 0;
+		if (!rst & !phase_changing & /*phase_with_mem &*/ bus_xfer_ok) mfuse_r <= 0;
 		else mfuse_r <= 1;
 	end
 

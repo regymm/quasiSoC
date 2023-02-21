@@ -10,6 +10,7 @@
 
 module quasi_main 
 	#(
+		parameter SIMULATION = 0,
 		parameter CLOCK_FREQ = 100000000,
 		//parameter CLOCK_FREQ = 75000000,
 		parameter BAUD_RATE_UART = 3000000,
@@ -152,6 +153,7 @@ module quasi_main
 	wire clk_2x;
     wire clk_hdmi_25;
     wire clk_hdmi_250;
+`ifndef SIMULATION
 	clocking_wizard clock_wizard_inst(
 		.clk_in1(sysclk),
 		.clk_main(),
@@ -160,6 +162,9 @@ module quasi_main
 		.clk_hdmi_250(clk_hdmi_250),
 		.clk_hdmi_50(clk_2x)
 	);
+`else
+	assign clk_main = sysclk;
+`endif
 	//clocking_xc7 clocking_xc7_inst (
 		//.clk_50(sysclk),
 		//.clk1_62d5(clk_main),
@@ -203,7 +208,11 @@ module quasi_main
 	clocked_rom #(
 		.WIDTH(32),
 		.DEPTH(10),
-		.INIT("/home/petergu/quasiSoC/firmware/bootrom/result_bootrom.dat")
+`ifndef SIMULATION
+		.INIT("/home/petergu/quasiSoC/firmware/bootrom/bootrom.dat")
+`else
+		.INIT("/home/petergu/quasiSoC/firmware/bootrom/bootrom_sim.dat")
+`endif
 	) bootrom(
 		.clk(clk_main),
         .a(bootm_a),
@@ -222,7 +231,7 @@ module quasi_main
 	simple_ram #(
 		.WIDTH(32),
 		.DEPTH(12),
-		.INIT("/home/petergu/quasiSoC/rtl/null.dat")
+		.INIT("/home/petergu/quasiSoC/sim/zeros.dat")
 	) distram (
         .clk(clk_main),
         .a(distm_a),
@@ -486,13 +495,8 @@ module quasi_main
 		.uart_ready(sb_rxnew)
 	);
 `else
+	assign req1 = 0;
 	assign sb_ready = 1;
-	assign a_mem = mainm_a_c;
-	assign d_mem = mainm_d_c;
-	assign we_mem = mainm_we_c;
-	assign spo_mem = mainm_spo_c;
-	assign rd_mem = mainm_rd_c;
-	assign ready_mem = mainm_ready_c;
 `endif
 
     // video
@@ -519,26 +523,28 @@ module quasi_main
 		.TMDSn_clock(TMDSn_clock)
 	);
 `else
-	OBUFDS OBUFDS_red(
-		.I(0),
-		.O(TMDSp[2]),
-		.OB(TMDSn[2])
-	);
-	OBUFDS OBUFDS_green(
-		.I(0),
-		.O(TMDSp[1]),
-		.OB(TMDSn[1])
-	);
-	OBUFDS OBUFDS_blue(
-		.I(0),
-		.O(TMDSp[0]),
-		.OB(TMDSn[0])
-	);
-	OBUFDS OBUFDS_clock(
-		.I(0),
-		.O(TMDSp_clock),
-		.OB(TMDSn_clock)
-	);
+	`ifndef SIMULATION
+		OBUFDS OBUFDS_red(
+			.I(0),
+			.O(TMDSp[2]),
+			.OB(TMDSn[2])
+		);
+		OBUFDS OBUFDS_green(
+			.I(0),
+			.O(TMDSp[1]),
+			.OB(TMDSn[1])
+		);
+		OBUFDS OBUFDS_blue(
+			.I(0),
+			.O(TMDSp[0]),
+			.OB(TMDSn[0])
+		);
+		OBUFDS OBUFDS_clock(
+			.I(0),
+			.O(TMDSp_clock),
+			.OB(TMDSn_clock)
+		);
+	`endif
 	`ifdef LCD_EN
 	lcd_ili9486 lcd_ili9486_inst(
 		.clk(clk_main),
@@ -862,20 +868,38 @@ module quasi_main
 		.sys_rst(rst_ddr_auto)
 	);
 `else
-	// 2**14 * 32 64KB -- have to be w/o cache and ...
-	simple_ram #(
-		.WIDTH(32),
-		.DEPTH(14),
-		.INIT("/home/petergu/quasiSoC/rtl/null.dat")
-	) distram_mainm (
-        .clk(clk_main),
-        .a({2'b0, mainm_a[31:2]}),
-        .d(mainm_d),
-        .we(mainm_we),
-		.rd(mainm_rd),
-        .spo(mainm_spo),
-		.ready(mainm_ready)
-    );
+	assign ui_clk_sync_rst = 0;
+	`ifndef SIMULATION
+		// 2**14 * 32 64KB -- have to be w/o cache and ...
+		simple_ram #(
+			.WIDTH(32),
+			.DEPTH(14),
+			.INIT("/home/petergu/quasiSoC/rtl/null.dat")
+		) distram_mainm (
+			.clk(clk_main),
+			.a({2'b0, mainm_a[31:2]}),
+			.d(mainm_d),
+			.we(mainm_we),
+			.rd(mainm_rd),
+			.spo(mainm_spo),
+			.ready(mainm_ready)
+		);
+	`else
+		// 2**21 * 32 8MB
+		simple_ram #(
+			.WIDTH(32),
+			.DEPTH(21),
+			.INIT("/tmp/meminit.dat")
+		) distram_mainm (
+			.clk(clk_main),
+			.a({2'b0, mainm_a[31:2]}),
+			.d(mainm_d),
+			.we(mainm_we),
+			.rd(mainm_rd),
+			.spo(mainm_spo),
+			.ready(mainm_ready)
+		);
+	`endif
 `endif
 `endif
 

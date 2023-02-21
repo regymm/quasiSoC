@@ -48,11 +48,11 @@ module privilege
 		input int_reply
     );
 
-	reg mode = 1; // default 11 machine mode, 00 dummy user mode
+	reg mode = 1'b1; // default 11 machine mode, 00 dummy user mode
 
 	// Control State Registers
-	(*mark_debug = "true"*)reg [31:0]mstatus = 32'b0_00000000_0000000000_00_00_0_0_;
-	reg [31:0]misa = 32'b01_0000_00000000000001000100000000;
+	(*mark_debug = "true"*)reg [31:0]mstatus;
+	reg [31:0]misa;
 	(*mark_debug = "true"*)reg [31:0]mie;
 	(*mark_debug = "true"*)reg [31:0]mtvec;
 	(*mark_debug = "true"*)reg [31:0]mscratch;
@@ -78,23 +78,39 @@ module privilege
 	//reg [63:0]mtimecmp;
 
 	//wire [31:0]mstatus_wpri_mask = 32'b01111111100000000000011001000100; // WPRI otherwise
+	//wire [31:0]mstatus_read_mask	= 32'b11111111111111111110011101110111;
+	//wire [31:0]mstatus_read_val		= 32'b0000000000000000000zz000z000z000;
+	//wire [31:0]mstatus_write_mask	= 32'b11111111111111111110011101110111;
+	//wire [31:0]mtvec_read_mask		= 32'b00000000000000000000000000000011;
+	//wire [31:0]mtvec_read_val		= 32'bzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz00;
+	//wire [31:0]mtvec_write_mask		= 32'b00000000000000000000000000000011;
+	//wire [31:0]mip_read_mask		= 32'b11111111111111111111111111110111;
+	//wire [31:0]mip_read_val			= {20'b0, eip, 3'b0, tip, 3'b0, sip, 3'b0};
+	//wire [31:0]mip_write_mask		= 32'b11111111111111111111111111110111; // WARL otherwise
+	//wire [31:0]mie_read_mask		= 32'b00000000000000000000100010001000;
+	//wire [31:0]mie_read_val			= 32'b00000000000000000000z000z000z000;
+	//wire [31:0]mie_write_mask		= 32'b11111111111111111111011101110111; // WARL otherwise
+	//wire [31:0]mepc_read_mask		= 32'b00000000000000000000000000000011;
+	//wire [31:0]mepc_read_val		= 32'bzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz00;
+	//wire [31:0]mepc_write_mask		= 32'b00000000000000000000000000000011;
+	//wire [31:0]mip_wpri_mask		= 32'b111111111010001000100; // WARL otherwise
+
+	// having Z or X in read val is not good, thought they are masked
 	wire [31:0]mstatus_read_mask	= 32'b11111111111111111110011101110111;
-	wire [31:0]mstatus_read_val		= 32'b0000000000000000000xx000x000x000;
+	wire [31:0]mstatus_read_val		= 32'b00000000000000000000000000000000;
 	wire [31:0]mstatus_write_mask	= 32'b11111111111111111110011101110111;
 	wire [31:0]mtvec_read_mask		= 32'b00000000000000000000000000000011;
-	wire [31:0]mtvec_read_val		= 32'bxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx00;
+	wire [31:0]mtvec_read_val		= 32'b00000000000000000000000000000000;
 	wire [31:0]mtvec_write_mask		= 32'b00000000000000000000000000000011;
 	wire [31:0]mip_read_mask		= 32'b11111111111111111111111111110111;
 	wire [31:0]mip_read_val			= {20'b0, eip, 3'b0, tip, 3'b0, sip, 3'b0};
 	wire [31:0]mip_write_mask		= 32'b11111111111111111111111111110111; // WARL otherwise
 	wire [31:0]mie_read_mask		= 32'b00000000000000000000100010001000;
-	wire [31:0]mie_read_val			= 32'b00000000000000000000x000x000x000;
+	wire [31:0]mie_read_val			= 32'b00000000000000000000000000000000;
 	wire [31:0]mie_write_mask		= 32'b11111111111111111111011101110111; // WARL otherwise
 	wire [31:0]mepc_read_mask		= 32'b00000000000000000000000000000011;
-	wire [31:0]mepc_read_val		= 32'bxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx00;
+	wire [31:0]mepc_read_val		= 32'b00000000000000000000000000000000;
 	wire [31:0]mepc_write_mask		= 32'b00000000000000000000000000000011;
-	//wire [31:0]mip_wpri_mask		= 32'b111111111010001000100; // WARL otherwise
-
 
 	//reg [31:0]sstatus;
 	//reg [31:0]sie;
@@ -129,15 +145,15 @@ module privilege
 			//12'h144: spo = sip;
 			//12'h180: spo = satp;
 
-			12'h300: spo = mstatus_read_val & mstatus_read_mask + mstatus & ~mstatus_read_mask;
+			12'h300: spo = mstatus_read_val & mstatus_read_mask | mstatus & ~mstatus_read_mask;
 			12'h301: spo = misa;
-			12'h304: spo = mie_read_val & mie_read_mask + mie & ~mie_read_mask;
-			12'h305: spo = mtvec_read_val & mtvec_read_mask + mtvec & ~mtvec_read_mask;
+			12'h304: spo = mie_read_val & mie_read_mask | mie & ~mie_read_mask;
+			12'h305: spo = mtvec_read_val & mtvec_read_mask | mtvec & ~mtvec_read_mask;
 			12'h340: spo = mscratch;
-			12'h341: spo = mepc_read_val & mepc_read_mask + mepc & ~mepc_read_mask;
+			12'h341: spo = mepc_read_val & mepc_read_mask | mepc & ~mepc_read_mask;
 			12'h342: spo = mcause;
 			12'h343: spo = mtval;
-			12'h344: spo = mip_read_val & mip_read_mask + mip & ~mip_read_mask;
+			12'h344: spo = mip_read_val & mip_read_mask | mip & ~mip_read_mask;
 
 			default: spo = 0;
 		endcase
@@ -147,7 +163,7 @@ module privilege
 		if (rst) begin
 			mode <= 1'b1;
 			mstatus <= 32'b00000000000000000001100010000000;
-			misa <= 32'b01_0000_00000000000001000100000000;
+			misa <= 32'b01_0000_00000001000001000100000000;
 			mie <= 32'b0;
 			mtvec <= 32'b0;
 			mscratch <= 32'b0;
@@ -216,6 +232,8 @@ module privilege
 			state <= IDLE;
 			interrupt <= 0;
 			eip_reply <= 0;
+			int_source <= 0;
+			mcause_i_code <= 0;
 		end else begin
 			case (state)
 				IDLE: begin

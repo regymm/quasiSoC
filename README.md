@@ -24,18 +24,15 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. No-MMU Linux capa
 <summary>Future plan</summary>
 
 - [ ] Illegal instruction/load/store exception
-- [ ] Bus arbitrationDMA
-- [ ] DMA
 - [ ] Optimize memory access cycles
-- [ ] U-mode memory protection (like PMP?)
 - [ ] Sv32 MMU
 - [ ] S-mode
 - [ ] GDB debug over openocd JTAG
 - [ ] faster M instructions
+- [ ] Formal verification
 - [ ] amo(max|min)u? (Linux doesn't use, not planned)
 - [ ] IO bus w/ burst (hard, not planned)
-- [ ] PMP (not planned)
-- [ ] Formal verification (not planned)
+- [ ] U-mode memory protection (like PMP?) (not planned)
 - [ ] Pipeline (not planned)
 
 </details>
@@ -59,6 +56,7 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. No-MMU Linux capa
 - [x] CH375 USB disk
 - [x] W5500 ethernet module
   - [ ] W5500 as MAC with LwIP stack
+- [x] **Bus arbitration**: Multiple hosts, "DMA"
 - [x] **Bus converter**: Use AXI peripherals
 - [x] **Hart transplant**: Use other RISC-V cores with my peripherals
 - [ ] **Xeno transplant**: Use ARM or x86 cores with my peripherals
@@ -112,17 +110,10 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. No-MMU Linux capa
 
 </details>
 
-
-<details>
-<summary>Xilinx Spartan 6</summary>
-
-- [x] xc6slx16 @ Nameless LED controller module
-
-</details>
-
 <details>
 <summary>Others</summary>
 
+- [x] xc6slx16 @ Nameless LED controller module, deprecated
 - [ ] ep4ce15 @ QMTech core board w/ SDRAM [ref](http://land-boards.com/blwiki/index.php?title=QMTECH_EP4CE15_FPGA_Card)
 - [ ] ep2c35 @ Cisco HWIC-3G-CDMA router module [ref](https://github.com/tomverbeure/cisco-hwic-3g-cdma)
 - [ ] lfe5u-12f @ mystery module
@@ -133,6 +124,9 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. No-MMU Linux capa
 
 
 ### Build & Run
+
+*Boardless start*</br>
+[Simulation](Simulation.md)
 
 *Quick start*</br>
 [Build & run instructions](BuildnRun.md)

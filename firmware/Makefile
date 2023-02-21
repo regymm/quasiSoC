@@ -14,10 +14,10 @@ CPPFLAGS=	$(CFLAGS) -nostdlib
 OBJCOPY	=	$(RISCV)objcopy
 READELF	=	$(RISCV)readelf
 
-all: sd_uartbl/uartbl.bin bootrom/bootrom.dat sd_kpbl/kpbl.bin
+all: sd_uartbl/uartbl.bin bootrom/bootrom.dat bootrom/bootrom_sim.dat sd_kpbl/kpbl.bin
 
-bootrom/bootrom.dat: bootrom/bootrom.bin
-	xxd -c 4 -p bootrom/bootrom.bin > bootrom/result_bootrom.dat
+%.dat: %.bin
+	xxd -c 4 -p $*.bin > $*.dat
 
 %.bin: %.elf
 	$(OBJCOPY) -O binary $*.elf $*.bin
@@ -28,6 +28,9 @@ bootrom/bootrom.dat: bootrom/bootrom.bin
 
 %.c_o: %.c
 	$(CC) -c $(CFLAGS) $*.c -o $*.c_o
+
+bootrom/bootrom_sim.elf: bootrom/bootrom_sim.o bootrom/bootrom_sim.c_o bootrom/basic.c_o
+	$(LD) $(LDFLAGS) $^ -o $@ --script bootrom/linker_bootrom.ld
 
 bootrom/bootrom.elf: bootrom/bootrom.o bootrom/bootrom.c_o bootrom/basic.c_o
 	$(LD) $(LDFLAGS) $^ -o $@ --script bootrom/linker_bootrom.ld
@@ -56,3 +59,10 @@ clean:
 	-rm -f sd_kpbl/*.c_o
 	-rm -f sd_kpbl/*.elf
 	-rm -f sd_kpbl/*.bin
+
+#bootrom/bootrom_sim.dat: bootrom/bootrom_sim.bin
+	#xxd -c 4 -p bootrom/bootrom_sim.bin > bootrom/result_bootrom_sim.dat
+
+#bootrom/bootrom.dat: bootrom/bootrom.bin
+	#xxd -c 4 -p bootrom/bootrom.bin > bootrom/result_bootrom.dat
+

@@ -49,4 +49,4 @@ In `software/`, run `make run_tests`, `make run_coremark`, or `make run_renderer
 
 I think these three examples can cover most of the software flows required in cross-compiling(Makefile, linker script, volatile int* MMIO, ODR, inline assembly, call C in assembly, objcopy, patch BSS, ...). My coding habit is bad but they work(at least for now). 
 
-Things like printf, string operation, float-point, and basic C++ will all work. 
+Things like printf, string operation, float-point, and basic C++ are all tested to be working. 

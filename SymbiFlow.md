@@ -1,5 +1,7 @@
 ## Quasi SoC -- SymbiFlow
 
+TODO: update!
+
 *I don't understand this toolchain, yet it works ...*
 
 ***Help needed!***

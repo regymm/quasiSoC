@@ -14,7 +14,7 @@ module register_file
         output [WIDTH-1:0]rd1
     );
     reg [WIDTH-1:0]regfile[31:0];
-    initial $readmemh("/home/petergu/MyHome/quasiSoC/pcpu/regfile.dat", regfile);
+    initial $readmemh("/home/petergu/quasiSoC/rtl/pcpu/regfile.dat", regfile);
 	assign rd0 = ra0 == 5'b0 ? 0 : regfile[ra0];
 	assign rd1 = ra1 == 5'b0 ? 0 : regfile[ra1];
     always @ (posedge clk) begin

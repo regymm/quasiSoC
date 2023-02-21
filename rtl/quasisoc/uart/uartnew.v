@@ -110,6 +110,10 @@ module uart_new
         else begin
             case (state_tx)
                 IDLE: if (we & (a == 3'b000)) begin
+				`ifdef SIMULATION
+					$write("%c", data);
+					$fflush();
+				`endif
                     data_tx <= data;
                     state_tx <= START;
                     bitpos_tx <= 3'b0;

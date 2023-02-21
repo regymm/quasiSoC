@@ -1,4 +1,4 @@
-RISCV_PATH=/opt/riscv32i/bin
+RISCV_PATH=/nfs/opt/riscv32i/bin
 TESTS_PATH=./riscv_tests
 all: 
 	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32im  firmware/start.S -o firmware/start.o

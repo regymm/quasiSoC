@@ -104,12 +104,12 @@ module top_simu ();
 
         //.sd_dat0(sd_dat0),
 
-		.psram_ce(psram_ce),
-		.psram_mosi(psram_mosi),
-		.psram_miso(psram_miso),
-		.psram_sio2(psram_sio2),
-		.psram_sio3(psram_sio3),
-		.psram_sclk(psram_sclk),
+//		.psram_ce(psram_ce),
+//		.psram_mosi(psram_mosi),
+//		.psram_miso(psram_miso),
+//		.psram_sio2(psram_sio2),
+//		.psram_sio3(psram_sio3),
+//		.psram_sclk(psram_sclk),
 
 		//.eth_intn(eth_intn),
 		//.eth_rstn(eth_rstn),

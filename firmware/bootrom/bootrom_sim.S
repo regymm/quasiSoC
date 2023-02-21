@@ -61,7 +61,7 @@ _start:
 	j main_tests
 main_tests:
 	li t0, 0x00
-	csrc mstatus, t0
+	;csrc mstatus, t0
 	# amo
 	li t0, 0x12
 	la t1, 0x10000000
@@ -298,7 +298,10 @@ end:
 	nop
 	nop
 	# TODO: better temporary stack ?
-	la sp, 0x10001ffc
+	la sp, 0x200ffffc
+	# For sake of kernel, prepare registers
+	li a0, 0
+	la a1, 0x20700000
 	j c_start
 	j real_end
 	nop
