@@ -11,6 +11,7 @@
 module quasi_main 
 	#(
 		parameter SIMULATION = 0,
+		parameter INTERACTIVE_SIM = 0,
 		parameter CLOCK_FREQ = 100000000,
 		//parameter CLOCK_FREQ = 75000000,
 		parameter BAUD_RATE_UART = 3000000,
@@ -35,6 +36,10 @@ module quasi_main
 
         input uart_rx,
         output uart_tx,
+	`ifdef INTERACTIVE_SIM
+		input uart_rxsim_en,
+		input [7:0]uart_rxsim_data,
+	`endif
 
 		//input uart_rx_2,
 		//output uart_tx_2,
@@ -354,6 +359,7 @@ module quasi_main
 	wire sb_rxnew;
     wire irq_uart;
 `ifdef UART_EN
+`ifndef INTERACTIVE_SIM
 	uart_new #(
 		.CLOCK_FREQ(CLOCK_FREQ),
 		.BAUD_RATE(BAUD_RATE_UART)
@@ -379,6 +385,32 @@ module quasi_main
 		.rxnew(sb_rxnew),
 		.rxdata(sb_rxdata)
     );
+`else
+	uart_sim uart_sim_inst (
+        .clk(clk_main),
+		`ifdef UART_RST_EN
+			// avoid UART reset dead lock
+			.rst(manual_rst),
+		`else
+			.rst(rst),
+		`endif
+
+        .tx(uart_tx),
+        .rx(uart_rx),
+		.rxsim_en(uart_rxsim_en),
+		.rxsim_data(uart_rxsim_data),
+
+        .a(uart_a),
+        .d(uart_d),
+        .we(uart_we),
+        .spo(uart_spo), 
+
+        .irq(irq_uart),
+
+		.rxnew(sb_rxnew),
+		.rxdata(sb_rxdata)
+    );
+`endif
 `else
 	assign uart_spo = 0;
 	assign uart_tx = 1;

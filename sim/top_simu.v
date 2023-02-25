@@ -84,43 +84,8 @@ module top_simu ();
         .led(led),
 		.sw(sw),
 
-		//.ddr2_dq              (ddr2_dq_fpga),
-		//.ddr2_dqs_n           (ddr2_dqs_n_fpga),
-		//.ddr2_dqs_p           (ddr2_dqs_p_fpga),
-
-		//.ddr2_addr            (ddr2_addr_fpga),
-		//.ddr2_ba              (ddr2_ba_fpga),
-		//.ddr2_ras_n           (ddr2_ras_n_fpga),
-		//.ddr2_cas_n           (ddr2_cas_n_fpga),
-		//.ddr2_we_n            (ddr2_we_n_fpga),
-		//.ddr2_ck_p            (ddr2_ck_p_fpga),
-		//.ddr2_ck_n            (ddr2_ck_n_fpga),
-		//.ddr2_cke             (ddr2_cke_fpga),
-		//.ddr2_cs_n            (ddr2_cs_n_fpga),
-
-		//.ddr2_dm              (ddr2_dm_fpga),
-
-		//.ddr2_odt             (ddr2_odt_fpga),
-
-        //.sd_dat0(sd_dat0),
-
-//		.psram_ce(psram_ce),
-//		.psram_mosi(psram_mosi),
-//		.psram_miso(psram_miso),
-//		.psram_sio2(psram_sio2),
-//		.psram_sio3(psram_sio3),
-//		.psram_sclk(psram_sclk),
-
-		//.eth_intn(eth_intn),
-		//.eth_rstn(eth_rstn),
-		//.eth_sclk(eth_sclk),
-		//.eth_scsn(eth_scsn),
-		//.eth_mosi(eth_mosi),
-		//.eth_miso(eth_miso),
 		.uart_rx(rx),
 		.uart_tx(tx)
-		//.uart_rx_2(1)
-		//.ch375_tx(ch375_tx)
 	);
     
     initial begin

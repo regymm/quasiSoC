@@ -30,10 +30,13 @@ fi
 
 echo -e "\033[37mCompiling...\033[0m"
 rm -rf obj_dir
-verilator --binary -j 0 -DSIMULATION --top-module top_simu \
-	-Wno-width -Wno-pinmissing -Wno-implicit -Wno-caseincomplete \
+#verilator --binary -j 0 -DSIMULATION --top-module top_simu \
+	#iv_simu.v \
+verilator -j 0 -DSIMULATION -DINTERACTIVE_SIM --top-module quasi_main \
+	--no-timing \
+	-Wno-width -Wno-pinmissing -Wno-implicit -Wno-caseincomplete -Wno-stmtdly -Wno-infiniteloop \
 	-I../rtl/board-specific/nexys-video/ \
-	iv_simu.v \
+	--cc \
 	../rtl/pcpu/alu.v \
 	../rtl/pcpu/privilege.v \
 	../rtl/pcpu/register_file.v \
@@ -52,34 +55,37 @@ verilator --binary -j 0 -DSIMULATION --top-module top_simu \
 	../rtl/quasisoc/interrupt/interrupt_unit.v \
 	../rtl/quasisoc/uart/serialboot.v \
 	../rtl/quasisoc/fifo.v \
-	../rtl/quasisoc/uart/uartnew.v \
-	../rtl/quasisoc/uart/uartreset.v
-iverilog -DSIMULATION -I../rtl/board-specific/nexys-video/ \
-	iv_simu.v \
-	../rtl/pcpu/alu.v \
-	../rtl/pcpu/privilege.v \
-	../rtl/pcpu/register_file.v \
-	../rtl/pcpu/riscv-multicyc.v \
-	../rtl/pcpu/rv32a.v \
-	../rtl/pcpu/rv32m.v \
-	../rtl/board-specific/nexys-video/quasi_main.v \
-	../rtl/quasisoc/simple_ram.v \
-	../rtl/quasisoc/debounce.v \
-	../rtl/quasisoc/clocked_rom.v \
-	../rtl/quasisoc/bus/arbitrator.v \
-	../rtl/quasisoc/bus/highmapper.v \
-	../rtl/quasisoc/bus/lowmapper.v \
-	../rtl/quasisoc/gpio/gpio.v \
-	../rtl/quasisoc/interrupt/aclint.v \
-	../rtl/quasisoc/interrupt/interrupt_unit.v \
-	../rtl/quasisoc/uart/serialboot.v \
-	../rtl/quasisoc/fifo.v \
-	../rtl/quasisoc/uart/uartnew.v \
-	../rtl/quasisoc/uart/uartreset.v
+	../rtl/quasisoc/uart/uartsim.v \
+	../rtl/quasisoc/uart/uartreset.v \
+	--exe sim_main.cpp 
+make -C obj_dir -f Vquasi_main.mk  Vquasi_main
+
+#iverilog -DSIMULATION -I../rtl/board-specific/nexys-video/ \
+	#iv_simu.v \
+	#../rtl/pcpu/alu.v \
+	#../rtl/pcpu/privilege.v \
+	#../rtl/pcpu/register_file.v \
+	#../rtl/pcpu/riscv-multicyc.v \
+	#../rtl/pcpu/rv32a.v \
+	#../rtl/pcpu/rv32m.v \
+	#../rtl/board-specific/nexys-video/quasi_main.v \
+	#../rtl/quasisoc/simple_ram.v \
+	#../rtl/quasisoc/debounce.v \
+	#../rtl/quasisoc/clocked_rom.v \
+	#../rtl/quasisoc/bus/arbitrator.v \
+	#../rtl/quasisoc/bus/highmapper.v \
+	#../rtl/quasisoc/bus/lowmapper.v \
+	#../rtl/quasisoc/gpio/gpio.v \
+	#../rtl/quasisoc/interrupt/aclint.v \
+	#../rtl/quasisoc/interrupt/interrupt_unit.v \
+	#../rtl/quasisoc/uart/serialboot.v \
+	#../rtl/quasisoc/fifo.v \
+	#../rtl/quasisoc/uart/uartnew.v \
+	#../rtl/quasisoc/uart/uartreset.v
 
 
 echo -e "\033[37mLaunching simulation...\033[0m"
 #vvp -n a.out
-obj_dir/Vtop_simu
+obj_dir/Vquasi_main
 
 echo -e "\033[37mFinished.\033[0m"
