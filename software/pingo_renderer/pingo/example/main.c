@@ -1,8 +1,8 @@
 /*#include "windowbackend.h"*/
 #include "consolebackend.h"
-/*#include "teapot.h"*/
-/*#include "cube.h"*/
-/*#include "pingo_mesh.h"*/
+#include "teapot.h"
+#include "cube.h"
+#include "pingo_mesh.h"
 #include "viking.h"
 #include "../render/renderer.h"
 #include "../render/texture.h"
@@ -42,7 +42,7 @@ Pixel * loadTexture(char * filename, Vec2i size) {
     return image;
 }
 
-int sftrdr_main(){
+int sftrdr_main(int id){
     /*Vec2i size = {1280, 800};*/
     Vec2i size = {160, 120};
 
@@ -66,8 +66,10 @@ int sftrdr_main(){
     rendererSetScene(&renderer, &s);
 
     Object viking_room;
-	viking_room.mesh = &viking_mesh;
-	/*viking_room.mesh = &mesh_teapot;*/
+
+	// a basic selection
+	viking_room.mesh = id == 0 ? &viking_mesh : id == 1 ? &mesh_teapot : &mesh_cube;
+
     sceneAddRenderable(&s, object_as_renderable(&viking_room));
     viking_room.material = 0;
 
@@ -96,7 +98,7 @@ int sftrdr_main(){
 
         //TEA TRANSFORM - Defines position and orientation of the object
         viking_room.transform = mat4RotateZ(3.142128);
-        t = mat4Scale((Vec3f){0.2,0.2,0.2});
+        t = mat4Scale(id == 0 ? (Vec3f){0.2,0.2,0.2} : (Vec3f){1.2, 1.2, 1.2});
         viking_room.transform = mat4MultiplyM(&viking_room.transform, &t );
         t = mat4Translate((Vec3f){0,0,0});
         viking_room.transform = mat4MultiplyM(&viking_room.transform, &t );
@@ -105,7 +107,7 @@ int sftrdr_main(){
 
         //SCENE
         /*s.transform = mat4RotateY(cos(phi -= 0.05)+0.64);*/
-		s.transform = mat4RotateY(cos(phi -= 0.5)+0.64);
+		s.transform = mat4RotateY(cos(phi -= (id == 0 ? 0.5 : 0.2))+0.64);
 
         rendererSetCamera(&renderer,(Vec4i){0,0,size.x,size.y});
 		rendererRender(&renderer);

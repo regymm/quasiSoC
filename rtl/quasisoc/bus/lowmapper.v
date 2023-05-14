@@ -61,6 +61,12 @@ module lowmapper
         output uart_we,
         input [31:0]uart_spo,
 
+        // uart2: 0x9d000000
+        output reg [2:0]uart2_a,
+        output reg [31:0]uart2_d,
+        output uart2_we,
+        input [31:0]uart2_spo,
+
         // vram: 0x9400000 to 0x9400
         output reg [31:0]video_a = 0,
         output reg [31:0]video_d = 0,
@@ -157,6 +163,7 @@ module lowmapper
 	assign gpio_rd = (state == 2 & aid2 == 2) ? rd_r : 0;
 	`endif
 	assign uart_we = (state == 2 & aid2 == 3) ? we_r : 0;
+	assign uart2_we = (state == 2 & aid2 == 4'hd) ? we_r : 0;
 	assign video_we = (state == 2 & aid2 == 4) ? we_r : 0;
 	assign sd_we = (state == 2 & aid2 == 6) ? we_r : 0;
 	assign usb_we = (state == 2 & aid2 == 7) ? we_r : 0;
@@ -193,6 +200,7 @@ module lowmapper
 					4'ha: required_spo <= ps2_spo;
 					4'hb: required_spo <= t_spo; 
 					4'hc: required_spo <= eth_spo;
+					4'hd: required_spo <= uart2_spo;
 					default: required_spo <= 0;
 				endcase
 			end
@@ -219,6 +227,8 @@ module lowmapper
         gpio_d = d_r;
         uart_a = a_r[4:2];
         uart_d = d_r;
+        uart2_a = a_r[4:2];
+        uart2_d = d_r;
 		sb_a = a_r[4:2];
 		sb_d = d_r;
         video_a = a_r;

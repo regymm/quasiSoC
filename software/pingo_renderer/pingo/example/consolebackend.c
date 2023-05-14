@@ -41,7 +41,7 @@ void console_backend_afterRender( Renderer * ren,  BackEnd * backEnd) {
 			Pixel* pix3 = &frameBuffer[x+2 + y * totalSize.x];
 			Pixel* pix4 = &frameBuffer[x+3 + y * totalSize.x];
 			if (y < 240 && x < 320) {
-				video_base[y*80 + x/4] = (pix1->g) + (pix2->g<<8) + (pix3->g<<16) + (pix4->g<<24);
+				video_base[(y+60)*80 + (x+80)/4] = (pix1->g) + (pix2->g<<8) + (pix3->g<<16) + (pix4->g<<24);
 				/*video_base[y*80 + x/4] = (pix2->g<<8) + (pix3->g<<16) + (pix4->g<<24);*/
 				/*video_base[y*80 + x/4] = (pix1->g);*/
 			}

@@ -14,6 +14,10 @@ volatile int* uart_rx_new		= (int*) 0x93000004;
 volatile int* uart_rx_data		= (int*) 0x93000000;
 
 volatile int* video_base		= (int*) 0x94000000;
+volatile int* video_char_base	= (int*) 0x94400000;
+volatile int* video_light_mode	= (int*) 0x94820000;
+volatile int* video_mono_mode	= (int*) 0x94840000;
+volatile int* video_char_mode	= (int*) 0x94860000;
 int video_x;
 int video_y;
 
@@ -40,12 +44,14 @@ void hardware_init()
 #include "pingo/sftrdr_main.h"
 void software_renderer()
 {
-	volatile int* video_light_mode;
-	/*video_light_mode = (void *)0x94040000;*/
-	/**video_light_mode = 0xffffffff;*/
-	video_light_mode = (void *)0x94020000;
-	*video_light_mode = 0xffffffff;
-	sftrdr_main();
+	*video_light_mode = 0x1;
+	*video_mono_mode = 0x0;
+	// 0x0: picture mode, 0x1: pure char mode, 0x2: mixed mode
+	*video_char_mode = 0x2;
+	// 0: Viking
+	// 1: teaport
+	// 2: cube
+	sftrdr_main(2);
 }
 
 void hdmi_test()
@@ -75,6 +81,15 @@ void hdmi_test()
 			int clr = (i+j)%2 ? 0x1c : 0xe3;
 		}
 	}
+
+	for (i = 0; i < 80*30; i++) {
+		video_char_base[i] = 0x0700 + i%0x100;
+	}
+	video_char_base[0] = 0x0e30;
+	video_char_base[i-1] = 0x0330;
+	/*for (i = 0; i < 60; i++) {*/
+		/*video_char_base[i] = 0x0e30;*/
+	/*}*/
 	/*printf("%u\r\n", timer_ctrl[0]);*/
 	/*while(1);*/
 }

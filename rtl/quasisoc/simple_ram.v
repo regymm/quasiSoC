@@ -28,7 +28,10 @@ module simple_ram
 	assign ready = ~(rd | we);
 	
 	always @ (posedge clk) begin
-		if (we) mem[a] <= d;
+		if (we) begin
+			mem[a] <= d;
+			spo <= d;
+		end
 		spo <= mem[a];
 	end
 	//always @ (a) begin

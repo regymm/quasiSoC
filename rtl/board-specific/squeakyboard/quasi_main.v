@@ -13,6 +13,7 @@ module quasi_main
 		parameter CLOCK_FREQ = 62500000,
 		//parameter CLOCK_FREQ = 75000000,
 		parameter BAUD_RATE_UART = 1843200,
+		parameter BAUD_RATE_UART2 = 115200,
 		//parameter BAUD_RATE_UART = 3686400,
 		parameter BAUD_RATE_CH375 = 9600,
 		//parameter TIMER_COUNTER = 4000 // for debugging
@@ -35,8 +36,8 @@ module quasi_main
         input uart_rx,
         output uart_tx,
 
-		//input uart_rx_2,
-		//output uart_tx_2,
+		input uart_rx_2,
+		output uart_tx_2,
 
         input sd_ncd,
         input sd_wp,
@@ -73,8 +74,8 @@ module quasi_main
 		output lcd_cs,
 		output lcd_rst,
 
-		input p1p,
-		input p1n,
+		//input p1p,
+		//input p1n,
 		input p3p,
 		input p3n,
 		input p2p,
@@ -155,10 +156,10 @@ module quasi_main
 		//.clk5_50(clk_2x)
 	//);
 
-	(*mark_debug = "true"*)reg [7:0]probe;
-	always @ (posedge clk_main) begin
-		probe <= {p1p, p1n, p3p, p3n, p2p, p2n, p4p, p4n};
-	end
+	//(*mark_debug = "true"*)reg [7:0]probe;
+	//always @ (posedge clk_main) begin
+		//probe <= {p1p, p1n, p3p, p3n, p2p, p2n, p4p, p4n};
+	//end
 
     wire [1:0]sw_d;
     debounce #(.N(2)) debounce_inst_0(
@@ -187,7 +188,7 @@ module quasi_main
 	clocked_rom #(
 		.WIDTH(32),
 		.DEPTH(10),
-		.INIT("/home/petergu/MyHome/quasiSoC/firmware/bootrom/result_bootrom.dat")
+		.INIT("/home/petergu/quasiSoC/firmware/bootrom/bootrom.dat")
 	) bootrom(
 		.clk(clk_main),
         .a(bootm_a),
@@ -206,7 +207,7 @@ module quasi_main
 	simple_ram #(
 		.WIDTH(32),
 		.DEPTH(12),
-		.INIT("/home/petergu/MyHome/quasiSoC/rtl/null.dat")
+		.INIT("/home/petergu/quasiSoC/rtl/null.dat")
 	) distram (
         .clk(clk_main),
         .a(distm_a),
@@ -319,7 +320,6 @@ module quasi_main
 	assign irq_gpio = 0;
 `endif
 
-
     // uart
     wire [2:0]uart_a;
     wire [31:0]uart_d;
@@ -358,6 +358,32 @@ module quasi_main
 	assign uart_spo = 0;
 	assign uart_tx = 1;
 	assign irq_uart = 0;
+`endif
+
+	// UART2, probably handheld terminal, uartboot/uartreset not supported,
+	// for now
+	wire [2:0]uart2_a;
+	wire [31:0]uart2_d;
+	wire uart2_we;
+	wire [31:0]uart2_spo;
+`ifdef UART2_EN
+	uart_new #(
+		.CLOCK_FREQ(CLOCK_FREQ),
+		.BAUD_RATE(BAUD_RATE_UART2)
+	) uart2_inst (
+		.clk(clk_main),
+
+		.tx(uart_tx_2),
+		.rx(uart_rx_2),
+
+		.a(uart2_a),
+		.d(uart2_d),
+		.we(uart2_we),
+		.spo(uart2_spo)
+	);
+`else
+	assign uart2_spo = 0;
+	assign uart_tx_2 = 1;
 `endif
 
 	// uart reset
@@ -724,6 +750,7 @@ module quasi_main
 		.spo(aclint_spo)
     );
 
+	// this is nonstandard and not used, I guess
     interrupt_unit interrupt_unit_inst(
         .clk(clk_main),
         .rst(rst),
@@ -909,6 +936,11 @@ module quasi_main
         .uart_d(uart_d),
         .uart_we(uart_we),
 
+        .uart2_spo(uart2_spo),
+        .uart2_a(uart2_a),
+        .uart2_d(uart2_d),
+        .uart2_we(uart2_we),
+
         .video_spo(video_spo),
         .video_a(video_a),
         .video_d(video_d),
@@ -932,7 +964,7 @@ module quasi_main
         .sb_a(sb_a),
         .sb_d(sb_d),
         .sb_we(sb_we),
-        .sb_spo(sb_spo),
+        .sb_spo(0),
 		.sb_ready(sb_ready),
 
 		.ps2_spo(ps2_spo),

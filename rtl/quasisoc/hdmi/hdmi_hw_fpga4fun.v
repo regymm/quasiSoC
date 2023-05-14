@@ -7,8 +7,10 @@ module hdmi_fpga4fun
 
 		input [23:0]rgb,
 
-		output [9:0]cx,
-		output [9:0]cy,
+		output reg [9:0]cx, // 0 to 799
+		output reg [9:0]cy, // 0 to 524
+		output [9:0]cx_next,
+		output [9:0]cy_next,
 
         // 8 differential signals output
         output [2:0] TMDSp, TMDSn,
@@ -16,20 +18,15 @@ module hdmi_fpga4fun
     );
 
 	// 800x525 frame counter
-	reg [9:0]counterX; // 0 to 799
-	reg [9:0]counterY; // 0 to 524
+	assign cx_next = cx == 799 ? 0 : cx + 1;
+	assign cy_next = cx == 799 ? ((cy == 524) ? 0 : cy + 1) : cy;
 	always @ (posedge clk_pix) begin
-		counterX <= (counterX == 799) ? 0 : counterX + 1;
-		if (counterX == 799)
-			counterY <= (counterY == 524) ? 0 : counterY + 1;
+		cx <= cx_next;
+		cy <= cy_next;
 	end
-	wire hSync = (counterX >= 656) & (counterX < 752);
-	wire vSync = (counterY >= 490) & (counterY < 492);
-	wire DrawArea = (counterX < 640) & (counterY < 480);
-
-	assign cx = counterX;
-	assign cy = counterY;
-
+	wire hSync = (cx >= 656) & (cx < 752);
+	wire vSync = (cy >= 490) & (cy < 492);
+	wire DrawArea = (cx < 640) & (cy < 480);
 
 	//hdmi_char_term hdmi_char_term_inst(
 		//.red(red),

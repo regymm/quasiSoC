@@ -5,8 +5,6 @@
 
 ## Clock signal
 set_property -dict {PACKAGE_PIN E3 IOSTANDARD LVCMOS33} [get_ports sysclk]
-create_clock -period 10.000 -name sys_clk_pin -waveform {0.000 5.000} -add [get_ports sysclk]
-
 
 ## FPGAOL LED (signle-digit-SEGPLAY)
 
@@ -14,9 +12,6 @@ set_property -dict {PACKAGE_PIN C17 IOSTANDARD LVCMOS33} [get_ports {led[0]}]
 set_property -dict {PACKAGE_PIN D18 IOSTANDARD LVCMOS33} [get_ports {led[1]}]
 set_property -dict {PACKAGE_PIN E18 IOSTANDARD LVCMOS33} [get_ports {led[2]}]
 set_property -dict {PACKAGE_PIN G17 IOSTANDARD LVCMOS33} [get_ports {led[3]}]
-set_property -dict {PACKAGE_PIN D17 IOSTANDARD LVCMOS33} [get_ports rts_led]
-set_property -dict {PACKAGE_PIN E17 IOSTANDARD LVCMOS33} [get_ports uart_tx_led]
-set_property -dict {PACKAGE_PIN F18 IOSTANDARD LVCMOS33} [get_ports uart_rx_led]
 #set_property -dict { PACKAGE_PIN G18   IOSTANDARD LVCMOS33 } [get_ports { led[7] }];
 
 
@@ -52,4 +47,5 @@ set_property -dict {PACKAGE_PIN C4 IOSTANDARD LVCMOS33} [get_ports uart_rx]
 set_property -dict {PACKAGE_PIN D4 IOSTANDARD LVCMOS33} [get_ports uart_tx]
 set_property -dict {PACKAGE_PIN D3 IOSTANDARD LVCMOS33} [get_ports cts]
 set_property -dict {PACKAGE_PIN E5 IOSTANDARD LVCMOS33} [get_ports rts]
+
 
