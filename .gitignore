@@ -5,6 +5,7 @@
 *.log
 *.txt
 *.dtb
+*.bak
 work
 eda_projects
 

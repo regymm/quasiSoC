@@ -1,5 +1,8 @@
 `timescale 1ns / 1ps
 module mkrvidor4000_top
+#(
+	parameter FBEXT_ENABLE = 0
+)
 (
 	input clk,
 	input clk_2x,
@@ -10,7 +13,11 @@ module mkrvidor4000_top
 	input [31:0]a,
 	input [31:0]d,
 	input we,
-	output logic [31:0]spo = 0,
+	output reg [31:0]spo = 0,
+
+	input [11:0]fb_a,
+	input [15:0]fb_d,
+	input fb_we,
 
 //`ifdef HDMI_PICTURE
 	//output req,
@@ -37,37 +44,10 @@ module mkrvidor4000_top
 	output TMDSn_clock
 );
 
-//(*mark_debug = "true"*) logic [23:0] rgb;
-//logic [10:0]cx;
-//logic [9:0]cy;
-//(*mark_debug = "true"*) wire [9:0]cx_next;
-//(*mark_debug = "true"*) wire [9:0]cy_next;
-//hdmi #(
-	//.VIDEO_ID_CODE(1), 
-	//.DVI_OUTPUT(1),
-	//.DDRIO(0)
-	////.AUDIO_RATE(AUDIO_RATE), 
-	////.AUDIO_BIT_WIDTH(AUDIO_BIT_WIDTH)
-//) hdmi(
-	//.clk_pixel_x10(clk_tmds), 
-	//.clk_pixel(clk_pix), 
-	//.clk_audio(0), 
-	//.rgb(rgb), 
-	////.audio_sample_word(0), 
-	//.tmds_p(TMDSp), 
-	//.tmds_clock_p(TMDSp_clock), 
-	//.tmds_n(TMDSn), 
-	//.tmds_clock_n(TMDSn_clock), 
-	//.cx(cx), 
-	//.cy(cy),
-	//.cx_next(cx_next),
-	//.cy_next(cy_next)
-//);
-
-//wire [9:0]cx_onscreen = cx_next - 160;
-//wire [9:0] cy_onscreen = cy_next - 45;
-
 	wire [31:0]data = {d[7:0], d[15:8], d[23:16], d[31:24]};
+	wire we_vram = we & a[23:22] == 2'b00;
+	wire we_char = we & a[23:22] == 2'b01;
+	wire we_ctrl = we & a[23:22] == 2'b10;
 
 	wire [23:0]rgb;
 	wire [9:0]cx;
@@ -88,21 +68,18 @@ module mkrvidor4000_top
 		.cy_next(cy_next)
 	);
 
-	//wire [9:0]cx_onscreen = cx;
-	//wire [9:0]cy_onscreen = cy;
-
-
 	// use upper blank memory address for mode control modes
+	// TODO: use single word for bitwise control
 	reg light_mode = 0;
 	reg mono_mode = 0;
-	reg [1:0]char_mode = 0;
+	reg [1:0]char_mode = 2'b11;
 	always @ (posedge clk) begin
 		if (rst) begin
 			light_mode = 0;
 			mono_mode = 0;
 			char_mode = 0;
 		end else begin
-			if (we & a[23:22] == 2'b10) begin
+			if (we_ctrl) begin
 				case (a[18:17])
 					2'b01: light_mode <= data[0];
 					2'b10: mono_mode <= data[0];
@@ -120,6 +97,9 @@ module mkrvidor4000_top
 		mono_mode_pix <= mono_mode;
 		char_mode_pix <= char_mode;
 	end
+
+	// framebuffer graphics
+	// TODO: consider wasting some address space for 32-bit addr per pixel
 
 	// the ID of the pixel. We're at 640x480 physically but only 320x240 are used, so /2
 	wire [16:0]pix_a_pix = (cx/2) + cy/2 * 512/2 + cy/2 * 128/2;
@@ -171,7 +151,7 @@ module mkrvidor4000_top
 		.clk1(clk),
 		.a1(a[15:2]),
 		.d1(data),
-		.we1(we & !a[16] & a[23:22] == 2'b00),
+		.we1(we_vram & !a[16]),
 		.clk2(clk_2x),
 		.a2(pix_a_vram),
 		.rd2(1),
@@ -185,7 +165,7 @@ module mkrvidor4000_top
 		.clk1(clk),
 		.a1(a[15:2]),
 		.d1(data),
-		.we1(we & a[16] & a[23:22] == 2'b00),
+		.we1(we_vram & a[16]),
 		.clk2(clk_2x),
 		.a2(pix_a_vram),
 		.rd2(1),
@@ -193,24 +173,24 @@ module mkrvidor4000_top
 		//.ready()
 	);
 
-	// character terminal!
+	// character terminal
 
 	// my VRAM interface
-	// 30 rows, 80 columns?
+	// 30 rows, 80 columns
 	// the address for video display
-	(*mark_debug = "true"*) wire [11:0]char_a_v = ({6'b0, cy[9:4]}) * 80 + {5'b0, cx[9:3]};
+	wire [11:0]char_a_v = ({6'b0, cy[9:4]}) * 80 + {5'b0, cx[9:3]};
 
 	// character console RAM, 8KB
 	wire [15:0]char_vram_spo;
 	simple_dp_ram #(
-		//.INIT("/home/petergu/quasiSoC/firmware/bootrom/bootrom.dat"),
+		.INIT("/home/petergu/quasiSoC/firmware/bootrom/bootrom.dat"),
 		.WIDTH(16),
 		.DEPTH(12)
 	) video_ram (
 		.clk1(clk),
-		.a1(a[13:2]),
-		.d1(data[15:0]),
-		.we1(we & a[23:22] == 2'b01),
+		.a1(FBEXT_ENABLE ? fb_a : a[13:2]),
+		.d1(FBEXT_ENABLE ? fb_d : data[15:0]),
+		.we1(FBEXT_ENABLE ? fb_we : we_char),
 		.clk2(clk_2x),
 		.a2(char_a_v),
 		.rd2(1),
@@ -233,4 +213,34 @@ module mkrvidor4000_top
 	assign rgb = char_mode_pix == 2'b00 ? pix_rgb : 
 		char_mode_pix == 2'b01 ? char_rgb : pix_rgb ^ char_rgb;
 
+
+//(*mark_debug = "true"*) logic [23:0] rgb;
+//logic [10:0]cx;
+//logic [9:0]cy;
+//(*mark_debug = "true"*) wire [9:0]cx_next;
+//(*mark_debug = "true"*) wire [9:0]cy_next;
+//hdmi #(
+	//.VIDEO_ID_CODE(1), 
+	//.DVI_OUTPUT(1),
+	//.DDRIO(0)
+	////.AUDIO_RATE(AUDIO_RATE), 
+	////.AUDIO_BIT_WIDTH(AUDIO_BIT_WIDTH)
+//) hdmi(
+	//.clk_pixel_x10(clk_tmds), 
+	//.clk_pixel(clk_pix), 
+	//.clk_audio(0), 
+	//.rgb(rgb), 
+	////.audio_sample_word(0), 
+	//.tmds_p(TMDSp), 
+	//.tmds_clock_p(TMDSp_clock), 
+	//.tmds_n(TMDSn), 
+	//.tmds_clock_n(TMDSn_clock), 
+	//.cx(cx), 
+	//.cy(cy),
+	//.cx_next(cx_next),
+	//.cy_next(cy_next)
+//);
+
+//wire [9:0]cx_onscreen = cx_next - 160;
+//wire [9:0] cy_onscreen = cy_next - 45;
 endmodule
