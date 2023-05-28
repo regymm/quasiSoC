@@ -511,7 +511,12 @@ module quasi_main
     wire video_we;
     wire [31:0]video_spo;
 `ifdef VIDEO_EN
-	mkrvidor4000_top mkrvidor4000_top_inst(
+	wire [11:0]hdmi_fb_a;
+	wire [15:0]hdmi_fb_d;
+	wire hdmi_fb_we;
+	mkrvidor4000_top #(
+		.FBEXT_ENABLE(1)
+	) mkrvidor4000_top_inst(
 		.clk(clk_main),
 		.clk_pix(clk_hdmi_25),
 		.clk_tmds(clk_hdmi_250),
@@ -523,11 +528,32 @@ module quasi_main
 		.we(video_we),
 		.spo(video_spo),
 
+		.fb_a(hdmi_fb_a),
+		.fb_d(hdmi_fb_d),
+		.fb_we(hdmi_fb_we),
+
 		.TMDSp(TMDSp),
 		.TMDSn(TMDSn),
 		.TMDSp_clock(TMDSp_clock),
 		.TMDSn_clock(TMDSn_clock)
 	);
+	`ifdef VT100_EN
+		vt100 #(
+			.CLOCK_FREQ(CLOCK_FREQ),
+			.BAUD_RATE(BAUD_RATE_UART)
+		) vt100_inst (
+			.clk(clk_main),
+			.rst(rst),
+			.rx(uart_tx), // same as serial UART output
+			.fb_a(hdmi_fb_a),
+			.fb_d(hdmi_fb_d),
+			.fb_we(hdmi_fb_we)
+		);
+	`else
+		assign hdmi_fb_a = 0;
+		assign hdmi_fb_d = 0;
+		assign hdmi_fb_we = 0;
+	`endif
 `else
 	OBUFDS OBUFDS_red(
 		.I(0),

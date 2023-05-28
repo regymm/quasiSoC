@@ -7,6 +7,9 @@ set_property PHASESHIFT_MODE WAVEFORM [get_cells -hierarchical *adv*]
 #create_generated_clock -name c62d5 -source [get_pins clocking_xc7_inst/clk1_62d5] -divide_by 16 -multiply_by 20 -add -master_clock sysclk [get_pins clocking_xc7_inst/clk1_62d5]
 #create_generated_clock -name c125 -source [get_pins clocking_xc7_inst/clk2_125] -divide_by 8 -multiply_by 20 -add -master_clock sysclk [get_pins clocking_xc7_inst/clk2_125]
 
+#set_max_delay -from [get_clocks clk_main_clock_wizard] -to [get_clocks clk_hdmi_25_clock_wizard]  16 -datapath_only
+#set_max_delay -from [get_clocks clk_hdmi_25_clock_wizard] -to [get_clocks clk_main_clock_wizard] 16 -datapath_only
+
 ## buttons, switches and LEDs
 set_property -dict {PACKAGE_PIN L15 IOSTANDARD LVCMOS33} [get_ports {btn[0]}]
 set_property -dict {PACKAGE_PIN P19 IOSTANDARD LVCMOS33} [get_ports {btn[1]}]

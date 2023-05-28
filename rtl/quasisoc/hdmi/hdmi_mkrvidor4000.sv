@@ -75,9 +75,9 @@ module mkrvidor4000_top
 	reg [1:0]char_mode = 2'b11;
 	always @ (posedge clk) begin
 		if (rst) begin
-			light_mode = 0;
-			mono_mode = 0;
-			char_mode = 0;
+			light_mode <= 0;
+			mono_mode <= 0;
+			char_mode <= 2'b11;
 		end else begin
 			if (we_ctrl) begin
 				case (a[18:17])
@@ -191,7 +191,7 @@ module mkrvidor4000_top
 		.a1(FBEXT_ENABLE ? fb_a : a[13:2]),
 		.d1(FBEXT_ENABLE ? fb_d : data[15:0]),
 		.we1(FBEXT_ENABLE ? fb_we : we_char),
-		.clk2(clk_2x),
+		.clk2(clk),
 		.a2(char_a_v),
 		.rd2(1),
 		.spo2(char_vram_spo)
