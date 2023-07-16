@@ -11,8 +11,7 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. No-MMU Linux capa
   - [x] Core local interrupt controller(CLINT, for mtime and ~~software~~ interrupt)
   - [ ] Platform-level interrupt controller(PLIC, for external interrupt)
 - [x] U-mode\*
-- [x] Memory-mapped IO bus
-  - [ ] with arbitration and DMA
+- [x] Memory-mapped IO bus with arbitration and "DMA"
 - [x] Cache, direct mapping(configurable, 32 KB default)
 
 &nbsp;&nbsp;  \*: except amo(max|min)u? </br>
@@ -49,7 +48,6 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. No-MMU Linux capa
 - [ ] PS/2 mouse
 - [x] Graphics
   - [x] HDMI, character terminal, frame buffer graphics(320x240 8-bit color, 640x480 2-bit monochrome)
-    - [ ] Quality of life fixes
   - [ ] Old good VGA
   - [x] ILI9486 480x320 LCD
     - [ ] Refresh rate upgrade
@@ -132,7 +130,7 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. No-MMU Linux capa
 [Build & run instructions](BuildnRun.md)
 
 *Free-as-in-freedom*</br>
-[Free software toolchain -- SymbiFlow(Vivado-free!)](SymbiFlow.md)
+[Free software toolchain (Vivado-free!)](fstc.md)
 
 ### Linux Kernel
 

@@ -3,7 +3,7 @@
  * License           : GPL-3.0-or-later
  * Author            : Peter Gu <github.com/regymm>
  * Date              : 2022.07.21
- * Last Modified Date: 2022.07.21
+ * Last Modified Date: 2023.07.16
  */
 
 `timescale 1ns / 1ps
@@ -13,6 +13,10 @@ module mmu_sv32
 (
 	input clk,
 	input rst,
+
+	input [1:0]mode,
+	input paging,
+	input [21:0]root_ppn,
 
 	input vreq,
 	output vgnt,
@@ -34,110 +38,197 @@ module mmu_sv32
 	input [31:0]pspo,
 	input pready,
 
-	// control ports
-	input [31:0]satp,
-	input [1:0]mode,
-
 	// these are synchronous exceptions, not interrupts
-	output err,
-	output [15:0]err_code
+	output reg pagefault,
+	output reg accessfault,
+	output reg [15:0]err_code
 );
 	localparam PAGESIZE = 4096; // 2**12
 	localparam LEVELS = 2;
 	localparam PTESIZE = 4;
 
-	reg p1req;
-	wire v1gnt;
-	wire v1hrd;
-	reg [31:0]p1a;
-	reg [31:0]p1d;
-	reg p1we;
-	reg p1rd;
-	wire [31:0]v1spo;
-	wire v1ready;
+	reg mmureq;
+	reg mmugnt;
+	reg mmuhrd;
+	reg [31:0]mmua;
+	reg [31:0]mmud;
+	reg mmuwe;
+	reg mmurd;
+	reg [31:0]mmuspo;
+	reg mmuready;
 
-	assign preq = mode ? p1req : vreq;
-	assign vgnt = mode ? v1gnt : pgnt;
-	assign vhrd = mode ? v1hrd : phrd;
-	assign pa = mode ? p1a : va;
-	assign pd = mode ? p1d : vd;
-	assign pwe = mode ? p1we : vwe;
-	assign prd = mode ? p1rd : vrd;
-	assign vspo = mode ? v1spo : pspo;
-	assign vready = mode ? v1ready : pready;
+	reg enabled = 0;
+	always @ (posedge clk) begin
+		enabled <= mode[1] == 0 & paging;
+	end
 
-	assign v1gnt = 1;
-	assign v1hrd = 0;
+	// TODO: take care about bus switching problems
+	assign preq = enabled ? mmureq : vreq;
+	assign vgnt = enabled ? mmugnt : pgnt;
+	assign vhrd = enabled ? mmuhrd : phrd;
+	assign pa = enabled ? mmua : va;
+	assign pd = enabled ? mmud : vd;
+	assign pwe = enabled ? mmuwe : vwe;
+	assign prd = enabled ? mmurd : vrd;
+	assign vspo = enabled ? mmuspo : pspo;
+	assign vready = enabled ? (mmuready & !(vrd | vwe)) : pready;
+
+
+	// the sets we are operating on: 
+	// cpu-side: va, vd, vwe, vrd, mmuspo, mmuready, ignore vreq, mmugnt=1, mmuhrd=0
+	// phys mem: mmua, mmud, mmuwe, mmurd, pready, pspo, mmureq, pgnt, phrd
+
+	assign mmugnt = 1;
+	assign mmuhrd = 0;
 
 	reg [31:0]vareg;
 	reg [31:0]vdreg;
 	reg vwereg;
 	reg vrdreg;
 
-	wire enabled = satp[31]; // 0: bare, 1: sv32
-	wire [8:0]asid = satp[30:22];
-	wire [21:0]root_ppn = satp[21:0];
-
 	wire [9:0]vpn1 = vareg[31:22];
 	wire [9:0]vpn0 = vareg[21:12];
 	wire [11:0]offset = vareg[11:0];
-	wire [31:0]pteaddr1 = (root_ppn << $clog2(PAGESIZE)) + (vpn1 << PTESIZE);
 
+	wire [31:0]pteaddr1 = (root_ppn << $clog2(PAGESIZE)) + (vpn1 << $clog2(PTESIZE));
 	reg [31:0]pte1;
 	wire pte1v = pte1[0];
 	wire pte1r = pte1[1];
 	wire pte1w = pte1[2];
 	wire pte1x = pte1[3];
 	wire pte1u = pte1[4];
+	wire [21:0]pte1ppn = pte1[31:10];
+	wire [31:0]pteaddr2 = (pte1ppn << $clog2(PAGESIZE)) + (vpn0 << $clog2(PTESIZE));
+	reg [31:0]pte2;
+	wire pte2v = pte2[0];
+	wire pte2r = pte2[1];
+	wire pte2w = pte2[2];
+	wire pte2x = pte2[3];
+	wire pte2u = pte2[4];
+	wire pte2a = pte2[6];
+	wire pte2d = pte2[7];
+	wire [21:0]pte2ppn = pte2[31:10];
+	wire [31:0]physaddr = {pte2ppn, offset};
 
 	localparam DISABLED = 0;
 	localparam IDLE = 1;
 	localparam LV1RD = 2;
 	localparam LV1DECODE = 3;
-	reg [3:0]state;
+	localparam BAD = -1;
+	reg [3:0]phase;
 
 	// bus control
 	reg mfuse_r;
 	wire mfuse = mfuse_r & !phrd;
-	wire bus_occupied = p1req & pgnt;
-	wire phase_need_gnt = state == LV1RD;
-	assign p1req = !phrd & phase_need_gnt;
+	wire bus_xfer_ok = mmureq & pgnt;
+	wire phase_need_gnt = phase == LV1RD;
+	assign mmureq = !phrd & phase_need_gnt;
+	wire phase_changing = phase_n != phase;
 	always @ (posedge clk) begin
 		if (rst) mfuse_r <= 1;
 		else if (!phase_changing & phase_with_mem & bus_xfer_ok) mfuse_r <= 0;
 		else mfuse_r <= 1;
 	end
 
+	reg phase_n;
+	always @ (*) begin
+		phase_n = BAD;
+		mmuready = 0;
+		mmua = 0;
+		mmuwe = 0;
+		mmurd = 0;
+		pagefault = 0;
+		accessfault = 0;
+		case (phase) 
+			IDLE: begin
+				mmuready = 1;
+				if (!enabled) phase_n = DISABLED;
+				else if (vwe | vrd) phase_n = LV1RD;
+			end
+			LV1RD: begin
+				mmua = pteaddr1;
+				mmurd = mfuse;
+				if (bus_xfer_ok & pready) phase_n = LV1DECODE;
+			end
+			LV1DECODE: begin
+				if (!pte1v | (!pte1r & pte1w)) phase_n = PAGEFAULT;
+				else if (pte1r | pte1x) phase_n = BAD; // superpage not supported
+				else phase_n = LV2RD;
+			end
+			LV2RD: begin
+				mmua = pteaddr2;
+				mmurd = mfuse;
+				if (bus_xfer_ok & pready) phase_n = LV2DECODE;
+			end
+			LV2DECODE: begin
+				if (!pte2v | (!pte2r & pte2w)) phase_n = PAGEFAULT;
+				else if (pte2r | pte2x) phase_n = LEAF;
+				else phase_n = BAD;
+			end
+			LEAF: begin
+				// we only check write violations and u-mode violations
+				// distinguishing r and x is too much
+				// SUM/MXR check: easy but no
+				if ((vwreg & !pte2w) | (!pte2u & mode == 2'b00)) phase_n = PAGEFAULT; 
+				// TODO: a and d management
+			end
+			DISABLED: begin
+				if (enabled) phase_n = IDLE;
+			end
+			PAGEFAULT: begin
+				pagefault = 1;
+				mmuready = 1;
+				phase_n = IDLE;
+			end
+			ACCESSFAULT: begin
+				accessfault = 1;
+				mmuready = 1;
+				phase_n = IDLE;
+			end
+			BAD: begin
+				pagefault = 1;
+				accessfault = 1;
+			end
+		endcase
+	end
+
 	always @ (posedge clk) begin
 		if (rst) begin
-			state <= IDLE;
+			phase <= IDLE;
+			mmua <= 0;
+			mmud <= 0;
+			mmuwe <= 0;
+			mmurd <= 0;
+			mmuspo <= 0;
+			mmuready <= 1;
+			mmureq <= 0;
+			pagefault <= 0;
+			accessfault <= 0;
 		end else begin
-			case (state)
+			phase <= phase_n;
+			case (phase)
 				IDLE: begin
 					vareg <= va;
 					vdreg <= vd;
 					vwereg <= vwe;
 					vrdreg <= vrd;
-					if (mode == 0)
-						state <= DISABLED;
-					else if (vwe | vrd) begin
-						state <= LV1RD;
-					end
+					pagefault <= 0;
+					accessfault <= 0;
 				end
 				LV1RD: begin
-					p1a <= pteaddr1;
-					p1we <= mfuse;
-					if (bus_occupied & pready) begin
-						state <= LV1DECODE; 
+					if (phase_n == LV1DECODE) begin
 						pte1 <= pspo;
 					end
 				end
 				LV1DECODE: begin
 				end
 				DISABLED: begin
-					if (mode == 1) state <= IDLE;
+					if (enabled == 1) begin
+						phase <= IDLE;
+						mmuready <= 1;
+					end
 				end
-				default: state <= IDLE;
+				default: phase <= IDLE;
 			endcase
 		end
 	end

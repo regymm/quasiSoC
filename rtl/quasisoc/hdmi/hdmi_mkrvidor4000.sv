@@ -1,4 +1,13 @@
+/**
+ * File              : hdmi_mkrvidor4000.sv
+ * License           : GPL-3.0-or-later
+ * Author            : Peter Gu <github.com/regymm>
+ * Date              : 2023.06.10
+ * Last Modified Date: 2023.06.10
+ */
 `timescale 1ns / 1ps
+`include "quasi.vh"
+
 module mkrvidor4000_top
 #(
 	parameter FBEXT_ENABLE = 0
@@ -54,6 +63,30 @@ module mkrvidor4000_top
 	wire [9:0]cy;
 	wire [9:0]cx_next;
 	wire [9:0]cy_next;
+
+`ifdef TRUE_HDMI_EN
+	wire [2:0]tmds;
+	wire tmds_clock;
+	hdmi #(
+		.VIDEO_ID_CODE(1)
+	) hdmi_hdl_util (
+		.clk_pixel_x5(clk_tmds),
+		.clk_pixel(clk_pix),
+		.clk_audio(0),
+		.rgb(rgb),
+		.audio_sample_word({0, 0}),
+		.tmds(tmds),
+		.tmds_clock(tmds_clock),
+		.cx(cx),
+		.cy(cy)
+	);
+	assign cx_next = cx;
+	assign cy_next = cy;
+	OBUFDS #(.IOSTANDARD("TMDS_33")) obufds0 (.I(tmds[0]), .O(TMDSp[0]), .OB(TMDSn[0]));
+	OBUFDS #(.IOSTANDARD("TMDS_33")) obufds1 (.I(tmds[1]), .O(TMDSp[1]), .OB(TMDSn[1]));
+	OBUFDS #(.IOSTANDARD("TMDS_33")) obufds2 (.I(tmds[2]), .O(TMDSp[2]), .OB(TMDSn[2]));
+	OBUFDS #(.IOSTANDARD("TMDS_33")) obufds_clock(.I(tmds_clock), .O(TMDSp_clock), .OB(TMDSn_clock));
+`else
 	hdmi_fpga4fun hdmi(
 		.clk_pix(clk_pix), 
 		.clk_tmds(clk_tmds), 
@@ -67,6 +100,7 @@ module mkrvidor4000_top
 		.cx_next(cx_next),
 		.cy_next(cy_next)
 	);
+`endif
 
 	// use upper blank memory address for mode control modes
 	// TODO: use single word for bitwise control

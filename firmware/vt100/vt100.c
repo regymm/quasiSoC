@@ -9,6 +9,9 @@
 // running on quasisoc/pcpu and (previously) heteroterminal/vexriscv
 /*typedef unsigned char uint8_t;*/
 
+#define ROWS 24
+#define COLS 80
+#define BUFFER_LIM 512
 extern void cpld_write_cmd(int addr, int data);
 extern int cpld_is_ready();
 extern int rx_has_new();
@@ -83,7 +86,7 @@ static inline  void cpld_wait_safe()
 
 static inline void lcd_wchar_safe(int x, int y, int c, int iscursor)
 {
-	hdmi_fb[x + y * 80] = (iscursor ? 0xf000 : 0x0f00) + (c & 0xff);
+	hdmi_fb[x + y * COLS] = (iscursor ? 0xf000 : 0x0f00) + (c & 0xff);
 	cpld_wait_safe();
 	/*cpld_write_cmd(2, x);*/
 	/*cpld_write_cmd(3, y);*/
@@ -93,10 +96,10 @@ static inline void lcd_wchar_safe(int x, int y, int c, int iscursor)
 static inline void buf_wchar(int x, int y, int c)
 {
 	// also write to buffer
-	unsigned int idx = (y * 80 + x) >> 2;
+	unsigned int idx = (y * COLS + x) >> 2;
 	int i4 = (x & 0x3) * 8;
 	/*unsigned int c4 = fb[idx];*/
-	if (idx > 511) {
+	if (idx > (BUFFER_LIM - 1)) {
 		/*led(2);*/
 		return;
 	}
@@ -126,7 +129,7 @@ static inline void scroll_down(int* pos_y)
 				/*lcd_wchar_safe(i, j, fb[(j*80+i)>>2] >> ((i&0x3)*8), 0);*/
 			/*}*/
 	}
-	else *pos_y = (*pos_y == 23 ? 23 : *pos_y + 1);
+	else *pos_y = (*pos_y == (ROWS - 1) ? (ROWS - 1) : *pos_y + 1);
 	/*else if (*pos_y < *scroll_start || *pos_y > *scroll_end) *pos_y = *pos_y + 1;*/
 }
 
@@ -158,7 +161,7 @@ void c_start()
 	*head = 0;
 	*tail = 0;
 	*scroll_start = 0;
-	*scroll_end = 23;
+	*scroll_end = ROWS - 1;
 	
 	// VT100 seqs
 	int in_esc_seq = 0; // 0: none, 1: esc, 2: csi, 3: qmark
@@ -275,18 +278,18 @@ void c_start()
 							/*}*/
 							/*cpld_wait_safe();*/
 						/*}*/
-						int clear_start = csi_param[0] == 0 ? (pos_x + pos_y * 80) : 0;
-						int clear_end = csi_param[0] == 1 ? (pos_x + pos_y * 80) : 1919;
+						int clear_start = csi_param[0] == 0 ? (pos_x + pos_y * COLS) : 0;
+						int clear_end = csi_param[0] == 1 ? (pos_x + pos_y * COLS) : (COLS * ROWS - 1);
 						for (i = clear_start; i <= clear_end; i++) {
 							int i4 = (i & 0x3) * 8;
-							if (i>>2 < 512)
+							if (i>>2 < BUFFER_LIM)
 								fb[i>>2] = (fb[i>>2] & (~(0xFF<<i4))) + (' ' << i4);
 							cpld_wait_safe();
 						}
 						/*pos_x = 0; pos_y = 0;*/
 					} else if (c == 'K') {
 						int clrstart = csi_param[0] == 0 ? pos_x : 0;
-						int clrend = csi_param[0] == 1 ? pos_x : 79;
+						int clrend = csi_param[0] == 1 ? pos_x : (COLS - 1);
 						for (i = clrstart; i <= clrend; i++) {
 							buf_wchar(i, pos_y, ' ');
 							cpld_wait_safe();
@@ -298,7 +301,7 @@ void c_start()
 					} else if (c == 'r') { // set scroll region
 						int is_all = csi_param[0] + csi_param[1];
 						*scroll_start = is_all ? csi_param[0]-1 : 0;
-						*scroll_end = is_all ? csi_param[1]-1 : 23;
+						*scroll_end = is_all ? csi_param[1]-1 : (ROWS - 1);
 						pos_y = 0; // cursor to top
 					}
 				}
@@ -325,22 +328,22 @@ void c_start()
 					// pos_y auto updated
 				}
 				buf_wchar(pos_x, pos_y, c);
-				if (pos_x == 79) on_line_end = 1;
+				if (pos_x == (COLS - 1)) on_line_end = 1;
 				pos_x = pos_x + 1;
 				/*if (pos_x == 80) {*/
 					/*on_line_end = 1;*/
 					/*pos_x = 79;*/
 				/*}*/
 			}
-			if (pos_x > 79) pos_x = 79;
+			if (pos_x > (COLS - 1)) pos_x = (COLS - 1);
 			else if (pos_x < 0) pos_x = 0;
-			if (pos_y > 23) pos_y = 23;
+			if (pos_y > (ROWS - 1)) pos_y = (ROWS - 1);
 			else if (pos_y < 0) pos_y = 0;
 		}
 		// sync to CPLD
-		for (j = 0; j < 24; j++)
-			for (i = 0; i < 80; i++) {
-				lcd_wchar_safe(i, j, fb[(j*80+i)>>2] >> ((i&0x3)*8), i == pos_x && j == pos_y);
+		for (j = 0; j < ROWS; j++)
+			for (i = 0; i < COLS; i++) {
+				lcd_wchar_safe(i, j, fb[(j*COLS+i)>>2] >> ((i&0x3)*8), i == pos_x && j == pos_y);
 			}
 		cpld_wait_safe();
 		/*cpld_write_cmd(2, pos_x);*/

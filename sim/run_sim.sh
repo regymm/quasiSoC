@@ -38,6 +38,7 @@ verilator -j 0 -DSIMULATION -DINTERACTIVE_SIM --top-module quasi_main \
 	-I../rtl/board-specific/nexys-video/ \
 	--cc \
 	../rtl/pcpu/alu.v \
+	../rtl/pcpu/mmu.v \
 	../rtl/pcpu/privilege.v \
 	../rtl/pcpu/register_file.v \
 	../rtl/pcpu/riscv-multicyc.v \

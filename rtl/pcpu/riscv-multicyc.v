@@ -14,6 +14,7 @@
 
 module riscv_multicyc
 	#(
+		parameter RV32M = 1,
 		parameter START_ADDR = 32'hf0000000,
 		parameter INVALID_ADDR = 32'hffffffff
 	)
@@ -22,9 +23,14 @@ module riscv_multicyc
 		input rst,
 
 		input tip,
-		input sip,
 		input eip,
 		output eip_reply,
+
+	`ifdef IRQ_EN
+		output [1:0]mode, 
+		output paging,
+		output [21:0]root_ppn,
+	`endif
 
 		output req,
 		input gnt,
@@ -74,6 +80,7 @@ module riscv_multicyc
 		`ifdef IRQ_EN
 		4: newpc = {mtvec_in[31:2], 2'b0}; // exception, interrupt
 		5: newpc = mepc_in;
+		6: newpc = sepc_in;
 		`endif
 		default: newpc = INVALID_ADDR;
 	endcase end
@@ -235,18 +242,24 @@ module riscv_multicyc
 	reg CsrWe;
 	reg CsrSave;
 	reg OnExcEnter;
-	reg OnExcLeave;
 	reg OnExcIsint;
+	reg OnExcLeave;
+	reg OnExcIsmret;
 	reg IntReply;
 
 	reg [3:0]mcause_code_out;
 	wire [31:0]mtvec_in;
 	wire [31:0]mepc_in;
+	wire [31:0]sepc_in;
 
 	wire [31:0]csr_a = instruction[31:20];
 	wire [31:0]csr_d = ALUOut;
 	wire csr_we = CsrWe;
 	wire [31:0]csr_spo;
+
+	//wire mode;
+	//wire paging;
+	//wire [21:0]root_ppn;
 
 	wire interrupt;
 	privilege privilege_inst
@@ -259,22 +272,28 @@ module riscv_multicyc
 		.we(csr_we),
 		.spo(csr_spo),
 
-		.tip(tip),
-		.sip(sip),
-		.eip(eip),
-		.eip_reply(eip_reply),
+		.m_tip(tip),
+		.m_eip(eip),
+		.m_eip_reply(eip_reply),
 
 		.on_exc_enter(OnExcEnter),
-		.on_exc_leave(OnExcLeave),
 		.on_exc_isint(OnExcIsint),
-
 		.pc_in(oldpc),
 		.mcause_code_in(mcause_code_out),
 		.mtvec_out(mtvec_in),
+
+		.on_exc_leave(OnExcLeave),
+		.on_exc_ismret(OnExcIsmret),
 		.mepc_out(mepc_in),
+		.sepc_out(sepc_in),
 
 		.interrupt(interrupt),
-		.int_reply(IntReply)
+		.int_reply(IntReply),
+
+		.mode(mode),
+
+		.paging(paging),
+		.ppn(root_ppn)
 	);
 	reg [31:0]csrreg = 0;
 	always @ (posedge clk) begin
@@ -284,9 +303,10 @@ module riscv_multicyc
 
 	// privileged instructions
 	wire priv_csr = op == OP_PRIV & instruction[14:12] != 3'b0;
-	wire priv_wfi = op == OP_PRIV & instruction[14:12] == 3'b0 & instruction[28] & !instruction[25] & !instruction[29];
-	wire priv_mret = op == OP_PRIV & instruction[14:12] == 3'b0 & instruction[28] & !instruction[25] & instruction[29];
-	wire priv_sfencevma = op == OP_PRIV & instruction[14:12] == 3'b0 & instruction[28] & instruction[25];
+	wire priv_wfi = op == OP_PRIV & instruction[14:12] == 3'b0 & !instruction[25] & instruction[22];
+	wire priv_mret = op == OP_PRIV & instruction[14:12] == 3'b0 & instruction[29];
+	wire priv_sret = op == OP_PRIV & instruction[14:12] == 3'b0 & !instruction[22] & !instruction[25] & instruction[28] & !instruction[29];
+	wire priv_sfencevma = op == OP_PRIV & instruction[14:12] == 3'b0 & instruction[25];
 	wire priv_ecall = op == OP_PRIV & instruction[14:12] == 3'b0 & !instruction[28] & !instruction[20];
 	wire priv_ebreak = op == OP_PRIV & instruction[14:12] == 3'b0 & !instruction[28] & instruction[20];
 
@@ -294,7 +314,12 @@ module riscv_multicyc
 	localparam EXC_BREAKPOINT = 4'd3;
 	localparam EXC_LOAD_FAULT = 4'd5;
 	localparam EXC_STORE_FAULT = 4'd7;
+	localparam EXC_ECALL_FROM_U_MODE = 4'd8; // a temp. hack for bad nommu kernel
+	localparam EXC_ECALL_FROM_S_MODE = 4'd9;
 	localparam EXC_ECALL_FROM_M_MODE = 4'd11;
+	localparam EXC_INSTR_PAGE_FAULT = 4'd12;
+	localparam EXC_LOAD_PAGE_FAULT = 4'd13;
+	localparam EXC_STORE_AMO_PAGE_FAULT = 4'd15;
 
 	// TODO: generalize and improve
 	always @ (posedge clk) begin
@@ -302,7 +327,9 @@ module riscv_multicyc
 		else if (priv_ebreak)
 			mcause_code_out <= EXC_BREAKPOINT;
 		else if (priv_ecall)
-			mcause_code_out <= EXC_ECALL_FROM_M_MODE;
+			mcause_code_out <= mode == 2'b11 ? EXC_ECALL_FROM_M_MODE : 
+								mode == 2'b01 ? EXC_ECALL_FROM_S_MODE : 
+								EXC_ECALL_FROM_U_MODE;
 	end
 `endif
 
@@ -365,7 +392,7 @@ module riscv_multicyc
 	localparam OP_R_I	=	7'b0010011;
 	localparam OP_R		=	7'b0110011; // including RV32M
 	localparam OP_FENCE	=	7'b0001111; // FENCE(nop), FENCE.I(nop)
-	localparam OP_PRIV	=	7'b1110011; // ENV(ecall, ebreak), CSR, WFI(aka nop), SFENCE.VMA(aka nop), MRET
+	localparam OP_PRIV	=	7'b1110011; // ENV(ecall, ebreak), CSR, WFI(aka nop), SFENCE.VMA(aka nop), MRET, SRET
 	localparam OP_AMO	=	7'b0101111; // amoxxx.w.xx, lr.xx, sc.xx
 	// TODO: simplify this
 	wire inst_srai = instruction[14:12] == 3'b101 & op == OP_R_I & instruction[30] == 1'b1;
@@ -436,6 +463,7 @@ module riscv_multicyc
 	localparam INTERRUPT	=	100;
 	localparam EXCEPTION	=	110;
 	localparam MRET			=	120;
+	localparam SRET			=	130;
 	//localparam ECALL		=	130;
 	localparam BAD			=	255;
 
@@ -497,8 +525,9 @@ module riscv_multicyc
 		CsrWe = 0;
 		CsrSave = 0;
 		OnExcEnter = 0;
-		OnExcLeave = 0;
 		OnExcIsint = 0;
+		OnExcLeave = 0;
+		OnExcIsmret = 0;
 		IntReply = 0;
 		`endif
 		`ifdef RV32A
@@ -527,6 +556,7 @@ module riscv_multicyc
 				if (interrupt) phase_n = INTERRUPT;
 				else if (op == OP_FENCE | priv_wfi | priv_sfencevma) phase_n = IF;
 				else if (priv_mret) phase_n = MRET;
+				else if (priv_sret) phase_n = SRET;
 				else if (priv_ebreak) phase_n = EXCEPTION;
 					//mcause_code_out <= EXC_BREAKPOINT;
 				else if (priv_ecall) phase_n = EXCEPTION;
@@ -697,6 +727,13 @@ module riscv_multicyc
 				PCWrite = 1; PCSrc = 4;
 			end
 			MRET: begin
+				phase_n = IF;
+				// ~~~~~~~~~~~~~~~~~~~~
+				OnExcLeave = 1;
+				OnExcIsmret = 1;
+				PCWrite = 1; PCSrc = 5;
+			end
+			SRET: begin
 				phase_n = IF;
 				// ~~~~~~~~~~~~~~~~~~~~
 				OnExcLeave = 1;

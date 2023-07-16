@@ -1029,65 +1029,90 @@ module quasi_main
 	);
 
     // cpu-multi-cycle
+	`ifdef IRQ_EN
+	wire [1:0]mode;
+	wire paging;
+	wire [21:0]root_ppn;
+	`endif
 	riscv_multicyc riscv_multicyc_inst(
 		.clk(clk_main),
 		.rst(rst),
 
 		.tip(irq_timer_pending),
-		.sip(irq_soft_pending),
 		.eip(cpu_eip),
 		.eip_reply(cpu_eip_reply),
 
-		.req(req0),
-		.gnt(gnt0),
-		.hrd(hrd0),
-		.a(a0),
-		.d(d0),
-		.we(we0),
-		.rd(rd0),
-		.spo(spo0),
-		.ready(ready0)
+	`ifdef IRQ_EN
+		.mode(mode),
+		.paging(paging),
+		.root_ppn(root_ppn),
+	`endif
+
+		.req(vreq),
+		.gnt(vgnt),
+		.hrd(vhrd),
+		.a(va),
+		.d(vd),
+		.we(vwe),
+		.rd(vrd),
+		.spo(vspo),
+		.ready(vready)
 	);
 
-    //// MMU
-    //wire [31:0]vspo;
-    //wire vready;
-    //wire virq;
-    //wire [31:0]va;
-    //wire [31:0]vd;
-    //wire vwe;
-    //wire vrd;
-//`ifdef MMU_EN
-    //mmu mmu_inst(
-        //.clk(clk_main),
-        //.rst(rst),
+	// MMU
+	wire vreq;
+	wire vgnt;
+	wire vhrd;
+	wire [31:0]vspo;
+	wire vready;
+	wire virq;
+	wire [31:0]va;
+	wire [31:0]vd;
+	wire vwe;
+	wire vrd;
+`ifdef MMU_EN
+	mmu_sv32 mmu_inst(
+		.clk(clk_main),
+		.rst(rst),
 
-        //.ring(ring),
+		.mode(mode),
+		.paging(paging),
+		.root_ppn(root_ppn),
 
-        //.va(va),
-        //.vd(vd),
-        //.vwe(vwe),
-        //.vrd(vrd),
-        //.vspo(vspo),
-        //.vready(vready),
-        //.virq(virq), // nc
+		.vreq(vreq),
+		.vgnt(vgnt),
+		.vhrd(vhrd),
+		.va(va),
+		.vd(vd),
+		.vwe(vwe),
+		.vrd(vrd),
+		.vspo(vspo),
+		.vready(vready),
+		//.virq(virq), // nc
 
-        //.pspo(spo0),
-        //.pready(ready0),
-        //.pa(a0),
-        //.pd(d0),
-        //.pwe(we0),
-        //.prd(rd0)
-    //);
-//`else
-	//assign virq = 0;
-	//assign a0 = va;
-	//assign d0 = vd;
-	//assign we0 = vwe;
-	//assign rd0 = vrd;
-	//assign spo0 = vspo;
-	//assign ready0 = vready;
-//`endif
+		.preq(req0),
+		.pgnt(gnt0),
+		.phrd(hrd0),
+		.pspo(spo0),
+		.pready(ready0),
+		.pa(a0),
+		.pd(d0),
+		.pwe(we0),
+		.prd(rd0)
+	);
+`else
+	assign req0 = vreq;
+	assign vgnt = gnt0;
+	assign vhrd = hrd0;
+	assign a0 = va;
+	assign d0 = vd;
+	assign we0 = vwe;
+	assign rd0 = vrd;
+	assign vspo = spo0;
+	assign vready = ready0;
+	assign virq = 0;
+`endif
+
 	highmapper highmapper_inst (
 		.a(a),
 		.d(d),

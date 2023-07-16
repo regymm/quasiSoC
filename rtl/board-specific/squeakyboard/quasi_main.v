@@ -519,7 +519,11 @@ module quasi_main
 	) mkrvidor4000_top_inst(
 		.clk(clk_main),
 		.clk_pix(clk_hdmi_25),
+		`ifdef TRUE_HDMI_EN
+		.clk_tmds(clk_mem),
+		`else
 		.clk_tmds(clk_hdmi_250),
+		`endif
 		.clk_2x(clk_2x),
 		.rst(rst),
 

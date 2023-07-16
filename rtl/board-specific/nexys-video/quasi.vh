@@ -5,6 +5,7 @@
 `define RV32M
 `define RV32A
 `define IRQ_EN
+`define MMU_EN
 
 
 `ifdef SIMULATION
@@ -26,7 +27,6 @@
 	//`define LCD_EN
 	//`define PS2_EN
 	//`define ETH_EN
-	//`define MMU_EN
 
 	`define SERIALBOOT_EN
 	`define UART_RST_EN
