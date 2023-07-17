@@ -112,16 +112,23 @@ module mmu_sv32
 
 	localparam DISABLED = 0;
 	localparam IDLE = 1;
-	localparam LV1RD = 2;
-	localparam LV1DECODE = 3;
-	localparam BAD = -1;
+	localparam BAD = 2;
+	localparam PAGEFAULT = 3;
+	localparam ACCESSFAULT = 4;
+	localparam LV1RD = 8;
+	localparam LV1DECODE = 9;
+	localparam LV2RD = 10;
+	localparam LV2DECODE = 11;
+	localparam TAINT = 12;
+	localparam MEMRW = 13;
 	reg [3:0]phase;
 
 	// bus control
 	reg mfuse_r;
 	wire mfuse = mfuse_r & !phrd;
 	wire bus_xfer_ok = mmureq & pgnt;
-	wire phase_need_gnt = phase == LV1RD;
+	wire phase_need_gnt = phase[3]; // (phase!=IDLE & phase!=DISABLED & phase!=BAD);
+	wire phase_with_mem = phase == LV1RD | phase == LV2RD | phase == TAINT | phase == MEMRW; // maybe we don't need this... a mfuse=1 when no mem access does no harm
 	assign mmureq = !phrd & phase_need_gnt;
 	wire phase_changing = phase_n != phase;
 	always @ (posedge clk) begin
@@ -162,15 +169,29 @@ module mmu_sv32
 			end
 			LV2DECODE: begin
 				if (!pte2v | (!pte2r & pte2w)) phase_n = PAGEFAULT;
-				else if (pte2r | pte2x) phase_n = LEAF;
+				else if (pte2r | pte2x) begin
+					// leaf PTE is found
+					// we only check write violations and u-mode violations
+					// distinguishing r and x is too much
+					// SUM/MXR check: easy but no
+					if ((vwereg & !pte2w) | (!pte2u & mode == 2'b00)) phase_n = PAGEFAULT; 
+					else if (!pte2a | (vwereg & !pte2w)) phase_n = TAINT;
+					else phase_n = MEMRW;
+				end
 				else phase_n = BAD;
 			end
-			LEAF: begin
-				// we only check write violations and u-mode violations
-				// distinguishing r and x is too much
-				// SUM/MXR check: easy but no
-				if ((vwreg & !pte2w) | (!pte2u & mode == 2'b00)) phase_n = PAGEFAULT; 
-				// TODO: a and d management
+			TAINT: begin
+				mmua = pteaddr2;
+				mmud = pte2 | 32'h40 | (vwereg & 32'h80);
+				mmuwe = mfuse;
+				if (bus_xfer_ok & pready) phase_n = MEMRW;
+			end
+			MEMRW: begin
+				mmua = physaddr;
+				mmud = vdreg;
+				mmurd = mfuse & vrdreg;
+				mmuwe = mfuse & vwereg;
+				if (bus_xfer_ok & pready) phase_n = IDLE;
 			end
 			DISABLED: begin
 				if (enabled) phase_n = IDLE;
@@ -194,16 +215,8 @@ module mmu_sv32
 
 	always @ (posedge clk) begin
 		if (rst) begin
-			phase <= IDLE;
-			mmua <= 0;
-			mmud <= 0;
-			mmuwe <= 0;
-			mmurd <= 0;
+			phase <= DISABLED;
 			mmuspo <= 0;
-			mmuready <= 1;
-			mmureq <= 0;
-			pagefault <= 0;
-			accessfault <= 0;
 		end else begin
 			phase <= phase_n;
 			case (phase)
@@ -212,8 +225,6 @@ module mmu_sv32
 					vdreg <= vd;
 					vwereg <= vwe;
 					vrdreg <= vrd;
-					pagefault <= 0;
-					accessfault <= 0;
 				end
 				LV1RD: begin
 					if (phase_n == LV1DECODE) begin
@@ -222,13 +233,23 @@ module mmu_sv32
 				end
 				LV1DECODE: begin
 				end
-				DISABLED: begin
-					if (enabled == 1) begin
-						phase <= IDLE;
-						mmuready <= 1;
+				LV2RD: begin
+					if (phase_n == LV2DECODE) begin
+						pte2 <= pspo;
 					end
 				end
-				default: phase <= IDLE;
+				LV2DECODE: begin
+				end
+				TAINT: begin
+				end
+				MEMRW: begin
+					if (phase_n == IDLE) begin
+						mmuspo <= pspo;
+					end
+				end
+				DISABLED: begin
+				end
+				default: ;
 			endcase
 		end
 	end

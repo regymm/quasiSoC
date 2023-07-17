@@ -1029,11 +1029,11 @@ module quasi_main
 	);
 
     // cpu-multi-cycle
-	`ifdef IRQ_EN
 	wire [1:0]mode;
 	wire paging;
 	wire [21:0]root_ppn;
-	`endif
+	wire pagefault;
+	wire accessfault;
 	riscv_multicyc riscv_multicyc_inst(
 		.clk(clk_main),
 		.rst(rst),
@@ -1042,11 +1042,11 @@ module quasi_main
 		.eip(cpu_eip),
 		.eip_reply(cpu_eip_reply),
 
-	`ifdef IRQ_EN
 		.mode(mode),
 		.paging(paging),
 		.root_ppn(root_ppn),
-	`endif
+		.pagefault(pagefault),
+		.accessfault(accessfault),
 
 		.req(vreq),
 		.gnt(vgnt),
@@ -1070,6 +1070,7 @@ module quasi_main
 	wire [31:0]vd;
 	wire vwe;
 	wire vrd;
+	// IRQ_EN must be defined also
 `ifdef MMU_EN
 	mmu_sv32 mmu_inst(
 		.clk(clk_main),
@@ -1093,12 +1094,15 @@ module quasi_main
 		.preq(req0),
 		.pgnt(gnt0),
 		.phrd(hrd0),
-		.pspo(spo0),
-		.pready(ready0),
 		.pa(a0),
 		.pd(d0),
 		.pwe(we0),
-		.prd(rd0)
+		.prd(rd0),
+		.pspo(spo0),
+		.pready(ready0),
+
+		.pagefault(pagefault),
+		.accessfault(accessfault)
 	);
 `else
 	assign req0 = vreq;
@@ -1111,6 +1115,8 @@ module quasi_main
 	assign vspo = spo0;
 	assign vready = ready0;
 	assign virq = 0;
+	assign pagefault = 0;
+	assign accessfault = 0;
 `endif
 
 	highmapper highmapper_inst (

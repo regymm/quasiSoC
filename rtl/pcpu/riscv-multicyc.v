@@ -26,11 +26,12 @@ module riscv_multicyc
 		input eip,
 		output eip_reply,
 
-	`ifdef IRQ_EN
 		output [1:0]mode, 
 		output paging,
 		output [21:0]root_ppn,
-	`endif
+
+		input pagefault,
+		input accessfault,
 
 		output req,
 		input gnt,
@@ -257,10 +258,6 @@ module riscv_multicyc
 	wire csr_we = CsrWe;
 	wire [31:0]csr_spo;
 
-	//wire mode;
-	//wire paging;
-	//wire [21:0]root_ppn;
-
 	wire interrupt;
 	privilege privilege_inst
 	(
@@ -310,10 +307,11 @@ module riscv_multicyc
 	wire priv_ecall = op == OP_PRIV & instruction[14:12] == 3'b0 & !instruction[28] & !instruction[20];
 	wire priv_ebreak = op == OP_PRIV & instruction[14:12] == 3'b0 & !instruction[28] & instruction[20];
 
+	localparam EXC_INSTR_ACC_FAULT = 4'd1;
 	localparam EXC_ILLEGAL_INSTRUCTION = 4'd2;
 	localparam EXC_BREAKPOINT = 4'd3;
-	localparam EXC_LOAD_FAULT = 4'd5;
-	localparam EXC_STORE_FAULT = 4'd7;
+	localparam EXC_LOAD_ACC_FAULT = 4'd5;
+	localparam EXC_STORE_AMO_ACC_FAULT = 4'd7;
 	localparam EXC_ECALL_FROM_U_MODE = 4'd8; // a temp. hack for bad nommu kernel
 	localparam EXC_ECALL_FROM_S_MODE = 4'd9;
 	localparam EXC_ECALL_FROM_M_MODE = 4'd11;
@@ -324,6 +322,14 @@ module riscv_multicyc
 	// TODO: generalize and improve
 	always @ (posedge clk) begin
 		if (rst) mcause_code_out <= 0;
+		else if (accessfault) 
+			mcause_code_out <= phase == IF ? EXC_INSTR_ACC_FAULT : 
+								op == OP_LOAD ? EXC_LOAD_ACC_FAULT :
+								EXC_STORE_AMO_ACC_FAULT;
+		else if (pagefault)
+			mcause_code_out <= phase == IF ? EXC_INSTR_PAGE_FAULT : 
+								op == OP_LOAD ? EXC_LOAD_PAGE_FAULT :
+								EXC_STORE_AMO_PAGE_FAULT;
 		else if (priv_ebreak)
 			mcause_code_out <= EXC_BREAKPOINT;
 		else if (priv_ecall)
@@ -557,10 +563,7 @@ module riscv_multicyc
 				else if (op == OP_FENCE | priv_wfi | priv_sfencevma) phase_n = IF;
 				else if (priv_mret) phase_n = MRET;
 				else if (priv_sret) phase_n = SRET;
-				else if (priv_ebreak) phase_n = EXCEPTION;
-					//mcause_code_out <= EXC_BREAKPOINT;
-				else if (priv_ecall) phase_n = EXCEPTION;
-					//mcause_code_out <= EXC_ECALL_FROM_M_MODE;
+				else if (priv_ebreak | priv_ecall) phase_n = EXCEPTION;
 				else
 				`endif
 				if (op == OP_LUI | op == OP_AUIPC | op == OP_JAL) phase_n = WB;
@@ -744,5 +747,14 @@ module riscv_multicyc
 				phase_n = BAD;
 			end
 		endcase
+		`ifdef IRQ_EN
+		if (phase_with_mem &
+			`ifdef RV32A_EN
+			phase != RV32A_MEM1 &
+			`endif
+			bus_xfer_ok & MemReady
+			& (pagefault | accessfault))
+			phase_n = EXCEPTION;
+		`endif
 	end
 endmodule
