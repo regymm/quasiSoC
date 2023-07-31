@@ -64,7 +64,7 @@ module privilege
 	(*mark_debug = "true"*)reg [31:0]mepc;
 	reg [31:0]mcause;
 	(*mark_debug = "true"*)reg [31:0]mtval;
-	(*mark_debug = "true"*)reg [31:0]mip;
+	(*mark_debug = "true"*)reg [31:0]mip = 0;
 
 	reg [31:0]mepc_reg;
 	reg [31:0]sepc_reg;

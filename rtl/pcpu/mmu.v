@@ -47,9 +47,9 @@ module mmu_sv32
 	localparam LEVELS = 2;
 	localparam PTESIZE = 4;
 
-	reg mmureq;
-	reg mmugnt;
-	reg mmuhrd;
+	wire mmureq;
+	wire mmugnt;
+	wire mmuhrd;
 	reg [31:0]mmua;
 	reg [31:0]mmud;
 	reg mmuwe;
@@ -57,10 +57,12 @@ module mmu_sv32
 	reg [31:0]mmuspo;
 	reg mmuready;
 
-	reg enabled = 0;
-	always @ (posedge clk) begin
-		enabled <= mode[1] == 0 & paging;
-	end
+	// TODO: add delay elsewhere for timing
+	wire enabled = mode[1] == 0 & paging;
+	//reg enabled = 0;
+	//always @ (posedge clk) begin
+		//enabled <= mode[1] == 0 & paging;
+	//end
 
 	// TODO: take care about bus switching problems
 	assign preq = enabled ? mmureq : vreq;
@@ -73,6 +75,7 @@ module mmu_sv32
 	assign vspo = enabled ? mmuspo : pspo;
 	assign vready = enabled ? (mmuready & !(vrd | vwe)) : pready;
 
+	wire [31:0]pspo_endian = {pspo[7:0], pspo[15:8], pspo[23:16], pspo[31:24]};
 
 	// the sets we are operating on: 
 	// cpu-side: va, vd, vwe, vrd, mmuspo, mmuready, ignore vreq, mmugnt=1, mmuhrd=0
@@ -90,6 +93,8 @@ module mmu_sv32
 	wire [9:0]vpn0 = vareg[21:12];
 	wire [11:0]offset = vareg[11:0];
 
+	reg levels_i; // 1: pte1, 0: pte2
+
 	wire [31:0]pteaddr1 = (root_ppn << $clog2(PAGESIZE)) + (vpn1 << $clog2(PTESIZE));
 	reg [31:0]pte1;
 	wire pte1v = pte1[0];
@@ -97,6 +102,8 @@ module mmu_sv32
 	wire pte1w = pte1[2];
 	wire pte1x = pte1[3];
 	wire pte1u = pte1[4];
+	wire pte1a = pte1[6];
+	wire pte1d = pte1[7];
 	wire [21:0]pte1ppn = pte1[31:10];
 	wire [31:0]pteaddr2 = (pte1ppn << $clog2(PAGESIZE)) + (vpn0 << $clog2(PTESIZE));
 	reg [31:0]pte2;
@@ -108,7 +115,7 @@ module mmu_sv32
 	wire pte2a = pte2[6];
 	wire pte2d = pte2[7];
 	wire [21:0]pte2ppn = pte2[31:10];
-	wire [31:0]physaddr = {pte2ppn, offset};
+	wire [31:0]physaddr = {levels_i ? pte1ppn : pte2ppn, offset};
 
 	localparam DISABLED = 0;
 	localparam IDLE = 1;
@@ -122,6 +129,7 @@ module mmu_sv32
 	localparam TAINT = 12;
 	localparam MEMRW = 13;
 	reg [3:0]phase;
+	reg [3:0]phase_n;
 
 	// bus control
 	reg mfuse_r;
@@ -137,9 +145,8 @@ module mmu_sv32
 		else mfuse_r <= 1;
 	end
 
-	reg phase_n;
 	always @ (*) begin
-		phase_n = BAD;
+		phase_n = phase; // remain last phase by default
 		mmuready = 0;
 		mmua = 0;
 		mmuwe = 0;
@@ -149,23 +156,34 @@ module mmu_sv32
 		case (phase) 
 			IDLE: begin
 				mmuready = 1;
-				if (!enabled) phase_n = DISABLED;
-				else if (vwe | vrd) phase_n = LV1RD;
+				if (enabled & (vwe | vrd)) phase_n = LV1RD;
+				else phase_n = IDLE;
+				//if (!enabled) phase_n = DISABLED;
+				//else if (vwe | vrd) phase_n = LV1RD;
+				//else phase_n = IDLE;
 			end
 			LV1RD: begin
 				mmua = pteaddr1;
 				mmurd = mfuse;
 				if (bus_xfer_ok & pready) phase_n = LV1DECODE;
+				else phase_n = LV1RD;
 			end
 			LV1DECODE: begin
 				if (!pte1v | (!pte1r & pte1w)) phase_n = PAGEFAULT;
-				else if (pte1r | pte1x) phase_n = BAD; // superpage not supported
+				else if (pte1r | pte1x) begin
+					// leaf PTE is found
+					// see LV2DECODE for details
+					if ((vwereg & !pte1w) | (!pte1u & mode == 2'b00)) phase_n = PAGEFAULT;
+					else if (!pte1a | (vwereg & !pte1d)) phase_n = TAINT;
+					else phase_n = MEMRW;
+				end
 				else phase_n = LV2RD;
 			end
 			LV2RD: begin
 				mmua = pteaddr2;
 				mmurd = mfuse;
 				if (bus_xfer_ok & pready) phase_n = LV2DECODE;
+				else phase_n = LV2RD;
 			end
 			LV2DECODE: begin
 				if (!pte2v | (!pte2r & pte2w)) phase_n = PAGEFAULT;
@@ -175,16 +193,17 @@ module mmu_sv32
 					// distinguishing r and x is too much
 					// SUM/MXR check: easy but no
 					if ((vwereg & !pte2w) | (!pte2u & mode == 2'b00)) phase_n = PAGEFAULT; 
-					else if (!pte2a | (vwereg & !pte2w)) phase_n = TAINT;
+					else if (!pte2a | (vwereg & !pte2d)) phase_n = TAINT;
 					else phase_n = MEMRW;
 				end
 				else phase_n = BAD;
 			end
 			TAINT: begin
-				mmua = pteaddr2;
-				mmud = pte2 | 32'h40 | (vwereg & 32'h80);
+				mmua = levels_i ? pteaddr1 : pteaddr2;
+				mmud = (levels_i ? pte1 : pte2) | 32'h40 | (vwereg & 32'h80);
 				mmuwe = mfuse;
 				if (bus_xfer_ok & pready) phase_n = MEMRW;
+				else phase_n = TAINT;
 			end
 			MEMRW: begin
 				mmua = physaddr;
@@ -192,9 +211,11 @@ module mmu_sv32
 				mmurd = mfuse & vrdreg;
 				mmuwe = mfuse & vwereg;
 				if (bus_xfer_ok & pready) phase_n = IDLE;
+				else phase_n = MEMRW;
 			end
 			DISABLED: begin
 				if (enabled) phase_n = IDLE;
+				else phase_n = DISABLED;
 			end
 			PAGEFAULT: begin
 				pagefault = 1;
@@ -209,13 +230,14 @@ module mmu_sv32
 			BAD: begin
 				pagefault = 1;
 				accessfault = 1;
+				phase_n = BAD;
 			end
 		endcase
 	end
 
 	always @ (posedge clk) begin
 		if (rst) begin
-			phase <= DISABLED;
+			phase <= IDLE;
 			mmuspo <= 0;
 		end else begin
 			phase <= phase_n;
@@ -225,17 +247,19 @@ module mmu_sv32
 					vdreg <= vd;
 					vwereg <= vwe;
 					vrdreg <= vrd;
+					levels_i <= 1;
 				end
 				LV1RD: begin
 					if (phase_n == LV1DECODE) begin
-						pte1 <= pspo;
+						pte1 <= pspo_endian;
 					end
 				end
 				LV1DECODE: begin
 				end
 				LV2RD: begin
+					levels_i <= 0;
 					if (phase_n == LV2DECODE) begin
-						pte2 <= pspo;
+						pte2 <= pspo_endian;
 					end
 				end
 				LV2DECODE: begin
@@ -244,7 +268,7 @@ module mmu_sv32
 				end
 				MEMRW: begin
 					if (phase_n == IDLE) begin
-						mmuspo <= pspo;
+						mmuspo <= pspo_endian;
 					end
 				end
 				DISABLED: begin
