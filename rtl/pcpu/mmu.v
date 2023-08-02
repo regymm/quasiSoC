@@ -115,7 +115,7 @@ module mmu_sv32
 	wire pte2a = pte2[6];
 	wire pte2d = pte2[7];
 	wire [21:0]pte2ppn = pte2[31:10];
-	wire [31:0]physaddr = {levels_i ? pte1ppn : pte2ppn, offset};
+	wire [31:0]physaddr = {levels_i ? {pte1ppn[21:10], vpn0} : pte2ppn, offset};
 
 	localparam DISABLED = 0;
 	localparam IDLE = 1;
@@ -144,6 +144,9 @@ module mmu_sv32
 		else if (!phase_changing & phase_with_mem & bus_xfer_ok) mfuse_r <= 0;
 		else mfuse_r <= 1;
 	end
+
+	wire [31:0]taint_d = (levels_i ? pte1 : pte2) | 32'h40 | (vwereg & 32'h80);
+	wire [31:0]taint_d_endian = {taint_d[7:0], taint_d[15:8], taint_d[23:16], taint_d[31:24]};
 
 	always @ (*) begin
 		phase_n = phase; // remain last phase by default
@@ -200,7 +203,8 @@ module mmu_sv32
 			end
 			TAINT: begin
 				mmua = levels_i ? pteaddr1 : pteaddr2;
-				mmud = (levels_i ? pte1 : pte2) | 32'h40 | (vwereg & 32'h80);
+				//mmud = (levels_i ? pte1 : pte2) | 32'h40 | (vwereg & 32'h80);
+				mmud = taint_d_endian;
 				mmuwe = mfuse;
 				if (bus_xfer_ok & pready) phase_n = MEMRW;
 				else phase_n = TAINT;
@@ -268,7 +272,7 @@ module mmu_sv32
 				end
 				MEMRW: begin
 					if (phase_n == IDLE) begin
-						mmuspo <= pspo_endian;
+						mmuspo <= pspo;
 					end
 				end
 				DISABLED: begin
