@@ -920,7 +920,7 @@ module quasi_main
 		// 2**21 * 32 8MB
 		simple_ram #(
 			.WIDTH(32),
-			.DEPTH(26),
+			.DEPTH(27),
 			.INIT("/tmp/meminit.dat")
 		) distram_mainm (
 			.clk(clk_main),

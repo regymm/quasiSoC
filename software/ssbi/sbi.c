@@ -186,7 +186,7 @@ void exception_set_handler(int cause, fp_exception handler)
 
 struct irq_context* exception_handler(struct irq_context* ctx)
 {
-	uart_putstr("[SBI] ISR\r\n");
+	/*uart_putstr("[SBI] ISR\r\n");*/
 	// External interrupt
 	if (ctx->cause & CAUSE_INTERRUPT) {
 		if (_irq_handler) ctx = _irq_handler(ctx);
@@ -198,11 +198,18 @@ struct irq_context* exception_handler(struct irq_context* ctx)
 	}
 	// Exception
 	else {
+		/*uart_putstr("[SBI] Exception ");*/
+		/*uart_puthex(ctx->cause);*/
+		/*uart_putstr(" at pc: ");*/
+		/*uart_puthex(ctx->pc);*/
+		/*uart_putstr("\r\n");*/
 		switch (ctx->cause) {
 			case CAUSE_ECALL_U:
 			case CAUSE_ECALL_S:
 			case CAUSE_ECALL_M:
 				ctx->pc += 4;
+				// due to some hack, the pc~mepc won't be restored. 
+				csr_write(mepc, csr_read(mepc)+4);
 				break;
 		}
 
@@ -213,7 +220,18 @@ struct irq_context* exception_handler(struct irq_context* ctx)
 				case CAUSE_PAGE_FAULT_INST:
 				case CAUSE_PAGE_FAULT_STORE:
 				case CAUSE_PAGE_FAULT_LOAD:
-					uart_putstr("[SBI] Forwarded instruction page fault to S-mode.\r\n");
+					;
+					/*uart_putstr("[SBI] Halted on page fault\r\n");*/
+					/*unsigned int* memstart = (void*) 0x210000ee;*/
+					/*unsigned int memcount = 0x100;*/
+					/*for (unsigned int i = 0; i < memcount; i++) {*/
+						/*uart_puthex((unsigned int)memstart + i);*/
+						/*uart_putstr(": ");*/
+						/*uart_puthex(*(memstart + i));*/
+						/*uart_putstr("\r\n");*/
+					/*}*/
+					/*while(1);*/
+					/*uart_putstr("[SBI] Forwarded instruction page fault to S-mode.\r\n");*/
 					unsigned long mepc_val = csr_read(mepc);
 					unsigned long stvec_val = csr_read(stvec);
 					unsigned long mstatus_val = csr_read(mstatus);
@@ -251,6 +269,7 @@ struct irq_context* exception_handler(struct irq_context* ctx)
 			/*[>_exit(-1);<]*/
 		/*}*/
 	}
+	/*uart_putstr("EXCEPTION RET\r\n");*/
 	return ctx;
 }
 
@@ -267,6 +286,9 @@ struct irq_context* sbi_syscall(struct irq_context* ctx)
 			_exit(0);
 			break;
 		case SBI_CONSOLE_PUTCHAR:
+			/*uart_putchar('(');*/
+			/*uart_puthex(a0);*/
+			/*uart_putstr(")");*/
 			uart_putchar(a0);
 			break;
 		case SBI_CONSOLE_GETCHAR:
@@ -320,6 +342,10 @@ void sbi_main()
 
 	volatile void* kernel_entry_addr = (void*) 0x20400000;
 	volatile void* kernel_dtb_addr = (void*) 0x20100000;
+	/*int* mem_test_addr = (void*) 0x21888208;*/
+	/**mem_test_addr = 0x12345678;*/
+	/*uart_putstr("MEM:");*/
+	/*uart_puthex(*mem_test_addr);*/
 
 	exception_set_handler(CAUSE_ECALL_S, sbi_syscall);
 	exception_set_irq_handler(irq_callback);
