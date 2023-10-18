@@ -3,10 +3,11 @@
  * License           : GPL-3.0-or-later
  * Author            : Peter Gu <github.com/ustcpetergu>
  * Date              : 2021.04.15
- * Last Modified Date: 2021.04.15
+ * Last Modified Date: 2023.10.18
  */
 #define false 0
 #define true 1
+#define UNTETHERED
 
 /*extern volatile int* BOOT_ENTRY;*/
 /*volatile int* BOOT_ENTRY2 = (int*) 0x10001000;*/
@@ -20,6 +21,14 @@ volatile int* uart_rx_new		= (int*) 0x93000004;
 volatile int* uart_rx_data		= (int*) 0x93000000;
 
 volatile int* cache_enable		= (int*) 0x7fffff00;
+
+volatile int* sd_cache_base		= (int*) 0x96000000;
+volatile int* sd_address		= (int*) 0x96001000;
+volatile int* sd_do_read		= (int*) 0x96001004;
+volatile int* sd_do_write		= (int*) 0x96001008;
+volatile int* sd_ncd			= (int*) 0x96002000;
+volatile int* sd_ready			= (int*) 0x96002010;
+volatile int* sd_cache_dirty	= (int*) 0x96002014;
 
 void uart_putchar(char c)
 {
@@ -39,7 +48,7 @@ void sd_uart_bl()
 {
 	*uart_rx_reset = 1;
 	uart_putstr("KERNEL PANIC BOOT LOADER \r\n");
-
+#ifndef UNTETHERED
 	uart_putstr("[kpbl] kernel from UART to 0x20001000... \r\n");
 	*set_start_addr = 0x20001000;
 	*start_dma = 1;
@@ -52,6 +61,37 @@ void sd_uart_bl()
 	uart_putstr("[kpbl] dtb from UART to 0x20700000... \r\n");
 	*set_start_addr = 0x20700000;
 	*start_dma = 1;
+#else
+	if (! *sd_ncd) {
+		uart_putstr("[kpbl] kernel from sdcard to 0x20001000... \r\n");
+		int sector = 0;
+		volatile int* addr = (int*) 0x20001000;
+		// we load a solid 4 MB or 8192 sector, offset at 4 MB
+		for(sector = 0; sector < 8192; sector++) {
+			while(! *sd_ready);
+			*sd_address = 8192 + sector;
+			*sd_do_read = 0x1;
+			while(! *sd_ready);
+			int i = 0;
+			for(i = 0; i < 128; i++) {
+				addr[i + (sector * 128)] = sd_cache_base[i];
+			}
+		}
+		uart_putstr("[kpbl] dtb from sdcard to 0x20700000... \r\n");
+		addr = (int*) 0x20700000;
+		// 1 MB at 8 MB offset this time
+		for(sector = 0; sector < 2048; sector++) {
+			while(! *sd_ready);
+			*sd_address = 16384 + sector;
+			*sd_do_read = 0x1;
+			while(! *sd_ready);
+			int i = 0;
+			for(i = 0; i < 128; i++) {
+				addr[i + (sector * 128)] = sd_cache_base[i];
+			}
+		}
+	}
+#endif
 
 	uart_putstr("[kpbl] enable cache... \r\n");
 	*cache_enable = 1;
@@ -76,73 +116,5 @@ void sd_uart_bl()
 	uart_putchar('0' + (c>>4)%0x10);
 	uart_putchar('\r');
 	uart_putchar('\n');
-
-
-
-
-	/*int i = -1;*/
-	/*int k = 0;*/
-	/*char c;*/
-	/*int inst[8];*/
-	/*unsigned int inst_bin;*/
-
-	/*while (1) {*/
-		/*c = uart_getchar();*/
-		/*[>uart_putchar(c);<]*/
-		/*if (c >= '0' && c <= '9') inst[k] = (c - '0');*/
-		/*else if (c >= 'a' && c <= 'f') inst[k] = (c - 'a' + 0xa);*/
-		/*else if (c >= 'A' && c <= 'F') inst[k] = (c - 'A' + 0xa);*/
-		/*else if (c == '\r' || c == '\n' || c == ' ') k--; // skip end of line*/
-		/*else {*/
-			/*uart_putstr("[uartbl]illegal input or end\r\n"); // illegal aka stop*/
-			/*uart_putchar((c >> 4)+ 48);*/
-			/*uart_putchar((c - ((c >> 4) << 4)) + 48);*/
-			/*uart_putstr("\r\n");*/
-			/*uart_putchar(i / 10000+ 48);*/
-			/*uart_putchar((i % 10000) / 1000 + 48);*/
-			/*uart_putchar((i % 1000) / 100 + 48);*/
-			/*uart_putchar((i % 100) / 10 + 48);*/
-			/*uart_putchar((i % 10) / 1 + 48);*/
-			/*break;*/
-		/*}*/
-
-		/*switch(k) {*/
-			/*case 0: */
-				/*inst_bin = inst[k] << 4;*/
-				/*break;*/
-			/*case 1:*/
-				/*inst_bin += inst[k];*/
-				/*break;*/
-			/*case 2:*/
-				/*inst_bin += inst[k] << 12;*/
-				/*break;*/
-			/*case 3:*/
-				/*inst_bin += inst[k] << 8;*/
-				/*break;*/
-			/*case 4:*/
-				/*inst_bin += inst[k] << 20;*/
-				/*break;*/
-			/*case 5:*/
-				/*inst_bin += inst[k] << 16;*/
-				/*break;*/
-			/*case 6:*/
-				/*inst_bin += inst[k] << 28;*/
-				/*i++;*/
-				/*break;*/
-			/*case 7:*/
-				/*[>inst_bin += inst[k] << 24;<]*/
-				/*BOOT_ENTRY2[i] = inst_bin + (inst[k] << 24);*/
-				/*k = -1;*/
-				/*break;*/
-			/*default:*/
-				/*break;*/
-		/*}*/
-		/*k++;*/
-
-
-	/*}*/
-
-	/*uart_putstr("[uartbl] reading finished. jump ... \r\n");*/
-
 	// return, and asm will do the jump
 }
