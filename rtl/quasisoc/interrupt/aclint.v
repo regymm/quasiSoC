@@ -17,6 +17,8 @@ module aclint
 	#(
 		parameter CLOCK_FREQ = 62500000,
 		parameter TIMER_COUNTER = 4000, // abandoned
+		// fast...
+		//parameter TIMER_RATE = 40000000
 		// default 10 MHz
 		parameter TIMER_RATE = 10000000
 		// slow...

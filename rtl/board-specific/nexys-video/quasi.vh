@@ -11,7 +11,8 @@
 `ifdef SIMULATION
 	`define GPIO_EN
 	`define UART_EN
-	`define MEM_SIMU_EN
+//	`define CACHE_EN
+//	`define MEM_SIMU_EN
 	`define SERIALBOOT_EN
 	`define UART_RST_EN
 `else

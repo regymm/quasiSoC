@@ -23,6 +23,7 @@ module privilege
 		input [31:0]d,
 		input we,
 		output reg [31:0]spo,
+		output csrexp,
 
 		// timer/external interrupt from outside
 		input m_tip,
@@ -211,6 +212,8 @@ module privilege
 			default: spo = 0;
 		endcase
 	end
+	// time and timeh access is forwarded to M mode
+	assign csrexp = a == 12'hc01 || a == 12'hc81;
 
 	always @ (posedge clk) begin
 		if (rst) begin

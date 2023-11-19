@@ -32,7 +32,7 @@ void uart_puthex(unsigned int n)
 	num_str = &outbuf[sizeof(outbuf) - 1];
 	*num_str = 0;
 	do {
-		*(--num_str) = digits[(int)n % 16];
+		*(--num_str) = digits[(unsigned int)n % 16];
 	}
 	while ((n /= 16) > 0);
 	while (*num_str)
@@ -130,6 +130,7 @@ extern void _exit(int);
 #define SBI_REMOTE_SFENCE_VMA 6
 #define SBI_REMOTE_SFENCE_VMA_ASID 7
 #define SBI_SHUTDOWN 8
+#define SBI_FUTURE 16
 
 #define SBI_ECALL(__num, __a0, __a1, __a2)                                    \
 	({                                                                    \
@@ -186,7 +187,7 @@ void exception_set_handler(int cause, fp_exception handler)
 
 struct irq_context* exception_handler(struct irq_context* ctx)
 {
-	/*uart_putstr("[SBI] ISR\r\n");*/
+	/*uart_putstr("[SBI] Called\r\n");*/
 	// External interrupt
 	if (ctx->cause & CAUSE_INTERRUPT) {
 		if (_irq_handler) ctx = _irq_handler(ctx);
@@ -203,12 +204,15 @@ struct irq_context* exception_handler(struct irq_context* ctx)
 		/*uart_putstr(" at pc: ");*/
 		/*uart_puthex(ctx->pc);*/
 		/*uart_putstr("\r\n");*/
+		// some exception returns to the NEXT instruction
 		switch (ctx->cause) {
 			case CAUSE_ECALL_U:
 			case CAUSE_ECALL_S:
 			case CAUSE_ECALL_M:
+			case CAUSE_BREAKPOINT:
+			case CAUSE_ILLEGAL_INSTRUCTION:
 				ctx->pc += 4;
-				// due to some hack, the pc~mepc won't be restored. 
+				// TODO: due to some hack, the pc~mepc won't be restored. 
 				csr_write(mepc, csr_read(mepc)+4);
 				break;
 		}
@@ -217,21 +221,59 @@ struct irq_context* exception_handler(struct irq_context* ctx)
 			ctx = _exception_table[ctx->cause](ctx);
 		else {
 			switch (ctx->cause) {
+				/*case CAUSE_ILLEGAL_INSTRUCTION:*/
+					/*break;*/
+				case CAUSE_BREAKPOINT:
+					;
+					uart_putstr("[SBI] Halted on breakpoint\r\n");
+					break;
+					// c0c586a4
+					// -> c0c58ac4
+					unsigned int* memstart = (void*) 0x21058ac4;
+					unsigned int memspan = 0x20;
+					for (unsigned int i = 0; i < memspan; i+=4) {
+						uart_puthex((unsigned int)memstart + i);
+						uart_putstr(": ");
+						uart_puthex(*(memstart + i/4));
+						uart_putstr("\r\n");
+					}
+					uart_putstr("\r\n");
+					memstart = (void*) 0x2188e20c;
+					memspan = 0x20;
+					for (unsigned int i = 0; i < memspan; i+=4) {
+						uart_puthex((unsigned int)memstart + i);
+						uart_putstr(": ");
+						uart_puthex(*(memstart + i/4));
+						uart_putstr("\r\n");
+					}
+					uart_putstr("\r\n");
+					memstart = (void*) 0x2188bdc8;
+					memspan = 0x40;
+					for (unsigned int i = 0; i < memspan; i+=4) {
+						uart_puthex((unsigned int)memstart + i);
+						uart_putstr(": ");
+						uart_puthex(*(memstart + i/4));
+						uart_putstr("\r\n");
+					}
+					while(1);
+					/*uart_putstr("[SBI] Forwarded instruction page fault to S-mode.\r\n");*/
 				case CAUSE_PAGE_FAULT_INST:
 				case CAUSE_PAGE_FAULT_STORE:
 				case CAUSE_PAGE_FAULT_LOAD:
 					;
 					/*uart_putstr("[SBI] Halted on page fault\r\n");*/
 					/*unsigned int* memstart = (void*) 0x210000ee;*/
-					/*unsigned int memcount = 0x100;*/
-					/*for (unsigned int i = 0; i < memcount; i++) {*/
+					/*unsigned int memspan = 0x100;*/
+					/*for (unsigned int i = 0; i < memspan; i++) {*/
 						/*uart_puthex((unsigned int)memstart + i);*/
 						/*uart_putstr(": ");*/
 						/*uart_puthex(*(memstart + i));*/
 						/*uart_putstr("\r\n");*/
 					/*}*/
 					/*while(1);*/
-					/*uart_putstr("[SBI] Forwarded instruction page fault to S-mode.\r\n");*/
+					uart_putstr("[SBI] Forwarded instruction page fault to S-mode.\r\n");
+					uart_puthex(ctx->pc);
+					uart_putstr("\r\n");
 					unsigned long mepc_val = csr_read(mepc);
 					unsigned long stvec_val = csr_read(stvec);
 					unsigned long mstatus_val = csr_read(mstatus);
@@ -259,6 +301,7 @@ struct irq_context* exception_handler(struct irq_context* ctx)
 					uart_putstr(" at PC: ");
 					uart_puthex(ctx->pc);
 					uart_putstr("\r\n");
+					while(1);
 					break;
 			}
 
@@ -301,6 +344,9 @@ struct irq_context* sbi_syscall(struct irq_context* ctx)
 			break;
 		case SBI_REMOTE_FENCE_I:
 		case SBI_REMOTE_SFENCE_VMA:
+			break;
+		case SBI_FUTURE:
+			uart_putstr("Unsupported future SBI call used.\r\n");
 			break;
 		default:
 			uart_putstr("[SBI] Unhandled syscall: ");

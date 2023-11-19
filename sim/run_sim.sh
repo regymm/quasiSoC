@@ -17,7 +17,10 @@ else
 		cat $3 >> /tmp/meminit
 		truncate -s 4M /tmp/meminit
 		cat $2 >> /tmp/meminit
+		##truncate -s 8391168 /tmp/meminit
+		##cat "/home/petergu/quasiSoC/software/tests_S/firmware/firmware.bin">> /tmp/meminit
 		truncate -s 32M /tmp/meminit
+		#dd if="/home/petergu/quasiSoC/software/tests_S/firmware/firmware.bin" of=/tmp/meminit bs=512 seek=16389 conv=notrunc
 		xxd -p -c 4 /tmp/meminit > /tmp/meminit.dat
 		ls;
 	elif [[ "$1" == "kernel" ]]; then

@@ -257,6 +257,7 @@ module riscv_multicyc
 	wire [31:0]csr_d = ALUOut;
 	wire csr_we = CsrWe;
 	wire [31:0]csr_spo;
+	wire csr_exp;
 
 	wire interrupt;
 	privilege privilege_inst
@@ -268,6 +269,7 @@ module riscv_multicyc
 		.d(csr_d),
 		.we(csr_we),
 		.spo(csr_spo),
+		.csrexp(csr_exp),
 
 		.m_tip(tip),
 		.m_eip(eip),
@@ -307,10 +309,13 @@ module riscv_multicyc
 	wire priv_ecall = op == OP_PRIV & instruction[14:12] == 3'b0 & !instruction[28] & !instruction[20];
 	wire priv_ebreak = op == OP_PRIV & instruction[14:12] == 3'b0 & !instruction[28] & instruction[20];
 
+	localparam EXC_INSTR_ADDR_MISALIGN= 4'd0;
 	localparam EXC_INSTR_ACC_FAULT = 4'd1;
 	localparam EXC_ILLEGAL_INSTRUCTION = 4'd2;
 	localparam EXC_BREAKPOINT = 4'd3;
+	localparam EXC_LOAD_ADDR_MISALIGN = 4'd4;
 	localparam EXC_LOAD_ACC_FAULT = 4'd5;
+	localparam EXC_STORE_AMO_ADDR_MISALIGN = 4'd6;
 	localparam EXC_STORE_AMO_ACC_FAULT = 4'd7;
 	localparam EXC_ECALL_FROM_U_MODE = 4'd8; // a temp. hack for bad nommu kernel
 	localparam EXC_ECALL_FROM_S_MODE = 4'd9;
@@ -336,6 +341,12 @@ module riscv_multicyc
 			mcause_code_out <= mode == 2'b11 ? EXC_ECALL_FROM_M_MODE : 
 								mode == 2'b01 ? EXC_ECALL_FROM_S_MODE : 
 								EXC_ECALL_FROM_U_MODE;
+		else if (csr_exp)
+			mcause_code_out <= EXC_ILLEGAL_INSTRUCTION;
+		else if (unaligned)
+			mcause_code_out <= phase == IF ? EXC_INSTR_ADDR_MISALIGN :
+								op == OP_LOAD ? EXC_LOAD_ADDR_MISALIGN :
+								EXC_STORE_AMO_ADDR_MISALIGN;
 	end
 `endif
 
@@ -450,6 +461,8 @@ module riscv_multicyc
 	end endcase end
 	assign loadbyte = nse ? {24'b0, loadbyte_byte}: {{24{loadbyte_byte[7]}}, loadbyte_byte};
 	assign loadhalf = nse ? {16'b0, loadhalf_half}: {{16{loadhalf_half[15]}}, loadhalf_half};
+	wire unaligned = 0;
+	//wire unaligned = (!store_unaligned & mar[1:0] != 2'b00) | (loadhalf & mar[0] != 1'b0);
 
 	localparam IF			=	10;
 	localparam ID_RF		=	20;
@@ -580,6 +593,9 @@ module riscv_multicyc
 				`ifdef RV32A
 				else if (op_a_amo) phase_n = RV32A_MEM1;
 				`endif
+				`ifdef IRQ_EN
+				else if (priv_csr & csr_exp) phase_n = EXCEPTION;
+				`endif
 				else phase_n = WB;
 				// ~~~~~~~~~~~~~~~~~~~~
 				`ifdef RV32M
@@ -622,13 +638,13 @@ module riscv_multicyc
 				ALUSrcB = 1;
 				IorDorW = 1;
 				if (op == OP_LOAD | (op == OP_STORE & store_unaligned) | op_a_lr) begin
-					MemRead = mfuse; // Load, SB, SH
+					MemRead = mfuse & !unaligned; // Load, SB, SH
 				end else if (op == OP_STORE & !store_unaligned) begin
-					MemWrite = mfuse;
+					MemWrite = mfuse & !unaligned; // do not issue real unaligned mem access
 					MemSrc = 2; // SW
 				`ifdef RV32A
 				end else if (op_a_sc) begin
-					MemWrite = sc_success & mfuse;
+					MemWrite = sc_success & mfuse & !unaligned;
 					MemSrc = 2;
 					LRInvalid = mfuse;
 				`endif
@@ -753,7 +769,7 @@ module riscv_multicyc
 			phase != RV32A_MEM1 &
 			`endif
 			bus_xfer_ok & MemReady
-			& (pagefault | accessfault))
+			& (pagefault | accessfault | unaligned))
 			phase_n = EXCEPTION;
 		`endif
 	end
