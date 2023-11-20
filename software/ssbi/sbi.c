@@ -13,6 +13,9 @@ volatile int* uart_rx_reset		= (int*) 0x93000004;
 volatile int* uart_rx_new		= (int*) 0x93000004;
 volatile int* uart_rx_data		= (int*) 0x93000000;
 
+volatile int* aclint_timel		= (int*) 0x9b00bff8;
+volatile int* aclint_timeh		= (int*) 0x9b00bffc;
+
 void uart_putchar(char c)
 {
 	while(! *uart_tx_done);
@@ -212,8 +215,6 @@ struct irq_context* exception_handler(struct irq_context* ctx)
 			case CAUSE_BREAKPOINT:
 			case CAUSE_ILLEGAL_INSTRUCTION:
 				ctx->pc += 4;
-				// TODO: due to some hack, the pc~mepc won't be restored. 
-				csr_write(mepc, csr_read(mepc)+4);
 				break;
 		}
 
@@ -221,8 +222,20 @@ struct irq_context* exception_handler(struct irq_context* ctx)
 			ctx = _exception_table[ctx->cause](ctx);
 		else {
 			switch (ctx->cause) {
-				/*case CAUSE_ILLEGAL_INSTRUCTION:*/
-					/*break;*/
+				case CAUSE_ILLEGAL_INSTRUCTION:
+					;
+					unsigned int instr = csr_read(mtval);
+					unsigned int rd = (instr >> 7) & 0x1f;
+					unsigned int csrid = (instr >> 20) & 0xfff;
+					unsigned int time = 0;
+					if (csrid == 0xc01)
+						time = *aclint_timel;
+					else if (csrid == 0xc81)
+						time = *aclint_timeh;
+					/*uart_putstr("[SBI] time query ");*/
+					/*uart_puthex(time);*/
+					ctx->reg[rd] = time;
+					break;
 				case CAUSE_BREAKPOINT:
 					;
 					uart_putstr("[SBI] Halted on breakpoint\r\n");
@@ -274,9 +287,9 @@ struct irq_context* exception_handler(struct irq_context* ctx)
 					uart_putstr("[SBI] Forwarded instruction page fault to S-mode.\r\n");
 					uart_puthex(ctx->pc);
 					uart_putstr("\r\n");
-					unsigned long mepc_val = csr_read(mepc);
+					unsigned long mepc_val = ctx->pc;
 					unsigned long stvec_val = csr_read(stvec);
-					unsigned long mstatus_val = csr_read(mstatus);
+					unsigned long mstatus_val = ctx->status;
 					unsigned long mcause_val = ctx->cause;
 					unsigned long mstatus_mpp = mstatus_val & MSTATUS_MPP;
 					unsigned long mstatus_sie = mstatus_val & MSTATUS_SIE;
@@ -290,10 +303,10 @@ struct irq_context* exception_handler(struct irq_context* ctx)
 					// sepc <= mepc
 					csr_write(sepc, mepc_val);
 					// mepc <= stvec
-					csr_write(mepc, stvec_val);
+					ctx->pc = stvec_val;
 					// scause <= mcause
 					csr_write(scause, mcause_val);
-					csr_write(mstatus, mstatus_val);
+					ctx->status = mstatus_val;
 					break;
 				default:
 					uart_putstr("[SBI] ERROR: Unhandled exception ");
@@ -326,18 +339,16 @@ struct irq_context* sbi_syscall(struct irq_context* ctx)
 	switch (which) {
 		case SBI_SHUTDOWN:
 			uart_putstr("[SBI] Shutdown. \r\n");
-			_exit(0);
+			_exit(0); // don't know where this goes...
 			break;
 		case SBI_CONSOLE_PUTCHAR:
-			/*uart_putchar('(');*/
-			/*uart_puthex(a0);*/
-			/*uart_putstr(")");*/
 			uart_putchar(a0);
 			break;
 		case SBI_CONSOLE_GETCHAR:
 			ctx->reg[REG_ARG0] = -1;
 			break;
 		case SBI_SET_TIMER:
+			uart_putstr("[SBI] Next timer set. \r\n");
 			/*set_mtimecmp(a0);*/
 			/*csr_set(mie, SR_IP_MTIP);*/
 			/*csr_clear(sip, SR_IP_STIP);*/
@@ -346,7 +357,7 @@ struct irq_context* sbi_syscall(struct irq_context* ctx)
 		case SBI_REMOTE_SFENCE_VMA:
 			break;
 		case SBI_FUTURE:
-			uart_putstr("Unsupported future SBI call used.\r\n");
+			uart_putstr("[SBI] Unsupported future SBI call used.\r\n");
 			break;
 		default:
 			uart_putstr("[SBI] Unhandled syscall: ");

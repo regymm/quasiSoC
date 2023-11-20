@@ -87,11 +87,11 @@ isr_vector:
     mv sp, a0
 
     # Restore registers
-#    lw s0,  (4* 0)(sp)
-#    csrw mepc, s0
-#
-#    lw s0,  (4* 1)(sp)
-#    csrw mstatus, s0
+    lw s0,  (4* 0)(sp)
+    csrw mepc, s0
+
+    lw s0,  (4* 1)(sp)
+    csrw mstatus, s0
 
     lw x1,  (4* 4)(sp)
     lw x3,  (4* 6)(sp)

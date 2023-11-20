@@ -34,6 +34,7 @@ module privilege
 		input on_exc_enter,
 		input on_exc_isint,
 		input [31:0]pc_in,
+		input [31:0]mtval_in,
 		input [3:0]mcause_code_in,
 		output [31:0]mtvec_out,
 		// for CPU mret
@@ -252,7 +253,7 @@ module privilege
 				12'h340: mscratch	<= d;
 				12'h341: mepc		<= (mepc & mepc_write_mask) + (d & ~mepc_write_mask);
 				12'h342: mcause		<= d; // WLRL, should be taken care of but not now
-				12'h343: mtval		<= d; // should be taken care of
+				//12'h343: mtval		<= d; // should be taken care of
 				default: ;
 			endcase
 			else if (on_exc_enter) begin
@@ -262,6 +263,7 @@ module privilege
 				mstatus <= {mstatus[31:13], mode, mstatus[10:8], mstatus_mie, mstatus[6:4], 1'b0, mstatus[2:0]};
 				mode <= 2'b11;
 				mepc <= pc_in;
+				mtval <= mtval_in;
 				if (on_exc_isint) begin
 					mcause <= {1'b1, 27'b0, mcause_i_code};
 				end else begin
@@ -270,6 +272,7 @@ module privilege
 				// enter S-mode: delegated
 				// not now
 			end else if (on_exc_leave) begin
+				mtval <= 32'b0;
 				// return from interrupt or exception: mret or sret
 				// if mret/sret gets here, it will be legal (not, like, mret from S-mode)
 				if (on_exc_ismret) begin

@@ -249,6 +249,7 @@ module riscv_multicyc
 	reg IntReply;
 
 	reg [3:0]mcause_code_out;
+	reg [31:0]mtval_out;
 	wire [31:0]mtvec_in;
 	wire [31:0]mepc_in;
 	wire [31:0]sepc_in;
@@ -279,6 +280,7 @@ module riscv_multicyc
 		.on_exc_isint(OnExcIsint),
 		.pc_in(oldpc),
 		.mcause_code_in(mcause_code_out),
+		.mtval_in(mtval_out),
 		.mtvec_out(mtvec_in),
 
 		.on_exc_leave(OnExcLeave),
@@ -347,6 +349,10 @@ module riscv_multicyc
 			mcause_code_out <= phase == IF ? EXC_INSTR_ADDR_MISALIGN :
 								op == OP_LOAD ? EXC_LOAD_ADDR_MISALIGN :
 								EXC_STORE_AMO_ADDR_MISALIGN;
+	end
+
+	always @ (posedge clk) begin
+		mtval_out <= instruction;
 	end
 `endif
 

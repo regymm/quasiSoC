@@ -3,6 +3,7 @@ set -e
 
 echo -e "\033[37mPreparing boot loader...\033[0m"
 make -C ../firmware
+make -C ../software/ssbi
 
 if [[ "$1" == "" ]]; then
 	echo -e "\033[31mRun without payload.\033[0m"
