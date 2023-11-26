@@ -132,7 +132,7 @@ module privilege
 											  m_tip, 1'b0, 1'b0, 1'b0,
 											  1'b0,  1'b0, 1'b0, 1'b0};
 	wire [31:0]mip_write_mask		= 32'b11111111_11111111_11111101_11011101;
-	// in our no-delegate implementation, sip is only writen by M-mode SBI
+	// in our no-delegate implementation, sip is only writen by M-mode SBI (skipped?)
 	// Linux kernel doesn't use sip, but relies on sie for interrupt control
 	// so our SBI will monitor sie to decide whether pass on the interrupt to S-mode kernel
 	wire [31:0]sip_read_mask		= 32'b11111111_11111111_11111111_11111111;
@@ -180,6 +180,9 @@ module privilege
 	wire meie = mie[11];
 	wire mtie = mie[7];
 	wire msie = mie[3];
+	wire seie = mie[9];
+	wire stie = mie[5];
+	wire ssie = mie[1];
 
 	//wire mcause_isinterrupt = mcause[31];
 	//wire mstatus_mie = mstatus[3];
@@ -299,13 +302,17 @@ module privilege
 	reg m_eip_reg;
 	reg meie_reg;
 	reg mtie_reg;
+	reg stie_reg;
 	always @ (posedge clk) begin
 		int_reply_reg <= int_reply;
-		int_pending <= mstatus_mie & (m_eip&meie | m_tip&mtie | 0&msie);
+		int_pending <= (mode == 2'b11 & mstatus_mie & (0&m_eip&meie | m_tip&mtie | 0&msie)) | 
+						(mode != 2'b11 & mstatus_sie & (m_tip&stie)) ; // TODO: m_eip&seie?
+					// TODO: nommu regression!
 		m_eip_reg <= m_eip;
 		m_tip_reg <= m_tip;
 		meie_reg <= meie;
 		mtie_reg <= mtie;
+		stie_reg <= stie;
 	end
 
 	localparam IDLE = 2'b00;
@@ -313,7 +320,7 @@ module privilege
 	localparam REPLY = 2'b10;
 	localparam END = 2'b11;
 	reg [1:0]state = IDLE;
-	reg [1:0]int_source;
+	reg [2:0]int_source;
 	reg [3:0]mcause_i_code;
 	always @ (posedge clk) begin
 		if (rst) begin
@@ -326,20 +333,23 @@ module privilege
 			case (state)
 				IDLE: begin
 					if (int_pending) begin
-						int_source <= {m_eip_reg&meie_reg, m_tip_reg&mtie_reg};
+						int_source <= {m_eip_reg&meie_reg, mode == 2'b11 & (m_tip_reg&mtie_reg), mode != 2'b11 & (m_tip_reg&stie_reg)};
 						state <= ISSUE;
 					end
 				end
 				ISSUE: begin
 					interrupt <= 1;
-					if (int_source[1]) begin
+					if (int_source[2]) begin
 						// external
 						m_eip_reply <= 1;
 						mcause_i_code <= 4'd11;
-					end else if (int_source[0]) begin
-						// timer
+					end else if (int_source[1])
+						// machine timer
 						mcause_i_code <= 4'd7;
-					end else
+					else if (int_source[0])
+						// supervisor timer
+						mcause_i_code <= 4'd5;
+					else
 						// software
 						mcause_i_code <= 4'd3;
 					state <= REPLY;

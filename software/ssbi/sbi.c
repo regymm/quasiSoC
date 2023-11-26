@@ -13,8 +13,10 @@ volatile int* uart_rx_reset		= (int*) 0x93000004;
 volatile int* uart_rx_new		= (int*) 0x93000004;
 volatile int* uart_rx_data		= (int*) 0x93000000;
 
-volatile int* aclint_timel		= (int*) 0x9b00bff8;
-volatile int* aclint_timeh		= (int*) 0x9b00bffc;
+volatile unsigned int* aclint_timel		= (unsigned int*) 0x9b00bff8;
+volatile unsigned int* aclint_timeh		= (unsigned int*) 0x9b00bffc;
+volatile unsigned int* aclint_timecmpl	= (unsigned int*) 0x9b004000;
+volatile unsigned int* aclint_timecmph	= (unsigned int*) 0x9b004004;
 
 void uart_putchar(char c)
 {
@@ -170,19 +172,9 @@ typedef struct irq_context* (*fp_irq) (struct irq_context* ctx);
 typedef struct irq_context* (*fp_syscall) (struct irq_context* ctx);
 
 static fp_exception _exception_table[CAUSE_MAX_EXC];
-static fp_irq _irq_handler = 0;
 
-void exception_set_irq_handler(fp_irq handler)
-{
-	_irq_handler = handler;
-}
-// unused, just use exception_set_handler instead
-/*void exception_set_syscall_handler(fp_syscall handler)*/
-/*{*/
-	/*_exception_table[CAUSE_ECALL_U] = handler;*/
-	/*_exception_table[CAUSE_ECALL_S] = handler;*/
-	/*_exception_table[CAUSE_ECALL_M] = handler;*/
-/*}*/
+static int cnt = 0;
+
 void exception_set_handler(int cause, fp_exception handler)
 {
 	_exception_table[cause] = handler;
@@ -191,141 +183,174 @@ void exception_set_handler(int cause, fp_exception handler)
 struct irq_context* exception_handler(struct irq_context* ctx)
 {
 	/*uart_putstr("[SBI] Called\r\n");*/
-	// External interrupt
-	if (ctx->cause & CAUSE_INTERRUPT) {
-		if (_irq_handler) ctx = _irq_handler(ctx);
-		else {
-			uart_putstr("[SBI] Unhandled IRQ: ");
-			uart_puthex(ctx->cause);
-			uart_putstr("\n\r");
-		} 
+	int is_interrupt = ctx->cause & CAUSE_INTERRUPT;
+	// Exception and Interrupt together
+	/*uart_putstr("[SBI] Exception ");*/
+	/*uart_puthex(ctx->cause);*/
+	/*uart_putstr(" at pc: ");*/
+	/*uart_puthex(ctx->pc);*/
+	/*uart_putstr("\r\n");*/
+	// some exception returns to the NEXT instruction
+	switch (ctx->cause) {
+		// case CAUSE_ECALL_U: is done in S-mode instead of here
+		case CAUSE_ECALL_S: // SBI calls
+		case CAUSE_ECALL_M: // probably not gonna happen
+		case CAUSE_BREAKPOINT: // kernel doesn't use this
+		case CAUSE_ILLEGAL_INSTRUCTION: // this is TIME/TIMEH CSR, handled here
+			ctx->pc += 4;
+			break;
 	}
-	// Exception
+
+	if (ctx->cause < CAUSE_MAX_EXC && _exception_table[ctx->cause])
+		ctx = _exception_table[ctx->cause](ctx);
 	else {
-		/*uart_putstr("[SBI] Exception ");*/
-		/*uart_puthex(ctx->cause);*/
-		/*uart_putstr(" at pc: ");*/
-		/*uart_puthex(ctx->pc);*/
-		/*uart_putstr("\r\n");*/
-		// some exception returns to the NEXT instruction
 		switch (ctx->cause) {
-			case CAUSE_ECALL_U:
-			case CAUSE_ECALL_S:
-			case CAUSE_ECALL_M:
-			case CAUSE_BREAKPOINT:
 			case CAUSE_ILLEGAL_INSTRUCTION:
-				ctx->pc += 4;
+				;
+				unsigned int instr = csr_read(mtval);
+				unsigned int rd = (instr >> 7) & 0x1f;
+				unsigned int csrid = (instr >> 20) & 0xfff;
+				unsigned int time = 0;
+				if (csrid == 0xc01)
+					time = *aclint_timel;
+				else if (csrid == 0xc81)
+					time = *aclint_timeh;
+				/*uart_putstr("[SBI] time query ");*/
+				/*uart_puthex(time);*/
+				ctx->reg[rd] = time;
+				break;
+			case CAUSE_BREAKPOINT:
+				;
+				uart_putstr("[SBI] Halted on breakpoint\r\n");
+				break;
+				// c0c586a4
+				// -> c0c58ac4
+				unsigned int* memstart = (void*) 0x21058ac4;
+				unsigned int memspan = 0x20;
+				for (unsigned int i = 0; i < memspan; i+=4) {
+					uart_puthex((unsigned int)memstart + i);
+					uart_putstr(": ");
+					uart_puthex(*(memstart + i/4));
+					uart_putstr("\r\n");
+				}
+				uart_putstr("\r\n");
+				memstart = (void*) 0x2188e20c;
+				memspan = 0x20;
+				for (unsigned int i = 0; i < memspan; i+=4) {
+					uart_puthex((unsigned int)memstart + i);
+					uart_putstr(": ");
+					uart_puthex(*(memstart + i/4));
+					uart_putstr("\r\n");
+				}
+				uart_putstr("\r\n");
+				memstart = (void*) 0x2188bdc8;
+				memspan = 0x40;
+				for (unsigned int i = 0; i < memspan; i+=4) {
+					uart_puthex((unsigned int)memstart + i);
+					uart_putstr(": ");
+					uart_puthex(*(memstart + i/4));
+					uart_putstr("\r\n");
+				}
+				while(1);
+				/*uart_putstr("[SBI] Forwarded instruction page fault to S-mode.\r\n");*/
+			case CAUSE_PAGE_FAULT_INST:
+			case CAUSE_PAGE_FAULT_STORE:
+			case CAUSE_PAGE_FAULT_LOAD:
+			case CAUSE_ECALL_U:
+			case CAUSE_INTERRUPT | IRQ_S_TIMER:
+				;
+				/*uart_putstr("[SBI] Halted on page fault\r\n");*/
+				/*unsigned int* memstart = (void*) 0x210000ee;*/
+				/*unsigned int memspan = 0x100;*/
+				/*for (unsigned int i = 0; i < memspan; i++) {*/
+					/*uart_puthex((unsigned int)memstart + i);*/
+					/*uart_putstr(": ");*/
+					/*uart_puthex(*(memstart + i));*/
+					/*uart_putstr("\r\n");*/
+				/*}*/
+				/*while(1);*/
+
+				/*if (ctx->cause == CAUSE_PAGE_FAULT_INST)*/
+					/*uart_putstr("[SBI] Forwarded instruction page fault to S-mode.\r\n");*/
+				/*if (ctx->cause == CAUSE_PAGE_FAULT_STORE)*/
+					/*uart_putstr("[SBI] Forwarded store page fault to S-mode.\r\n");*/
+				/*if (ctx->cause == CAUSE_PAGE_FAULT_LOAD)*/
+					/*uart_putstr("[SBI] Forwarded load page fault to S-mode.\r\n");*/
+				/*if (ctx->cause == CAUSE_ECALL_U) {*/
+					/*uart_putstr("[SBI] Forwarded U mode ecall: ");*/
+					/*uart_puthex(ctx->reg[17]);*/
+					/*uart_putstr(" params ");*/
+					/*uart_puthex(ctx->reg[10]);*/
+					/*uart_putstr(" ");*/
+					/*uart_puthex(ctx->reg[11]);*/
+					/*uart_putstr("\r\n");*/
+				/*}*/
+				/*if (ctx->cause == (CAUSE_INTERRUPT | IRQ_S_TIMER)) {*/
+					/*uart_putstr("[SBI] IRQ_S_TIMER.\r\n");*/
+					/*uart_puthex(ctx->status);*/
+					/*uart_putstr(" ");*/
+					/*uart_puthex(*aclint_timeh);*/
+					/*uart_putstr(" ");*/
+					/*uart_puthex(*aclint_timel);*/
+					/*uart_putstr("\r\n");*/
+					/*uart_puthex(*aclint_timecmph);*/
+					/*uart_putstr(" ");*/
+					/*uart_puthex(*aclint_timecmpl);*/
+					/*uart_putstr("\r\n");*/
+					/*uart_putstr("PC: ");*/
+					/*uart_puthex(ctx->pc);*/
+				/*}*/
+
+				/*uart_putstr("PC: ");*/
+				/*uart_puthex(ctx->pc);*/
+				/*uart_putstr(" Status: ");*/
+				/*uart_puthex(csr_read(mstatus));*/
+				/*uart_putstr(" ");*/
+				/*uart_puthex(csr_read(sstatus));*/
+				unsigned long mepc_val = ctx->pc;
+				unsigned long stvec_val = csr_read(stvec);
+				unsigned long mstatus_val = ctx->status;
+				unsigned long mcause_val = ctx->cause;
+				unsigned long mstatus_mpp = mstatus_val & MSTATUS_MPP;
+				unsigned long mstatus_sie = mstatus_val & MSTATUS_SIE;
+
+				// SPP <= MPP(S/U)
+				mstatus_val &= ~MSTATUS_SPP;
+				mstatus_val |= (mstatus_mpp & 0x800) ? MSTATUS_SPP : 0;
+				// SIE <= 0
+				mstatus_val &= ~MSTATUS_SIE;
+				// SPIE <= SIE
+				mstatus_val &= ~MSTATUS_SPIE;
+				mstatus_val |= mstatus_sie ? MSTATUS_SPIE : 0;
+				// sepc <= mepc
+				csr_write(sepc, mepc_val);
+				// mepc <= stvec
+				ctx->pc = stvec_val;
+				// scause <= mcause
+				csr_write(scause, mcause_val);
+				ctx->status = mstatus_val;
+
+				/*uart_putstr(" TVAL: ");*/
+				/*uart_puthex(csr_read(stval));*/
+				/*uart_putstr(" Status: ");*/
+				/*uart_puthex(ctx->status);*/
+				/*uart_putstr("\r\n");*/
+				/*uart_putstr(" Stvec: ");*/
+				/*uart_puthex(stvec_val);*/
+				/*uart_putstr("\r\n");*/
+				break;
+			default:
+				uart_putstr("[SBI] ERROR: Unhandled ");
+				uart_putstr(is_interrupt ? "interrupt " : "exception ");
+				uart_puthex(ctx->cause);
+				uart_putstr(" at PC: ");
+				uart_puthex(ctx->pc);
+				uart_putstr("\r\n");
+				while(1);
 				break;
 		}
 
-		if (ctx->cause < CAUSE_MAX_EXC && _exception_table[ctx->cause])
-			ctx = _exception_table[ctx->cause](ctx);
-		else {
-			switch (ctx->cause) {
-				case CAUSE_ILLEGAL_INSTRUCTION:
-					;
-					unsigned int instr = csr_read(mtval);
-					unsigned int rd = (instr >> 7) & 0x1f;
-					unsigned int csrid = (instr >> 20) & 0xfff;
-					unsigned int time = 0;
-					if (csrid == 0xc01)
-						time = *aclint_timel;
-					else if (csrid == 0xc81)
-						time = *aclint_timeh;
-					/*uart_putstr("[SBI] time query ");*/
-					/*uart_puthex(time);*/
-					ctx->reg[rd] = time;
-					break;
-				case CAUSE_BREAKPOINT:
-					;
-					uart_putstr("[SBI] Halted on breakpoint\r\n");
-					break;
-					// c0c586a4
-					// -> c0c58ac4
-					unsigned int* memstart = (void*) 0x21058ac4;
-					unsigned int memspan = 0x20;
-					for (unsigned int i = 0; i < memspan; i+=4) {
-						uart_puthex((unsigned int)memstart + i);
-						uart_putstr(": ");
-						uart_puthex(*(memstart + i/4));
-						uart_putstr("\r\n");
-					}
-					uart_putstr("\r\n");
-					memstart = (void*) 0x2188e20c;
-					memspan = 0x20;
-					for (unsigned int i = 0; i < memspan; i+=4) {
-						uart_puthex((unsigned int)memstart + i);
-						uart_putstr(": ");
-						uart_puthex(*(memstart + i/4));
-						uart_putstr("\r\n");
-					}
-					uart_putstr("\r\n");
-					memstart = (void*) 0x2188bdc8;
-					memspan = 0x40;
-					for (unsigned int i = 0; i < memspan; i+=4) {
-						uart_puthex((unsigned int)memstart + i);
-						uart_putstr(": ");
-						uart_puthex(*(memstart + i/4));
-						uart_putstr("\r\n");
-					}
-					while(1);
-					/*uart_putstr("[SBI] Forwarded instruction page fault to S-mode.\r\n");*/
-				case CAUSE_PAGE_FAULT_INST:
-				case CAUSE_PAGE_FAULT_STORE:
-				case CAUSE_PAGE_FAULT_LOAD:
-					;
-					/*uart_putstr("[SBI] Halted on page fault\r\n");*/
-					/*unsigned int* memstart = (void*) 0x210000ee;*/
-					/*unsigned int memspan = 0x100;*/
-					/*for (unsigned int i = 0; i < memspan; i++) {*/
-						/*uart_puthex((unsigned int)memstart + i);*/
-						/*uart_putstr(": ");*/
-						/*uart_puthex(*(memstart + i));*/
-						/*uart_putstr("\r\n");*/
-					/*}*/
-					/*while(1);*/
-					uart_putstr("[SBI] Forwarded instruction page fault to S-mode.\r\n");
-					uart_puthex(ctx->pc);
-					uart_putstr("\r\n");
-					unsigned long mepc_val = ctx->pc;
-					unsigned long stvec_val = csr_read(stvec);
-					unsigned long mstatus_val = ctx->status;
-					unsigned long mcause_val = ctx->cause;
-					unsigned long mstatus_mpp = mstatus_val & MSTATUS_MPP;
-					unsigned long mstatus_sie = mstatus_val & MSTATUS_SIE;
-
-					// SPP <= S/U
-					mstatus_val &= ~MSTATUS_SPP | (mstatus_mpp & 0x800 ? MSTATUS_SPP : 0);
-					// SIE <= 0
-					mstatus_val &= ~MSTATUS_SIE;
-					// SPIE <= SIE
-					mstatus_val &= ~MSTATUS_SPIE | (mstatus_sie ? MSTATUS_SPIE : 0);
-					// sepc <= mepc
-					csr_write(sepc, mepc_val);
-					// mepc <= stvec
-					ctx->pc = stvec_val;
-					// scause <= mcause
-					csr_write(scause, mcause_val);
-					ctx->status = mstatus_val;
-					break;
-				default:
-					uart_putstr("[SBI] ERROR: Unhandled exception ");
-					uart_puthex(ctx->cause);
-					uart_putstr(" at PC: ");
-					uart_puthex(ctx->pc);
-					uart_putstr("\r\n");
-					while(1);
-					break;
-			}
-
-		}
-		/*if (ctx->cause == CAUSE_PAGE_FAULT_INST){*/
-		/*}*/
-		/*else {*/
-			/*[>_exit(-1);<]*/
-		/*}*/
 	}
-	/*uart_putstr("EXCEPTION RET\r\n");*/
 	return ctx;
 }
 
@@ -336,6 +361,11 @@ struct irq_context* sbi_syscall(struct irq_context* ctx)
 	uint32_t a2    = ctx->reg[REG_ARG0 + 2];
 	uint32_t which = ctx->reg[REG_ARG0 + 7];
 
+	/*uart_putstr("Status: syscall from pc \r\n");*/
+	/*uart_puthex(ctx->pc);*/
+	/*uart_putstr("\r\n");*/
+	/*uart_puthex(csr_read(stval));*/
+	/*uart_putstr("\r\n");*/
 	switch (which) {
 		case SBI_SHUTDOWN:
 			uart_putstr("[SBI] Shutdown. \r\n");
@@ -348,10 +378,13 @@ struct irq_context* sbi_syscall(struct irq_context* ctx)
 			ctx->reg[REG_ARG0] = -1;
 			break;
 		case SBI_SET_TIMER:
-			uart_putstr("[SBI] Next timer set. \r\n");
-			/*set_mtimecmp(a0);*/
-			/*csr_set(mie, SR_IP_MTIP);*/
-			/*csr_clear(sip, SR_IP_STIP);*/
+			/*uart_putstr("[SBI] Next timer set ");*/
+			/*uart_puthex(a0);*/
+			/*uart_putstr(" ");*/
+			/*uart_puthex(a1);*/
+			/*uart_putstr("\r\n");*/
+			*aclint_timecmpl = a0;
+			*aclint_timecmph = a1;
 			break;
 		case SBI_REMOTE_FENCE_I:
 		case SBI_REMOTE_SFENCE_VMA:
@@ -365,24 +398,6 @@ struct irq_context* sbi_syscall(struct irq_context* ctx)
 			uart_putstr("\r\n");
 			_exit(-1);
 			break;
-	}
-	return ctx;
-}
-
-struct irq_context* irq_callback (struct irq_context* ctx)
-{
-	uint32_t cause = ctx->cause & 0xF;
-
-	if (cause == IRQ_M_TIMER) {
-		// pass to supervisor
-	}
-	else {
-		// we don't have any other IRQs in the whole system
-		// this should never happen
-		uart_putstr("[SBI] Unhandled IRQ: ");
-		uart_puthex(cause);
-		uart_putstr("\r\n");
-		_exit(-1);
 	}
 	return ctx;
 }
@@ -405,14 +420,14 @@ void sbi_main()
 	/*uart_puthex(*mem_test_addr);*/
 
 	exception_set_handler(CAUSE_ECALL_S, sbi_syscall);
-	exception_set_irq_handler(irq_callback);
-	csr_write(mie, 1 << IRQ_M_TIMER);
-	csr_write(mstatus, (PRV_S << MSTATUS_MPP_SHIFT) | SR_MPIE);
+	/*csr_write(mie, 1 << IRQ_M_TIMER);*/
+	csr_write(mie, 0);
+	csr_write(mstatus, (PRV_S << MSTATUS_MPP_SHIFT));
 	csr_write(mepc, kernel_entry_addr);
 	csr_write(mscratch, &_sp);
 
-	register uintptr_t a0 asm ("a0") = 0;
-	register uintptr_t a1 asm ("a1") = kernel_dtb_addr;
+	register uintptr_t a0 asm ("a0") = 0; // hart ID
+	register uintptr_t a1 asm ("a1") = kernel_dtb_addr; // dtb addr
 	asm volatile ("mret" :: "r" (a0), "r" (a1));
 
 	while (1);
