@@ -35,6 +35,7 @@ module privilege
 		input on_exc_isint,
 		input [31:0]pc_in,
 		input [31:0]mtval_in,
+		input [31:0]stval_in,
 		input [3:0]mcause_code_in,
 		output [31:0]mtvec_out,
 		// for CPU mret
@@ -108,14 +109,14 @@ module privilege
 	wire [31:0]misa_init			= 32'b01000000_00000100_00010001_00000001;
 
 	//                                                         MM    M S     
-	//                                                         PP  S P P M S 
-	//                                                         PP  P I I I I 
-	//                                                         10  P E E E E 
+	//                                                  S      PP  S P P M S 
+	//                                                  U      PP  P I I I I 
+	//                                                  M      10  P E E E E 
 	wire [31:0]mstatus_init			= 32'b00000000_00000000_00011001_10100000;
-	wire [31:0]mstatus_read_mask	= 32'b11111111_11111111_11100110_01010101;
+	wire [31:0]mstatus_read_mask	= 32'b11111111_11111011_11100110_01010101;
 	wire [31:0]mstatus_read_val		= 32'b0;
 	wire [31:0]mstatus_write_mask	= mstatus_read_mask;
-	wire [31:0]sstatus_read_mask	= 32'b11111111_11111111_11111110_11011101;
+	wire [31:0]sstatus_read_mask	= 32'b11111111_11111011_11111110_11011101;
 	wire [31:0]sstatus_read_val		= 32'b0;
 	wire [31:0]sstatus_write_mask	= sstatus_read_mask;
 
@@ -244,7 +245,7 @@ module privilege
 				12'h140: sscratch	<= d;
 				12'h141: sepc		<= (sepc & sepc_write_mask) + (d & ~sepc_write_mask);
 				12'h142: scause		<= d; // probably not used by kernel
-				12'h143: stval		<= d; // probably not used by kernel
+				//12'h143: stval		<= d; // probably not used by kernel
 				12'h180: satp		<= (satp & satp_write_mask) + (d & ~satp_write_mask);
 
 				12'h300: mstatus	<= (mstatus & mstatus_write_mask) + (d & ~mstatus_write_mask);
@@ -264,6 +265,7 @@ module privilege
 				mode <= 2'b11;
 				mepc <= pc_in;
 				mtval <= mtval_in;
+				stval <= stval_in;
 				if (on_exc_isint) begin
 					mcause <= {1'b1, 27'b0, mcause_i_code};
 				end else begin
@@ -273,13 +275,14 @@ module privilege
 				// not now
 			end else if (on_exc_leave) begin
 				mtval <= 32'b0;
+				//stval <= 32'b0;
 				// return from interrupt or exception: mret or sret
 				// if mret/sret gets here, it will be legal (not, like, mret from S-mode)
 				if (on_exc_ismret) begin
 					// mret
-					// mode back to MPP, MPP set to 00(U), MIE back to MPIE, MPIE to 1
+					// mode back to S(not MPP!!), MPP set to 00(U), MIE back to MPIE, MPIE to 1
 					mstatus <= {mstatus[31:13], 2'b00, mstatus[10:8], 1'b1, mstatus[6:4], mstatus_mpie, mstatus[2:0]};
-					mode <= mstatus_mpp;
+					mode <= 2'b01;
 				end else begin
 					// sret
 					// mode back to SPP, SPP to 0(U), SIE back to SPIE, SPIE to 1

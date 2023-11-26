@@ -917,7 +917,7 @@ module quasi_main
 			.ready(mainm_ready)
 		);
 	`else
-		// 2**21 * 32 8MB
+		// 2**27 * 32 64MB
 		simple_ram #(
 			.WIDTH(32),
 			.DEPTH(27),
@@ -931,6 +931,40 @@ module quasi_main
 			.spo(mainm_spo),
 			.ready(mainm_ready)
 		);
+		//wire [31:0]mainm_spo_l;
+		//wire [31:0]mainm_spo_h;
+		//wire mainm_ready_l;
+		//wire mainm_ready_h;
+		//assign mainm_spo = mainm_a[27] ? mainm_spo_h : mainm_spo_l;
+		//assign mainm_ready = mainm_a[27] ? mainm_ready_h : mainm_ready_l;
+		//// 2**27 * 32 64MB
+		//simple_ram #(
+			//.WIDTH(32),
+			//.DEPTH(27),
+			//.INIT("/tmp/meminit.dat")
+		//) distram_mainm (
+			//.clk(clk_main),
+			//.a({2'b0, mainm_a[31:2]}),
+			//.d(mainm_d),
+			//.we(mainm_a[27] ? 1'b0 : mainm_we),
+			//.rd(mainm_a[27] ? 1'b0 : mainm_rd),
+			//.spo(mainm_spo_l),
+			//.ready(mainm_ready_l)
+		//);
+		//// 2**27 * 32 64MB
+		//simple_ram #(
+			//.WIDTH(32),
+			//.DEPTH(27),
+			//.INIT("/tmp/meminit.dat")
+		//) distram_mainmh (
+			//.clk(clk_main),
+			//.a({2'b0, mainm_a[31:2]}),
+			//.d(mainm_d),
+			//.we(mainm_a[27] ? mainm_we : 1'b0),
+			//.rd(mainm_a[27] ? mainm_rd : 1'b0),
+			//.spo(mainm_spo_h),
+			//.ready(mainm_ready_h)
+		//);
 	`endif
 `endif
 `endif

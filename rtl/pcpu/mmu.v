@@ -275,6 +275,12 @@ module mmu_sv32
 						mmuspo <= pspo;
 					end
 				end
+				PAGEFAULT: begin
+					//$display("va vd vwe vrd: %h %h %h %h", vareg, vdreg, vwereg, vrdreg);
+					//$display("levels_i mode: %d %x", levels_i, mode);
+					//$display("1 v r w u: %h %h %h %h", pte1v, pte1r, pte1w, pte1u);
+					//$display("2 v r w u: %h %h %h %h", pte2v, pte2r, pte2w, pte2u);
+				end
 				DISABLED: begin
 				end
 				default: ;

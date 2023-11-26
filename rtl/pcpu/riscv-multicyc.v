@@ -250,6 +250,8 @@ module riscv_multicyc
 
 	reg [3:0]mcause_code_out;
 	reg [31:0]mtval_out;
+	reg [31:0]stval_out;
+	reg [31:0]pc_out;
 	wire [31:0]mtvec_in;
 	wire [31:0]mepc_in;
 	wire [31:0]sepc_in;
@@ -278,9 +280,10 @@ module riscv_multicyc
 
 		.on_exc_enter(OnExcEnter),
 		.on_exc_isint(OnExcIsint),
-		.pc_in(oldpc),
+		.pc_in(pc_out),
 		.mcause_code_in(mcause_code_out),
 		.mtval_in(mtval_out),
+		.stval_in(stval_out),
 		.mtvec_out(mtvec_in),
 
 		.on_exc_leave(OnExcLeave),
@@ -353,6 +356,13 @@ module riscv_multicyc
 
 	always @ (posedge clk) begin
 		mtval_out <= instruction;
+		// TODO: no priv_ecall
+		if (pagefault | accessfault | unaligned | priv_ecall) stval_out <= mem_addr;
+		//pc_out <= pc;
+		//if (phase_n == EXCEPTION | phase_n == INTERRUPT)
+			//pc_out <= phase == IF ? oldpc : oldpc;
+		if (phase_n == EXCEPTION | phase_n == INTERRUPT)
+			pc_out <= (phase == IF | phase == ID_RF) ? pc : oldpc;
 	end
 `endif
 
@@ -762,7 +772,7 @@ module riscv_multicyc
 				phase_n = IF;
 				// ~~~~~~~~~~~~~~~~~~~~
 				OnExcLeave = 1;
-				PCWrite = 1; PCSrc = 5;
+				PCWrite = 1; PCSrc = 6;
 			end
 			`endif
 			BAD: begin
