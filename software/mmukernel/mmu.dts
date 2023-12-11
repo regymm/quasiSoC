@@ -1,0 +1,95 @@
+/dts-v1/;
+
+/ {
+	#address-cells = <0x02>;
+	#size-cells = <0x02>;
+	compatible = "riscv-virtio";
+	model = "riscv-virtio,qemu";
+
+	chosen {
+		//bootargs = "earlycon=sbi console=ttyUL0";
+		stdout-path = "/soc/quasisoc_uart@93000000";
+	};
+
+	memory@20000000 {
+		device_type = "memory";
+		reg = <0x00 0x20000000 0x00 0x4000000>;
+	};
+	/*
+	memory@20400000 {
+		device_type = "memory";
+		reg = <0x00 0x20400000 0x00 0x8000000>;
+	};
+	*/
+
+	cpus {
+		#address-cells = <0x01>;
+		#size-cells = <0x00>;
+		timebase-frequency = <10000000>;
+
+		cpu@0 {
+			phandle = <0x01>;
+			device_type = "cpu";
+			reg = <0x00>;
+			status = "okay";
+			compatible = "riscv";
+			riscv,isa = "rv32imafdcsuh";
+			mmu-type = "riscv,sv32";
+
+			interrupt-controller {
+				#interrupt-cells = <0x01>;
+				interrupt-controller;
+				compatible = "riscv,cpu-intc";
+				phandle = <0x02>;
+			};
+		};
+
+		cpu-map {
+
+			cluster0 {
+
+				core0 {
+					cpu = <0x01>;
+				};
+			};
+		};
+	};
+
+	soc {
+		#address-cells = <0x02>;
+		#size-cells = <0x02>;
+		compatible = "simple-bus";
+		ranges;
+
+		quasisoc_uart@93000000 {
+			compatible = "quasisoc,uart-0.1";
+			reg = <0x00 0x93000000 0x00 0x100>;
+		};
+
+		/*
+		uart@10000000 {
+			interrupts = <0x0a>;
+			interrupt-parent = <0x03>;
+			clock-frequency = "\08@";
+			reg = <0x00 0x10000000 0x00 0x100>;
+			compatible = "ns16550a";
+		};
+
+		plic@c000000 {
+			phandle = <0x03>;
+			riscv,ndev = <0x35>;
+			reg = <0x00 0xc000000 0x00 0x600000>;
+			interrupts-extended = <0x02 0x0b 0x02 0x09>;
+			interrupt-controller;
+			compatible = "sifive,plic-1.0.0\0riscv,plic0";
+			#interrupt-cells = <0x01>;
+		};
+
+		clint@9b000000 {
+			interrupts-extended = <0x02 0x03 0x02 0x07>;
+			reg = <0x00 0x9b000000 0x00 0x10000>;
+			compatible = "riscv,clint0";
+		};
+		*/
+	};
+};
