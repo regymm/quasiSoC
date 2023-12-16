@@ -17,8 +17,7 @@ module quasi_main
 		parameter BAUD_RATE_UART = 3000000,
 		//parameter BAUD_RATE_UART = 3686400,
 		//parameter BAUD_RATE_CH375 = 9600,
-		//parameter TIMER_COUNTER = 4000 // for debugging
-		parameter TIMER_COUNTER = 1000000
+		parameter TIMER_RATE = 10000000
 	)
     (
         input sysclk,
@@ -51,10 +50,6 @@ module quasi_main
         output sd_dat3,
         output sd_cmd,
         output sd_sck,
-
-		//input ch375_tx,
-		//output ch375_rx,
-		//input ch375_nint,
 
 		//input ps2_clk,
 		//input ps2_data,
@@ -988,7 +983,7 @@ module quasi_main
     // RISC-V advanced core-local interrupt controller
     aclint #(
 		.CLOCK_FREQ(CLOCK_FREQ),
-		.TIMER_COUNTER(TIMER_COUNTER)
+		.TIMER_RATE(TIMER_RATE)
 	) aclint_inst(
         .clk(clk_main),
         .rst(rst),

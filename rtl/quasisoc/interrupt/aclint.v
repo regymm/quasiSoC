@@ -16,7 +16,8 @@
 module aclint
 	#(
 		parameter CLOCK_FREQ = 62500000,
-		parameter TIMER_COUNTER = 4000, // abandoned
+		parameter TIMER_COUNTER = -1, // abandoned
+		// this is passed from top module
 		// fast...
 		//parameter TIMER_RATE = 40000000
 		// default 10 MHz

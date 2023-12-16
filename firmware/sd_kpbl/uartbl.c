@@ -7,6 +7,7 @@
  */
 #define false 0
 #define true 1
+#define MMUKERNEL
 #define UNTETHERED
 
 /*extern volatile int* BOOT_ENTRY;*/
@@ -48,6 +49,75 @@ void sd_uart_bl()
 {
 	*uart_rx_reset = 1;
 	uart_putstr("KERNEL PANIC BOOT LOADER \r\n");
+#ifdef MMUKERNEL
+#ifndef UNTETHERED
+	uart_putstr("[kpbl] sbi from UART to 0x20001000... \r\n");
+	*set_start_addr = 0x20001000;
+	*start_dma = 1;
+
+	uart_putstr("[kpbl] Any key... \r\n");
+	*uart_rx_reset = 1;
+	while(! *uart_rx_new);
+
+	*uart_rx_reset = 1;
+	uart_putstr("[kpbl] dtb from UART to 0x20100000... \r\n");
+	*set_start_addr = 0x20100000;
+	*start_dma = 1;
+
+	uart_putstr("[kpbl] Any key... \r\n");
+	*uart_rx_reset = 1;
+	while(! *uart_rx_new);
+
+	*uart_rx_reset = 1;
+	uart_putstr("[kpbl] kernel from UART to 0x20400000... \r\n");
+	*set_start_addr = 0x20400000;
+	*start_dma = 1;
+#else
+	if (! *sd_ncd) {
+		uart_putstr("[kpbl] sbi, dtb, kernel binary bundle from sdcard to 0x20001000... \r\n");
+		int sector = 0;
+		volatile int* addr = (int*) 0x20001000;
+		// calc method: offset 4 MB -> sd_address 8192
+		// we load 32 MB - 4KB or 65536 - 8 sector, offset at 16 MB + 4KB(32768 + 8)
+		for(sector = 0; sector < 65536 - 8; sector++) {
+			while(! *sd_ready);
+			*sd_address = 32768 + 8 + sector;
+			*sd_do_read = 0x1;
+			while(! *sd_ready);
+			int i = 0;
+			for(i = 0; i < 128; i++) {
+				addr[i + (sector * 128)] = sd_cache_base[i];
+			}
+		}
+		/*uart_putstr("[kpbl] dtb from sdcard to 0x20100000... \r\n");*/
+		/*addr = (int*) 0x20100000;*/
+		/*// 1 MB or 2048 sectors at 17 MB offset (34816) this time*/
+		/*for(sector = 0; sector < 2048; sector++) {*/
+			/*while(! *sd_ready);*/
+			/**sd_address = 34816 + sector;*/
+			/**sd_do_read = 0x1;*/
+			/*while(! *sd_ready);*/
+			/*int i = 0;*/
+			/*for(i = 0; i < 128; i++) {*/
+				/*addr[i + (sector * 128)] = sd_cache_base[i];*/
+			/*}*/
+		/*}*/
+		/*uart_putstr("[kpbl] kernel from sdcard to 0x20400000... \r\n");*/
+		/*addr = (int*) 0x20400000;*/
+		/*// 10 MB or 20480 sectors at 18 MB offset (36848) this time*/
+		/*for(sector = 0; sector < 20480; sector++) {*/
+			/*while(! *sd_ready);*/
+			/**sd_address = 36848 + sector;*/
+			/**sd_do_read = 0x1;*/
+			/*while(! *sd_ready);*/
+			/*int i = 0;*/
+			/*for(i = 0; i < 128; i++) {*/
+				/*addr[i + (sector * 128)] = sd_cache_base[i];*/
+			/*}*/
+		/*}*/
+	}
+#endif
+#else
 #ifndef UNTETHERED
 	uart_putstr("[kpbl] kernel from UART to 0x20001000... \r\n");
 	*set_start_addr = 0x20001000;
@@ -91,6 +161,7 @@ void sd_uart_bl()
 			}
 		}
 	}
+#endif
 #endif
 
 	uart_putstr("[kpbl] enable cache... \r\n");

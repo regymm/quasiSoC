@@ -1,6 +1,4 @@
-`define SIMULATION
-// clock freq
-`define CLOCK_FREQ 62500000;
+//`define SIMULATION
 // CPU features
 `define RV32M
 `define RV32A
@@ -24,7 +22,7 @@
 	//`define CACHE_EN
 	`define SDCARD_EN
 	//`define CH375B_EN
-	`define VIDEO_EN
+	//`define VIDEO_EN
 	//`define LCD_EN
 	//`define PS2_EN
 	//`define ETH_EN
