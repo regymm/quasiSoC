@@ -1,31 +1,26 @@
 ## Quasi SoC
 
-Crappy RISC-V CPU and fancy peripherals designed to be useful. No-MMU Linux capable. Free-software toolchain ready. Prioritize compatibility and easy-to-understand -- if I can write this, you also can. 
+RISC-V CPU and rich bunch of peripherals designed to be useful. Runs Linux. Free-software toolchain ready. Prioritize compatibility and easy-to-understand -- if I can write this, you also can. 
 
 ![](doc/design.png)
 
 ### ∂CPU (partial CPU)
 
-- [x] Multiple-cycle RISC-V RV32IMA\* Zicsr\* @ 62.5 MHz, ~0.27 CoreMark/MHz
-- [x] M-mode, interrupt, exception\*
-  - [x] Core local interrupt controller(CLINT, for mtime and ~~software~~ interrupt)
+- [x] Multiple-cycle RISC-V RV32IMA Zicsr\* @ 62.5 MHz, ~0.27 CoreMark/MHz
+- [x] M, S, U-mode, interrupt, exception\*
+  - [x] Core local interrupt controller(ACLINT)
   - [ ] Platform-level interrupt controller(PLIC, for external interrupt)
-- [x] U-mode\*
+- [x] Sv32 MMU
 - [x] Memory-mapped IO bus with arbitration and "DMA"
 - [x] Cache, direct mapping(configurable, 32 KB default)
 
 &nbsp;&nbsp;  \*: except amo(max|min)u? </br>
-&nbsp;&nbsp;  \*: may not be exactly standard, stuffs like vectored interrupt not supported </br>
-&nbsp;&nbsp;  \*: stuffs like illegal instruction not supported </br>
-&nbsp;&nbsp;  \*: only MPP field in mstatus, which is enough</br>
+&nbsp;&nbsp;  \*: as far as Linux requires </br>
 
 <details>
 <summary>Future plan</summary>
 
-- [ ] Illegal instruction/load/store exception
 - [ ] Optimize memory access cycles
-- [ ] Sv32 MMU
-- [ ] S-mode
 - [ ] GDB debug over openocd JTAG
 - [ ] faster M instructions
 - [ ] Formal verification
@@ -77,7 +72,8 @@ Crappy RISC-V CPU and fancy peripherals designed to be useful. No-MMU Linux capa
 
 ### Software
 
-- [x] **Linux kernel** 32-bit No-MMU uClibc
+- [x] **Linux kernel** 32-bit No-MMU with uClibc
+- [x] **Linux kernel** 32-bit with MMU
   - [x] busybox userspace
   - [x] driver for my UART
 - [x] **MicroPython** [port](https://github.com/regymm/micropython/tree/master/ports/QuasiSoC)
