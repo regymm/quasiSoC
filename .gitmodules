@@ -1,0 +1,3 @@
+[submodule "rtl/3rdparty/DDR3_Controller"]
+	path = rtl/3rdparty/DDR3_Controller
+	url = https://github.com/AngeloJacobo/DDR3_Controller

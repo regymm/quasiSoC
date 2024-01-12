@@ -12,9 +12,9 @@ module quasi_main
 	#(
 		parameter SIMULATION = 0,
 		parameter INTERACTIVE_SIM = 0,
-		parameter CLOCK_FREQ = 100000000,
+		parameter CLOCK_FREQ = 80000000,
 		//parameter CLOCK_FREQ = 75000000,
-		parameter BAUD_RATE_UART = 3000000,
+		parameter BAUD_RATE_UART = 115200,
 		//parameter BAUD_RATE_UART = 3686400,
 		//parameter BAUD_RATE_CH375 = 9600,
 		parameter TIMER_RATE = 10000000
@@ -153,6 +153,7 @@ module quasi_main
 	wire clk_2x;
     wire clk_hdmi_25;
     wire clk_hdmi_250;
+	wire clk_ref;
 `ifndef SIMULATION
 	clocking_wizard clock_wizard_inst(
 		.clk_in1(sysclk),
@@ -160,7 +161,8 @@ module quasi_main
 		.clk_mem(clk_mem),
 		.clk_hdmi_25(clk_hdmi_25),
 		.clk_hdmi_250(clk_hdmi_250),
-		.clk_hdmi_50(clk_2x)
+		.clk_hdmi_50(clk_2x),
+		.clk_ref(clk_ref)
 	);
 `else
 	assign clk_main = sysclk;
@@ -678,9 +680,9 @@ module quasi_main
 	`ifdef CACHE_EN
 	memory_controller_burst memory_controller_inst
 	//memory_controller memory_controller_inst
-	(
+		(
 		.clk(clk_main),
-		.clk_mem(clk_mem),
+		.clk_mem(clk_ref),
 		.rst(rst),
 
 		.burst_en(mainm_burst_en),
@@ -843,6 +845,7 @@ module quasi_main
 		.ddr3_odt                       (ddr3_odt),
 
 		.sys_clk_i(clk_mem),
+		.clk_ref_i(clk_ref),
 		.ui_clk(clk_main),
 		.ui_clk_sync_rst(ui_clk_sync_rst),
 		.aresetn(!rst),

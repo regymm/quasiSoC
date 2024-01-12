@@ -43,6 +43,21 @@ void uart_putstr(const char* str)
 	while(str[n]) uart_putchar(str[n++]);
 }
 
+void sd_load(volatile int* memaddr, unsigned int offset_sec, unsigned int start_sec, unsigned int end_sec)
+{
+	unsigned int sector;
+	for(sector = start_sec; sector < end_sec; sector++) {
+		while(! *sd_ready);
+		*sd_address = offset_sec + sector;
+		*sd_do_read = 0x1;
+		while(! *sd_ready);
+		int i = 0;
+		for(i = 0; i < 128; i++) {
+			memaddr[i + (sector * 128)] = sd_cache_base[i];
+		}
+	}
+}
+
 // jumped from assembly to here
 // read hexadecimal from UART and save to BOOT_ENTRY
 void sd_uart_bl()
@@ -51,6 +66,7 @@ void sd_uart_bl()
 	uart_putstr("KERNEL PANIC BOOT LOADER \r\n");
 #ifdef MMUKERNEL
 #ifndef UNTETHERED
+	// somehow this doesn't work...
 	uart_putstr("[kpbl] sbi from UART to 0x20001000... \r\n");
 	*set_start_addr = 0x20001000;
 	*start_dma = 1;
@@ -74,47 +90,15 @@ void sd_uart_bl()
 	*start_dma = 1;
 #else
 	if (! *sd_ncd) {
-		uart_putstr("[kpbl] sbi, dtb, kernel binary bundle from sdcard to 0x20001000... \r\n");
-		int sector = 0;
-		volatile int* addr = (int*) 0x20001000;
-		// calc method: offset 4 MB -> sd_address 8192
-		// we load 32 MB - 4KB or 65536 - 8 sector, offset at 16 MB + 4KB(32768 + 8)
-		for(sector = 0; sector < 65536 - 8; sector++) {
-			while(! *sd_ready);
-			*sd_address = 32768 + 8 + sector;
-			*sd_do_read = 0x1;
-			while(! *sd_ready);
-			int i = 0;
-			for(i = 0; i < 128; i++) {
-				addr[i + (sector * 128)] = sd_cache_base[i];
-			}
-		}
-		/*uart_putstr("[kpbl] dtb from sdcard to 0x20100000... \r\n");*/
-		/*addr = (int*) 0x20100000;*/
-		/*// 1 MB or 2048 sectors at 17 MB offset (34816) this time*/
-		/*for(sector = 0; sector < 2048; sector++) {*/
-			/*while(! *sd_ready);*/
-			/**sd_address = 34816 + sector;*/
-			/**sd_do_read = 0x1;*/
-			/*while(! *sd_ready);*/
-			/*int i = 0;*/
-			/*for(i = 0; i < 128; i++) {*/
-				/*addr[i + (sector * 128)] = sd_cache_base[i];*/
-			/*}*/
-		/*}*/
-		/*uart_putstr("[kpbl] kernel from sdcard to 0x20400000... \r\n");*/
-		/*addr = (int*) 0x20400000;*/
-		/*// 10 MB or 20480 sectors at 18 MB offset (36848) this time*/
-		/*for(sector = 0; sector < 20480; sector++) {*/
-			/*while(! *sd_ready);*/
-			/**sd_address = 36848 + sector;*/
-			/**sd_do_read = 0x1;*/
-			/*while(! *sd_ready);*/
-			/*int i = 0;*/
-			/*for(i = 0; i < 128; i++) {*/
-				/*addr[i + (sector * 128)] = sd_cache_base[i];*/
-			/*}*/
-		/*}*/
+		uart_putstr("[kpbl] sbi, dtb, kernel from sdcard... \r\n");
+		// calc method: offset 4 MB -> sd_address 8192 sectors
+		// on-SDcard offset: 16MB aka 32768 sectors
+		unsigned int sd_img_sec_offset = 32768;
+		// ~~we load 32 MB - 4KB or 65536 - 8 sector~~
+		sd_load((volatile int*)0x20001000, sd_img_sec_offset + 8, 0, 16);
+		sd_load((volatile int*)0x20100000, sd_img_sec_offset + 2048, 0, 16);
+		sd_load((volatile int*)0x20400000, sd_img_sec_offset + 8192, 0, 47000); // kernel ~22MB
+		/*sd_load((volatile int*)0x20001000, sd_img_sec_offset + 8, 0, 65536 - 8);*/
 	}
 #endif
 #else

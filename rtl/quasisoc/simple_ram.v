@@ -10,7 +10,7 @@ module simple_ram
 	#(
 		parameter WIDTH = 32,
 		parameter DEPTH = 1,
-		parameter INIT = "/home/petergu/MyHome/pComputer/pCPU/null.dat"
+		parameter INIT = ""
 	)
 	(
 		input clk, 
