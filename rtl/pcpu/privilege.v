@@ -285,7 +285,8 @@ module privilege
 					// mret
 					// mode back to S(not MPP!!), MPP set to 00(U), MIE back to MPIE, MPIE to 1
 					mstatus <= {mstatus[31:13], 2'b00, mstatus[10:8], 1'b1, mstatus[6:4], mstatus_mpie, mstatus[2:0]};
-					mode <= 2'b01;
+					//mode <= 2'b01;
+					mode <= mstatus_mpp;
 				end else begin
 					// sret
 					// mode back to SPP, SPP to 0(U), SIE back to SPIE, SPIE to 1

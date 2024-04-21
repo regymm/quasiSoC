@@ -14,7 +14,7 @@ CPPFLAGS=	$(CFLAGS) -nostdlib
 OBJCOPY	=	$(RISCV)objcopy
 READELF	=	$(RISCV)readelf
 
-all: sd_uartbl/uartbl.bin bootrom/bootrom.dat bootrom/bootrom_sim.dat sd_kpbl/kpbl.bin
+all: sd_uartbl/uartbl.bin bootrom/bootrom.dat bootrom/bootrom_sim.dat sd_kpbl/kpbl.bin fpgaolbl/fpgaolbl.dat
 
 %.dat: %.bin
 	xxd -c 4 -p $*.bin > $*.dat
@@ -40,6 +40,9 @@ sd_uartbl/uartbl.elf: sd_uartbl/uartbl.o sd_uartbl/uartbl.c_o
 
 sd_kpbl/kpbl.elf: sd_kpbl/uartbl.o sd_kpbl/uartbl.c_o
 	$(LD) $(LDFLAGS) $^ -o $@ --script sd_uartbl/linker_uartbl.ld
+
+fpgaolbl/fpgaolbl.elf: fpgaolbl/fpgaolbl.o fpgaolbl/fpgaolbl.c_o
+	$(LD) $(LDFLAGS) $^ -o $@ --script fpgaolbl/linker_fpgaolbl.ld
 
 clean:
 	-rm -f *.elf

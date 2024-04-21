@@ -22,7 +22,7 @@
 	//`define CACHE_EN
 	`define SDCARD_EN
 	//`define CH375B_EN
-	//`define VIDEO_EN
+    `define VIDEO_EN
 	//`define LCD_EN
 	//`define PS2_EN
 	//`define ETH_EN
