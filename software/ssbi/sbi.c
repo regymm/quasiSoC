@@ -5,6 +5,7 @@
  * Date              : 2023.07.30
  * Last Modified Date: 2023.07.30
  */
+// Code based on https://github.com/ultraembedded/riscv-linux-boot
 #include "stdint.h"
 
 volatile int* uart_tx			= (int*) 0x93000000;
@@ -317,6 +318,9 @@ struct irq_context* exception_handler(struct irq_context* ctx)
 				// SPP <= MPP(S/U)
 				mstatus_val &= ~MSTATUS_SPP;
 				mstatus_val |= (mstatus_mpp & 0x800) ? MSTATUS_SPP : 0;
+				// MPP <= S (2'b01)
+				mstatus_val &= ~MSTATUS_MPP;
+				mstatus_val |= 0x800;
 				// SIE <= 0
 				mstatus_val &= ~MSTATUS_SIE;
 				// SPIE <= SIE
