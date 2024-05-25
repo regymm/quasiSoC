@@ -73,8 +73,17 @@ void fpgaolbl()
 	*up_stream_addr = first;
 	uart_putstr(" Done.\r\n");
 
-	uart_putstr("[bootrom]Load 1MB from upstream storage to main memory... : ");
-	int icnt = 1*1024*1024/4;
+	/*uart_putstr("[bootrom]Input number to select boot mode: \r\n");*/
+	/*uart_putstr("Upstream storage: 0xe0000000, main memory: 0x20000000, default control transfer address: 0x20001000 \r\n");*/
+	/*uart_putstr("0. Copy 256 KB from upstream storage to main memory\r\n");*/
+	/*uart_putstr("1. Copy 1 MB from upstream storage to main memory\r\n");*/
+	/*uart_putstr("2. Copy 8 MB from upstream storage to main memory (No MMU Linux)\r\n");*/
+	/*uart_putstr("3. Directly transfer control to 0xe0000000 \r\n");*/
+	/*uart_putstr("4. Directy transfer control to 0xe0001000 \r\n");*/
+	/*uart_putstr("5. Copy 256 KB 0xe0001000 to 0x20001000, 256 KB 0xe0100000 to 0x20100000, 32 MB 0xe0400000 to 0x20400000 (MMU Linux)\r\n");*/
+
+	uart_putstr("[bootrom]Load 8MB from upstream storage to main memory... : ");
+	int icnt = 8*1024*1024/4;
 	for (int i = 0; i < icnt; i++) {
 		if ((i & 0xFFFFF) == 0) {
 			uart_puthex(i);

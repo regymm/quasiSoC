@@ -42,6 +42,20 @@ void uart_putstr(const char* str)
 	int n = 0;
 	while(str[n]) uart_putchar(str[n++]);
 }
+void uart_puthex(unsigned int n)
+{
+	char* num_str;
+	char outbuf[32];
+	const char digits[] = "0123456789abcdef";
+	num_str = &outbuf[sizeof(outbuf) - 1];
+	*num_str = 0;
+	do {
+		*(--num_str) = digits[(unsigned int)n % 16];
+	}
+	while ((n /= 16) > 0);
+	while (*num_str)
+		uart_putchar(*num_str++);
+}
 
 void sd_load(volatile int* memaddr, unsigned int offset_sec, unsigned int start_sec, unsigned int end_sec)
 {
@@ -54,6 +68,13 @@ void sd_load(volatile int* memaddr, unsigned int offset_sec, unsigned int start_
 		int i = 0;
 		for(i = 0; i < 128; i++) {
 			memaddr[i + (sector * 128)] = sd_cache_base[i];
+		}
+		if (sector % 2000 == 0) {
+			uart_putstr("Sector ");
+			uart_puthex(sector);
+			uart_putstr(" towards ");
+			uart_puthex(end_sec);
+			uart_putstr("\r\n");
 		}
 	}
 }

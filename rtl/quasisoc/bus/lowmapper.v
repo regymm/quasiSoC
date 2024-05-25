@@ -55,6 +55,14 @@ module lowmapper
 		input gpio_ready,
 		//`endif
 
+		// PSPI: 0xe0000000 to 0xefffffff
+		output reg [31:0]pspi_a,
+		output reg [31:0]pspi_d,
+		output pspi_we,
+		output pspi_rd,
+		input [31:0]pspi_spo,
+		input pspi_ready,
+
         // uart: 0x93000000
         output reg [2:0]uart_a,
         output reg [31:0]uart_d,
@@ -112,8 +120,6 @@ module lowmapper
 		output reg [31:0]eth_d,
 		output eth_we,
 		input [31:0]eth_spo,
-
-        //// 0xe0000000 MMU control
 
         output reg irq
     );
@@ -174,46 +180,39 @@ module lowmapper
 	assign distm_we = (state == 3 & aid1 == 1) ? we_r : 0;
 	assign distm_rd = (state == 3 & aid1 == 1) ? rd_r : 0;
 	assign bootm_rd = (state == 3 & aid1 == 4'hf) ? rd_r : 0;
+	assign pspi_rd = (state == 3 & aid1 == 4'he) ? rd_r : 0;
+	assign pspi_we = (state == 3 & aid1 == 4'he) ?we_r : 0;
 
-	// update ready/spo every other cycle
-	// hope this can save some timings
-	reg [1:0]state2 = 0;
 	always @ (posedge clk) begin
-		case (state2)
-			0: state2 <= aid1 == 9 ? 1 : 2;
-			1: begin
-				state2 <= 0;
-				required_ready <= 1;
-				case (aid2)
-					2: begin
-						required_spo <= gpio_spo;
-						`ifdef AXI_GPIO_TEST
-						required_ready <= gpio_ready;
-						`endif
-					end
-					3: required_spo <= uart_spo; 
-					4: required_spo <= video_spo; 
-					6: required_spo <= sd_spo; 
-					7: required_spo <= usb_spo; 
-					8: required_spo <= int_spo; 
-					9: begin required_spo <= sb_spo;  required_ready <= sb_ready; end
-					4'ha: required_spo <= ps2_spo;
-					4'hb: required_spo <= t_spo; 
-					4'hc: required_spo <= eth_spo;
-					4'hd: required_spo <= uart2_spo;
-					default: required_spo <= 0;
-				endcase
-			end
-			2: begin
-				state2 <= 0;
-				case (aid1)
-					1: begin required_spo <= distm_spo; required_ready <= distm_ready; end
-					4'hf: begin required_spo <= bootm_spo; required_ready <= bootm_ready; end
-					default: begin required_spo <= 0; required_ready <= 1; end
-				endcase
-			end
-			default: state2 <= 0;
-		endcase
+		if (aid1 == 9) begin
+			required_ready <= 1;
+			case (aid2)
+				2: begin
+					required_spo <= gpio_spo;
+					`ifdef AXI_GPIO_TEST
+					required_ready <= gpio_ready;
+					`endif
+				end
+				3: required_spo <= uart_spo; 
+				4: required_spo <= video_spo; 
+				6: required_spo <= sd_spo; 
+				7: required_spo <= usb_spo; 
+				8: required_spo <= int_spo; 
+				9: begin required_spo <= sb_spo;  required_ready <= sb_ready; end
+				4'ha: required_spo <= ps2_spo;
+				4'hb: required_spo <= t_spo; 
+				4'hc: required_spo <= eth_spo;
+				4'hd: required_spo <= uart2_spo;
+				default: required_spo <= 0;
+			endcase
+		end else begin
+			case (aid1)
+				4'h1: begin required_spo <= distm_spo; required_ready <= distm_ready; end
+				4'he: begin required_spo <= pspi_spo; required_ready <= pspi_ready; end
+				4'hf: begin required_spo <= bootm_spo; required_ready <= bootm_ready; end
+				default: begin required_spo <= 0; required_ready <= 1; end
+			endcase
+		end
 	end
 
 	// due to some old issues, addresses need to be tuned
@@ -243,6 +242,8 @@ module lowmapper
 		t_d = d_r;
 		eth_a = a_r;
 		eth_d = d_r;
+		pspi_a = a_r;
+		pspi_d = d_r;
     end
 
 endmodule
