@@ -45,7 +45,18 @@ module quasi_main
         output sd_dat2,
         output sd_dat3,
         output sd_cmd,
-        output sd_sck
+        output sd_sck,
+
+		output wire sdram_clk,
+		output wire clock_enable,
+		output wire [1:0] bank_activate,
+		output wire [11:0] address,
+		output wire chip_select,
+		output wire row_address_strobe,
+		output wire column_address_strobe,
+		output wire write_enable,
+		//output wire [1:0] dqm,
+		inout wire [15:0] dq
     );
 	// bus/memory wires
 	// CPU(0) host
@@ -561,14 +572,72 @@ module quasi_main
 	`endif
 `else
 `ifdef SDRAM_EN
+	wire [1:0]command;
+	wire [31:0]data_address;
+	wire [31:0]data_write;
+	wire [31:0]data_read;
+	wire data_read_valid;
+	wire data_write_done;
 
-	// TODO: proper reset!
-	reg rst_ddr_auto = 0;
-	reg [13:0]rst_ddr_auto_cnt = 0;
-	always @ (posedge clk_mem) begin
-		rst_ddr_auto_cnt <= rst_ddr_auto_cnt + 1;
-		if (rst_ddr_auto_cnt == 2000) rst_ddr_auto <= 1;
-	end
+	sdram_br #(.DATA_WIDTH(16)) sdram_br_inst (
+		.clk(clk_main),
+		.rst(rst),
+
+		.a(mainm_a),
+		.d(mainm_d),
+		.we(mainm_we),
+		.rd(mainm_rd),
+		.spo(mainm_spo),
+		.ready(mainm_ready), 
+
+		.command(command),
+		.data_address(data_address),
+		.data_write(data_write),
+		.data_read(data_read),
+		.data_read_valid(data_read_valid),
+		.data_write_done(data_write_done)
+	);
+
+	localparam SPEED_GRADE = 99;
+	sdram_controller #(
+		.CLK_RATE(CLOCK_FREQ),
+		.READ_BURST_LENGTH(32 / 16),
+		.WRITE_BURST(1),
+		.BANK_ADDRESS_WIDTH(2),
+		.ROW_ADDRESS_WIDTH(12),
+		.COLUMN_ADDRESS_WIDTH(8),
+		.DATA_WIDTH(16),
+		.DQM_WIDTH(2),
+		.CAS_LATENCY(3),
+		.ROW_CYCLE_TIME(SPEED_GRADE == 5 ? 55E-9 : SPEED_GRADE == 6 ? 60E-9 : 63E-9),
+		.RAS_TO_CAS_DELAY(SPEED_GRADE == 5 ? 15E-9 : SPEED_GRADE == 6 ? 18E-9 : 21E-9),
+		.PRECHARGE_TO_REFRESH_OR_ROW_ACTIVATE_SAME_BANK_TIME(SPEED_GRADE == 5 ? 15E-9 : SPEED_GRADE == 6 ? 18E-9 : 21E-9),
+		.ROW_ACTIVATE_TO_ROW_ACTIVATE_DIFFERENT_BANK_TIME(SPEED_GRADE == 5 ? 10E-9 : SPEED_GRADE == 6 ? 12E-9 : 14E-9),
+		.ROW_ACTIVATE_TO_PRECHARGE_SAME_BANK_TIME(SPEED_GRADE == 5 ? 40E-9 : SPEED_GRADE == 6 ? 42E-9 : 42E-9),
+		.MINIMUM_STABLE_CONDITION_TIME(200E-6), // 200 us
+		.MODE_REGISTER_SET_CYCLE_TIME(2.0 / CLOCK_FREQ), // 2 clocks
+		.WRITE_RECOVERY_TIME(2.0 / CLOCK_FREQ), // 2 clocks
+		.AVERAGE_REFRESH_INTERVAL_TIME(15.6E-6) // 15.6 us
+	) sdram_controller (
+		.clk(clk_main),
+		.command(command),
+		.data_address(data_address),
+		.data_write(data_write),
+		.data_read(data_read),
+		.data_read_valid(data_read_valid),
+		.data_write_done(data_write_done),
+		.clock_enable(clock_enable),
+		.bank_activate(bank_activate),
+		.address(address),
+		.chip_select(chip_select),
+		.row_address_strobe(row_address_strobe),
+		.column_address_strobe(column_address_strobe),
+		.write_enable(write_enable),
+		.dqm(),
+		.dq(dq)
+	);
+
+	assign sdram_clk = clk_main;
 `else
 	assign ui_clk_sync_rst = 0;
 	`ifndef SIMULATION

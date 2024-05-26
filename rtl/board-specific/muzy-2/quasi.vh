@@ -17,7 +17,7 @@
 	// peripheral features
 	`define GPIO_EN
 	`define UART_EN
-	//`define SDRAM_EN
+	`define SDRAM_EN
 	//`define DDR_EN
 	//`define PSRAM_EN
 	//`define CACHE_EN

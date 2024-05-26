@@ -479,13 +479,13 @@ set_property SLEW FAST [get_ports ddr3_reset_n]
 set_property IOSTANDARD LVCMOS15 [get_ports ddr3_reset_n]
 set_property PACKAGE_PIN G1 [get_ports ddr3_reset_n]
 
-set_property SLEW FAST [get_ports {ddr3_cke[0]}]
-set_property IOSTANDARD SSTL15 [get_ports {ddr3_cke[0]}]
-set_property PACKAGE_PIN J6 [get_ports {ddr3_cke[0]}]
+set_property SLEW FAST [get_ports {ddr3_cke}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_cke}]
+set_property PACKAGE_PIN J6 [get_ports {ddr3_cke}]
 
-set_property SLEW FAST [get_ports {ddr3_odt[0]}]
-set_property IOSTANDARD SSTL15 [get_ports {ddr3_odt[0]}]
-set_property PACKAGE_PIN K4 [get_ports {ddr3_odt[0]}]
+set_property SLEW FAST [get_ports {ddr3_odt}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_odt}]
+set_property PACKAGE_PIN K4 [get_ports {ddr3_odt}]
 
 set_property SLEW FAST [get_ports {ddr3_dm[0]}]
 set_property IOSTANDARD SSTL15 [get_ports {ddr3_dm[0]}]
@@ -515,92 +515,91 @@ set_property IOSTANDARD DIFF_SSTL15 [get_ports {ddr3_dqs_n[1]}]
 set_property PACKAGE_PIN E1 [get_ports {ddr3_dqs_p[1]}]
 set_property PACKAGE_PIN D1 [get_ports {ddr3_dqs_n[1]}]
 
-set_property SLEW FAST [get_ports {ddr3_ck_p[0]}]
-set_property IOSTANDARD DIFF_SSTL15 [get_ports {ddr3_ck_p[0]}]
+set_property SLEW FAST [get_ports {ddr3_ck_p}]
+set_property IOSTANDARD DIFF_SSTL15 [get_ports {ddr3_ck_p}]
 
-set_property SLEW FAST [get_ports {ddr3_ck_n[0]}]
-set_property IOSTANDARD DIFF_SSTL15 [get_ports {ddr3_ck_n[0]}]
-set_property PACKAGE_PIN P5 [get_ports {ddr3_ck_p[0]}]
-set_property PACKAGE_PIN P4 [get_ports {ddr3_ck_n[0]}]
+set_property SLEW FAST [get_ports {ddr3_ck_n}]
+set_property IOSTANDARD DIFF_SSTL15 [get_ports {ddr3_ck_n}]
+set_property PACKAGE_PIN P5 [get_ports {ddr3_ck_p}]
+set_property PACKAGE_PIN P4 [get_ports {ddr3_ck_n}]
 
 
-set_property INTERNAL_VREF 0.75 [get_iobanks 35]
-
+#set_property INTERNAL_VREF 0.75 [get_iobanks 35]
 
 #create_debug_core u_ila_0 ila
 #set_property ALL_PROBE_SAME_MU true [get_debug_cores u_ila_0]
-#set_property ALL_PROBE_SAME_MU_CNT 4 [get_debug_cores u_ila_0]
-#set_property C_ADV_TRIGGER true [get_debug_cores u_ila_0]
-#set_property C_DATA_DEPTH 8192 [get_debug_cores u_ila_0]
-#set_property C_EN_STRG_QUAL true [get_debug_cores u_ila_0]
+#set_property ALL_PROBE_SAME_MU_CNT 1 [get_debug_cores u_ila_0]
+#set_property C_ADV_TRIGGER false [get_debug_cores u_ila_0]
+#set_property C_DATA_DEPTH 4096 [get_debug_cores u_ila_0]
+#set_property C_EN_STRG_QUAL false [get_debug_cores u_ila_0]
 #set_property C_INPUT_PIPE_STAGES 0 [get_debug_cores u_ila_0]
 #set_property C_TRIGIN_EN false [get_debug_cores u_ila_0]
 #set_property C_TRIGOUT_EN false [get_debug_cores u_ila_0]
 #set_property port_width 1 [get_debug_ports u_ila_0/clk]
 #connect_debug_port u_ila_0/clk [get_nets [list clock_wizard_inst/inst/clk_main]]
 #set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe0]
-#set_property port_width 16 [get_debug_ports u_ila_0/probe0]
-#connect_debug_port u_ila_0/probe0 [get_nets [list {sd_a[0]} {sd_a[1]} {sd_a[2]} {sd_a[3]} {sd_a[4]} {sd_a[5]} {sd_a[6]} {sd_a[7]} {sd_a[8]} {sd_a[9]} {sd_a[10]} {sd_a[11]} {sd_a[12]} {sd_a[13]} {sd_a[14]} {sd_a[15]}]]
+#set_property port_width 32 [get_debug_ports u_ila_0/probe0]
+#connect_debug_port u_ila_0/probe0 [get_nets [list {spo[0]} {spo[1]} {spo[2]} {spo[3]} {spo[4]} {spo[5]} {spo[6]} {spo[7]} {spo[8]} {spo[9]} {spo[10]} {spo[11]} {spo[12]} {spo[13]} {spo[14]} {spo[15]} {spo[16]} {spo[17]} {spo[18]} {spo[19]} {spo[20]} {spo[21]} {spo[22]} {spo[23]} {spo[24]} {spo[25]} {spo[26]} {spo[27]} {spo[28]} {spo[29]} {spo[30]} {spo[31]}]]
 #create_debug_port u_ila_0 probe
 #set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe1]
-#set_property port_width 32 [get_debug_ports u_ila_0/probe1]
-#connect_debug_port u_ila_0/probe1 [get_nets [list {riscv_multicyc_inst/ReadData1[0]} {riscv_multicyc_inst/ReadData1[1]} {riscv_multicyc_inst/ReadData1[2]} {riscv_multicyc_inst/ReadData1[3]} {riscv_multicyc_inst/ReadData1[4]} {riscv_multicyc_inst/ReadData1[5]} {riscv_multicyc_inst/ReadData1[6]} {riscv_multicyc_inst/ReadData1[7]} {riscv_multicyc_inst/ReadData1[8]} {riscv_multicyc_inst/ReadData1[9]} {riscv_multicyc_inst/ReadData1[10]} {riscv_multicyc_inst/ReadData1[11]} {riscv_multicyc_inst/ReadData1[12]} {riscv_multicyc_inst/ReadData1[13]} {riscv_multicyc_inst/ReadData1[14]} {riscv_multicyc_inst/ReadData1[15]} {riscv_multicyc_inst/ReadData1[16]} {riscv_multicyc_inst/ReadData1[17]} {riscv_multicyc_inst/ReadData1[18]} {riscv_multicyc_inst/ReadData1[19]} {riscv_multicyc_inst/ReadData1[20]} {riscv_multicyc_inst/ReadData1[21]} {riscv_multicyc_inst/ReadData1[22]} {riscv_multicyc_inst/ReadData1[23]} {riscv_multicyc_inst/ReadData1[24]} {riscv_multicyc_inst/ReadData1[25]} {riscv_multicyc_inst/ReadData1[26]} {riscv_multicyc_inst/ReadData1[27]} {riscv_multicyc_inst/ReadData1[28]} {riscv_multicyc_inst/ReadData1[29]} {riscv_multicyc_inst/ReadData1[30]} {riscv_multicyc_inst/ReadData1[31]}]]
+#set_property port_width 4 [get_debug_ports u_ila_0/probe1]
+#connect_debug_port u_ila_0/probe1 [get_nets [list {pmem_wstrb[0]} {pmem_wstrb[1]} {pmem_wstrb[2]} {pmem_wstrb[3]}]]
 #create_debug_port u_ila_0 probe
 #set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe2]
 #set_property port_width 32 [get_debug_ports u_ila_0/probe2]
-#connect_debug_port u_ila_0/probe2 [get_nets [list {highmapper_inst/d[0]} {highmapper_inst/d[1]} {highmapper_inst/d[2]} {highmapper_inst/d[3]} {highmapper_inst/d[4]} {highmapper_inst/d[5]} {highmapper_inst/d[6]} {highmapper_inst/d[7]} {highmapper_inst/d[8]} {highmapper_inst/d[9]} {highmapper_inst/d[10]} {highmapper_inst/d[11]} {highmapper_inst/d[12]} {highmapper_inst/d[13]} {highmapper_inst/d[14]} {highmapper_inst/d[15]} {highmapper_inst/d[16]} {highmapper_inst/d[17]} {highmapper_inst/d[18]} {highmapper_inst/d[19]} {highmapper_inst/d[20]} {highmapper_inst/d[21]} {highmapper_inst/d[22]} {highmapper_inst/d[23]} {highmapper_inst/d[24]} {highmapper_inst/d[25]} {highmapper_inst/d[26]} {highmapper_inst/d[27]} {highmapper_inst/d[28]} {highmapper_inst/d[29]} {highmapper_inst/d[30]} {highmapper_inst/d[31]}]]
+#connect_debug_port u_ila_0/probe2 [get_nets [list {pmem_wdata[0]} {pmem_wdata[1]} {pmem_wdata[2]} {pmem_wdata[3]} {pmem_wdata[4]} {pmem_wdata[5]} {pmem_wdata[6]} {pmem_wdata[7]} {pmem_wdata[8]} {pmem_wdata[9]} {pmem_wdata[10]} {pmem_wdata[11]} {pmem_wdata[12]} {pmem_wdata[13]} {pmem_wdata[14]} {pmem_wdata[15]} {pmem_wdata[16]} {pmem_wdata[17]} {pmem_wdata[18]} {pmem_wdata[19]} {pmem_wdata[20]} {pmem_wdata[21]} {pmem_wdata[22]} {pmem_wdata[23]} {pmem_wdata[24]} {pmem_wdata[25]} {pmem_wdata[26]} {pmem_wdata[27]} {pmem_wdata[28]} {pmem_wdata[29]} {pmem_wdata[30]} {pmem_wdata[31]}]]
 #create_debug_port u_ila_0 probe
 #set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe3]
 #set_property port_width 32 [get_debug_ports u_ila_0/probe3]
-#connect_debug_port u_ila_0/probe3 [get_nets [list {riscv_multicyc_inst/pc[0]} {riscv_multicyc_inst/pc[1]} {riscv_multicyc_inst/pc[2]} {riscv_multicyc_inst/pc[3]} {riscv_multicyc_inst/pc[4]} {riscv_multicyc_inst/pc[5]} {riscv_multicyc_inst/pc[6]} {riscv_multicyc_inst/pc[7]} {riscv_multicyc_inst/pc[8]} {riscv_multicyc_inst/pc[9]} {riscv_multicyc_inst/pc[10]} {riscv_multicyc_inst/pc[11]} {riscv_multicyc_inst/pc[12]} {riscv_multicyc_inst/pc[13]} {riscv_multicyc_inst/pc[14]} {riscv_multicyc_inst/pc[15]} {riscv_multicyc_inst/pc[16]} {riscv_multicyc_inst/pc[17]} {riscv_multicyc_inst/pc[18]} {riscv_multicyc_inst/pc[19]} {riscv_multicyc_inst/pc[20]} {riscv_multicyc_inst/pc[21]} {riscv_multicyc_inst/pc[22]} {riscv_multicyc_inst/pc[23]} {riscv_multicyc_inst/pc[24]} {riscv_multicyc_inst/pc[25]} {riscv_multicyc_inst/pc[26]} {riscv_multicyc_inst/pc[27]} {riscv_multicyc_inst/pc[28]} {riscv_multicyc_inst/pc[29]} {riscv_multicyc_inst/pc[30]} {riscv_multicyc_inst/pc[31]}]]
+#connect_debug_port u_ila_0/probe3 [get_nets [list {pmem_rdata[0]} {pmem_rdata[1]} {pmem_rdata[2]} {pmem_rdata[3]} {pmem_rdata[4]} {pmem_rdata[5]} {pmem_rdata[6]} {pmem_rdata[7]} {pmem_rdata[8]} {pmem_rdata[9]} {pmem_rdata[10]} {pmem_rdata[11]} {pmem_rdata[12]} {pmem_rdata[13]} {pmem_rdata[14]} {pmem_rdata[15]} {pmem_rdata[16]} {pmem_rdata[17]} {pmem_rdata[18]} {pmem_rdata[19]} {pmem_rdata[20]} {pmem_rdata[21]} {pmem_rdata[22]} {pmem_rdata[23]} {pmem_rdata[24]} {pmem_rdata[25]} {pmem_rdata[26]} {pmem_rdata[27]} {pmem_rdata[28]} {pmem_rdata[29]} {pmem_rdata[30]} {pmem_rdata[31]}]]
 #create_debug_port u_ila_0 probe
 #set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe4]
 #set_property port_width 32 [get_debug_ports u_ila_0/probe4]
-#connect_debug_port u_ila_0/probe4 [get_nets [list {riscv_multicyc_inst/instruction[0]} {riscv_multicyc_inst/instruction[1]} {riscv_multicyc_inst/instruction[2]} {riscv_multicyc_inst/instruction[3]} {riscv_multicyc_inst/instruction[4]} {riscv_multicyc_inst/instruction[5]} {riscv_multicyc_inst/instruction[6]} {riscv_multicyc_inst/instruction[7]} {riscv_multicyc_inst/instruction[8]} {riscv_multicyc_inst/instruction[9]} {riscv_multicyc_inst/instruction[10]} {riscv_multicyc_inst/instruction[11]} {riscv_multicyc_inst/instruction[12]} {riscv_multicyc_inst/instruction[13]} {riscv_multicyc_inst/instruction[14]} {riscv_multicyc_inst/instruction[15]} {riscv_multicyc_inst/instruction[16]} {riscv_multicyc_inst/instruction[17]} {riscv_multicyc_inst/instruction[18]} {riscv_multicyc_inst/instruction[19]} {riscv_multicyc_inst/instruction[20]} {riscv_multicyc_inst/instruction[21]} {riscv_multicyc_inst/instruction[22]} {riscv_multicyc_inst/instruction[23]} {riscv_multicyc_inst/instruction[24]} {riscv_multicyc_inst/instruction[25]} {riscv_multicyc_inst/instruction[26]} {riscv_multicyc_inst/instruction[27]} {riscv_multicyc_inst/instruction[28]} {riscv_multicyc_inst/instruction[29]} {riscv_multicyc_inst/instruction[30]} {riscv_multicyc_inst/instruction[31]}]]
+#connect_debug_port u_ila_0/probe4 [get_nets [list {pmem_addr[0]} {pmem_addr[1]} {pmem_addr[2]} {pmem_addr[3]} {pmem_addr[4]} {pmem_addr[5]} {pmem_addr[6]} {pmem_addr[7]} {pmem_addr[8]} {pmem_addr[9]} {pmem_addr[10]} {pmem_addr[11]} {pmem_addr[12]} {pmem_addr[13]} {pmem_addr[14]} {pmem_addr[15]} {pmem_addr[16]} {pmem_addr[17]} {pmem_addr[18]} {pmem_addr[19]} {pmem_addr[20]} {pmem_addr[21]} {pmem_addr[22]} {pmem_addr[23]} {pmem_addr[24]} {pmem_addr[25]} {pmem_addr[26]} {pmem_addr[27]} {pmem_addr[28]} {pmem_addr[29]} {pmem_addr[30]} {pmem_addr[31]}]]
 #create_debug_port u_ila_0 probe
 #set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe5]
 #set_property port_width 32 [get_debug_ports u_ila_0/probe5]
-#connect_debug_port u_ila_0/probe5 [get_nets [list {riscv_multicyc_inst/ReadData2[0]} {riscv_multicyc_inst/ReadData2[1]} {riscv_multicyc_inst/ReadData2[2]} {riscv_multicyc_inst/ReadData2[3]} {riscv_multicyc_inst/ReadData2[4]} {riscv_multicyc_inst/ReadData2[5]} {riscv_multicyc_inst/ReadData2[6]} {riscv_multicyc_inst/ReadData2[7]} {riscv_multicyc_inst/ReadData2[8]} {riscv_multicyc_inst/ReadData2[9]} {riscv_multicyc_inst/ReadData2[10]} {riscv_multicyc_inst/ReadData2[11]} {riscv_multicyc_inst/ReadData2[12]} {riscv_multicyc_inst/ReadData2[13]} {riscv_multicyc_inst/ReadData2[14]} {riscv_multicyc_inst/ReadData2[15]} {riscv_multicyc_inst/ReadData2[16]} {riscv_multicyc_inst/ReadData2[17]} {riscv_multicyc_inst/ReadData2[18]} {riscv_multicyc_inst/ReadData2[19]} {riscv_multicyc_inst/ReadData2[20]} {riscv_multicyc_inst/ReadData2[21]} {riscv_multicyc_inst/ReadData2[22]} {riscv_multicyc_inst/ReadData2[23]} {riscv_multicyc_inst/ReadData2[24]} {riscv_multicyc_inst/ReadData2[25]} {riscv_multicyc_inst/ReadData2[26]} {riscv_multicyc_inst/ReadData2[27]} {riscv_multicyc_inst/ReadData2[28]} {riscv_multicyc_inst/ReadData2[29]} {riscv_multicyc_inst/ReadData2[30]} {riscv_multicyc_inst/ReadData2[31]}]]
+#connect_debug_port u_ila_0/probe5 [get_nets [list {d[0]} {d[1]} {d[2]} {d[3]} {d[4]} {d[5]} {d[6]} {d[7]} {d[8]} {d[9]} {d[10]} {d[11]} {d[12]} {d[13]} {d[14]} {d[15]} {d[16]} {d[17]} {d[18]} {d[19]} {d[20]} {d[21]} {d[22]} {d[23]} {d[24]} {d[25]} {d[26]} {d[27]} {d[28]} {d[29]} {d[30]} {d[31]}]]
 #create_debug_port u_ila_0 probe
 #set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe6]
-#set_property port_width 32 [get_debug_ports u_ila_0/probe6]
-#connect_debug_port u_ila_0/probe6 [get_nets [list {sd_d[0]} {sd_d[1]} {sd_d[2]} {sd_d[3]} {sd_d[4]} {sd_d[5]} {sd_d[6]} {sd_d[7]} {sd_d[8]} {sd_d[9]} {sd_d[10]} {sd_d[11]} {sd_d[12]} {sd_d[13]} {sd_d[14]} {sd_d[15]} {sd_d[16]} {sd_d[17]} {sd_d[18]} {sd_d[19]} {sd_d[20]} {sd_d[21]} {sd_d[22]} {sd_d[23]} {sd_d[24]} {sd_d[25]} {sd_d[26]} {sd_d[27]} {sd_d[28]} {sd_d[29]} {sd_d[30]} {sd_d[31]}]]
+#set_property port_width 8 [get_debug_ports u_ila_0/probe6]
+#connect_debug_port u_ila_0/probe6 [get_nets [list {uartreset_inst/uart_data[0]} {uartreset_inst/uart_data[1]} {uartreset_inst/uart_data[2]} {uartreset_inst/uart_data[3]} {uartreset_inst/uart_data[4]} {uartreset_inst/uart_data[5]} {uartreset_inst/uart_data[6]} {uartreset_inst/uart_data[7]}]]
 #create_debug_port u_ila_0 probe
 #set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe7]
-#set_property port_width 32 [get_debug_ports u_ila_0/probe7]
-#connect_debug_port u_ila_0/probe7 [get_nets [list {sd_spo[0]} {sd_spo[1]} {sd_spo[2]} {sd_spo[3]} {sd_spo[4]} {sd_spo[5]} {sd_spo[6]} {sd_spo[7]} {sd_spo[8]} {sd_spo[9]} {sd_spo[10]} {sd_spo[11]} {sd_spo[12]} {sd_spo[13]} {sd_spo[14]} {sd_spo[15]} {sd_spo[16]} {sd_spo[17]} {sd_spo[18]} {sd_spo[19]} {sd_spo[20]} {sd_spo[21]} {sd_spo[22]} {sd_spo[23]} {sd_spo[24]} {sd_spo[25]} {sd_spo[26]} {sd_spo[27]} {sd_spo[28]} {sd_spo[29]} {sd_spo[30]} {sd_spo[31]}]]
+#set_property port_width 8 [get_debug_ports u_ila_0/probe7]
+#connect_debug_port u_ila_0/probe7 [get_nets [list {uart_inst/data_rx[0]} {uart_inst/data_rx[1]} {uart_inst/data_rx[2]} {uart_inst/data_rx[3]} {uart_inst/data_rx[4]} {uart_inst/data_rx[5]} {uart_inst/data_rx[6]} {uart_inst/data_rx[7]}]]
 #create_debug_port u_ila_0 probe
 #set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe8]
 #set_property port_width 32 [get_debug_ports u_ila_0/probe8]
-#connect_debug_port u_ila_0/probe8 [get_nets [list {highmapper_inst/a[0]} {highmapper_inst/a[1]} {highmapper_inst/a[2]} {highmapper_inst/a[3]} {highmapper_inst/a[4]} {highmapper_inst/a[5]} {highmapper_inst/a[6]} {highmapper_inst/a[7]} {highmapper_inst/a[8]} {highmapper_inst/a[9]} {highmapper_inst/a[10]} {highmapper_inst/a[11]} {highmapper_inst/a[12]} {highmapper_inst/a[13]} {highmapper_inst/a[14]} {highmapper_inst/a[15]} {highmapper_inst/a[16]} {highmapper_inst/a[17]} {highmapper_inst/a[18]} {highmapper_inst/a[19]} {highmapper_inst/a[20]} {highmapper_inst/a[21]} {highmapper_inst/a[22]} {highmapper_inst/a[23]} {highmapper_inst/a[24]} {highmapper_inst/a[25]} {highmapper_inst/a[26]} {highmapper_inst/a[27]} {highmapper_inst/a[28]} {highmapper_inst/a[29]} {highmapper_inst/a[30]} {highmapper_inst/a[31]}]]
+#connect_debug_port u_ila_0/probe8 [get_nets [list {pirorv32_inst/reg_pc[0]} {pirorv32_inst/reg_pc[1]} {pirorv32_inst/reg_pc[2]} {pirorv32_inst/reg_pc[3]} {pirorv32_inst/reg_pc[4]} {pirorv32_inst/reg_pc[5]} {pirorv32_inst/reg_pc[6]} {pirorv32_inst/reg_pc[7]} {pirorv32_inst/reg_pc[8]} {pirorv32_inst/reg_pc[9]} {pirorv32_inst/reg_pc[10]} {pirorv32_inst/reg_pc[11]} {pirorv32_inst/reg_pc[12]} {pirorv32_inst/reg_pc[13]} {pirorv32_inst/reg_pc[14]} {pirorv32_inst/reg_pc[15]} {pirorv32_inst/reg_pc[16]} {pirorv32_inst/reg_pc[17]} {pirorv32_inst/reg_pc[18]} {pirorv32_inst/reg_pc[19]} {pirorv32_inst/reg_pc[20]} {pirorv32_inst/reg_pc[21]} {pirorv32_inst/reg_pc[22]} {pirorv32_inst/reg_pc[23]} {pirorv32_inst/reg_pc[24]} {pirorv32_inst/reg_pc[25]} {pirorv32_inst/reg_pc[26]} {pirorv32_inst/reg_pc[27]} {pirorv32_inst/reg_pc[28]} {pirorv32_inst/reg_pc[29]} {pirorv32_inst/reg_pc[30]} {pirorv32_inst/reg_pc[31]}]]
 #create_debug_port u_ila_0 probe
 #set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe9]
-#set_property port_width 5 [get_debug_ports u_ila_0/probe9]
-#connect_debug_port u_ila_0/probe9 [get_nets [list {sdcard_inst/sd_controller_inst/state[0]} {sdcard_inst/sd_controller_inst/state[1]} {sdcard_inst/sd_controller_inst/state[2]} {sdcard_inst/sd_controller_inst/state[3]} {sdcard_inst/sd_controller_inst/state[4]}]]
+#set_property port_width 32 [get_debug_ports u_ila_0/probe9]
+#connect_debug_port u_ila_0/probe9 [get_nets [list {highmapper_inst/d[0]} {highmapper_inst/d[1]} {highmapper_inst/d[2]} {highmapper_inst/d[3]} {highmapper_inst/d[4]} {highmapper_inst/d[5]} {highmapper_inst/d[6]} {highmapper_inst/d[7]} {highmapper_inst/d[8]} {highmapper_inst/d[9]} {highmapper_inst/d[10]} {highmapper_inst/d[11]} {highmapper_inst/d[12]} {highmapper_inst/d[13]} {highmapper_inst/d[14]} {highmapper_inst/d[15]} {highmapper_inst/d[16]} {highmapper_inst/d[17]} {highmapper_inst/d[18]} {highmapper_inst/d[19]} {highmapper_inst/d[20]} {highmapper_inst/d[21]} {highmapper_inst/d[22]} {highmapper_inst/d[23]} {highmapper_inst/d[24]} {highmapper_inst/d[25]} {highmapper_inst/d[26]} {highmapper_inst/d[27]} {highmapper_inst/d[28]} {highmapper_inst/d[29]} {highmapper_inst/d[30]} {highmapper_inst/d[31]}]]
 #create_debug_port u_ila_0 probe
 #set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe10]
-#set_property port_width 8 [get_debug_ports u_ila_0/probe10]
-#connect_debug_port u_ila_0/probe10 [get_nets [list {sdcard_inst/sd_controller_inst/recv_data[0]} {sdcard_inst/sd_controller_inst/recv_data[1]} {sdcard_inst/sd_controller_inst/recv_data[2]} {sdcard_inst/sd_controller_inst/recv_data[3]} {sdcard_inst/sd_controller_inst/recv_data[4]} {sdcard_inst/sd_controller_inst/recv_data[5]} {sdcard_inst/sd_controller_inst/recv_data[6]} {sdcard_inst/sd_controller_inst/recv_data[7]}]]
+#set_property port_width 32 [get_debug_ports u_ila_0/probe10]
+#connect_debug_port u_ila_0/probe10 [get_nets [list {highmapper_inst/spo[0]} {highmapper_inst/spo[1]} {highmapper_inst/spo[2]} {highmapper_inst/spo[3]} {highmapper_inst/spo[4]} {highmapper_inst/spo[5]} {highmapper_inst/spo[6]} {highmapper_inst/spo[7]} {highmapper_inst/spo[8]} {highmapper_inst/spo[9]} {highmapper_inst/spo[10]} {highmapper_inst/spo[11]} {highmapper_inst/spo[12]} {highmapper_inst/spo[13]} {highmapper_inst/spo[14]} {highmapper_inst/spo[15]} {highmapper_inst/spo[16]} {highmapper_inst/spo[17]} {highmapper_inst/spo[18]} {highmapper_inst/spo[19]} {highmapper_inst/spo[20]} {highmapper_inst/spo[21]} {highmapper_inst/spo[22]} {highmapper_inst/spo[23]} {highmapper_inst/spo[24]} {highmapper_inst/spo[25]} {highmapper_inst/spo[26]} {highmapper_inst/spo[27]} {highmapper_inst/spo[28]} {highmapper_inst/spo[29]} {highmapper_inst/spo[30]} {highmapper_inst/spo[31]}]]
 #create_debug_port u_ila_0 probe
 #set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe11]
 #set_property port_width 32 [get_debug_ports u_ila_0/probe11]
-#connect_debug_port u_ila_0/probe11 [get_nets [list {highmapper_inst/spo[0]} {highmapper_inst/spo[1]} {highmapper_inst/spo[2]} {highmapper_inst/spo[3]} {highmapper_inst/spo[4]} {highmapper_inst/spo[5]} {highmapper_inst/spo[6]} {highmapper_inst/spo[7]} {highmapper_inst/spo[8]} {highmapper_inst/spo[9]} {highmapper_inst/spo[10]} {highmapper_inst/spo[11]} {highmapper_inst/spo[12]} {highmapper_inst/spo[13]} {highmapper_inst/spo[14]} {highmapper_inst/spo[15]} {highmapper_inst/spo[16]} {highmapper_inst/spo[17]} {highmapper_inst/spo[18]} {highmapper_inst/spo[19]} {highmapper_inst/spo[20]} {highmapper_inst/spo[21]} {highmapper_inst/spo[22]} {highmapper_inst/spo[23]} {highmapper_inst/spo[24]} {highmapper_inst/spo[25]} {highmapper_inst/spo[26]} {highmapper_inst/spo[27]} {highmapper_inst/spo[28]} {highmapper_inst/spo[29]} {highmapper_inst/spo[30]} {highmapper_inst/spo[31]}]]
+#connect_debug_port u_ila_0/probe11 [get_nets [list {highmapper_inst/a[0]} {highmapper_inst/a[1]} {highmapper_inst/a[2]} {highmapper_inst/a[3]} {highmapper_inst/a[4]} {highmapper_inst/a[5]} {highmapper_inst/a[6]} {highmapper_inst/a[7]} {highmapper_inst/a[8]} {highmapper_inst/a[9]} {highmapper_inst/a[10]} {highmapper_inst/a[11]} {highmapper_inst/a[12]} {highmapper_inst/a[13]} {highmapper_inst/a[14]} {highmapper_inst/a[15]} {highmapper_inst/a[16]} {highmapper_inst/a[17]} {highmapper_inst/a[18]} {highmapper_inst/a[19]} {highmapper_inst/a[20]} {highmapper_inst/a[21]} {highmapper_inst/a[22]} {highmapper_inst/a[23]} {highmapper_inst/a[24]} {highmapper_inst/a[25]} {highmapper_inst/a[26]} {highmapper_inst/a[27]} {highmapper_inst/a[28]} {highmapper_inst/a[29]} {highmapper_inst/a[30]} {highmapper_inst/a[31]}]]
 #create_debug_port u_ila_0 probe
 #set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe12]
-#set_property port_width 32 [get_debug_ports u_ila_0/probe12]
-#connect_debug_port u_ila_0/probe12 [get_nets [list {sdcard_inst/sd_address[0]} {sdcard_inst/sd_address[1]} {sdcard_inst/sd_address[2]} {sdcard_inst/sd_address[3]} {sdcard_inst/sd_address[4]} {sdcard_inst/sd_address[5]} {sdcard_inst/sd_address[6]} {sdcard_inst/sd_address[7]} {sdcard_inst/sd_address[8]} {sdcard_inst/sd_address[9]} {sdcard_inst/sd_address[10]} {sdcard_inst/sd_address[11]} {sdcard_inst/sd_address[12]} {sdcard_inst/sd_address[13]} {sdcard_inst/sd_address[14]} {sdcard_inst/sd_address[15]} {sdcard_inst/sd_address[16]} {sdcard_inst/sd_address[17]} {sdcard_inst/sd_address[18]} {sdcard_inst/sd_address[19]} {sdcard_inst/sd_address[20]} {sdcard_inst/sd_address[21]} {sdcard_inst/sd_address[22]} {sdcard_inst/sd_address[23]} {sdcard_inst/sd_address[24]} {sdcard_inst/sd_address[25]} {sdcard_inst/sd_address[26]} {sdcard_inst/sd_address[27]} {sdcard_inst/sd_address[28]} {sdcard_inst/sd_address[29]} {sdcard_inst/sd_address[30]} {sdcard_inst/sd_address[31]}]]
+#set_property port_width 6 [get_debug_ports u_ila_0/probe12]
+#connect_debug_port u_ila_0/probe12 [get_nets [list {ddr3_top_inst/ddr3_controller_inst/state_calibrate[0]} {ddr3_top_inst/ddr3_controller_inst/state_calibrate[1]} {ddr3_top_inst/ddr3_controller_inst/state_calibrate[2]} {ddr3_top_inst/ddr3_controller_inst/state_calibrate[3]} {ddr3_top_inst/ddr3_controller_inst/state_calibrate[4]} {ddr3_top_inst/ddr3_controller_inst/state_calibrate[5]}]]
 #create_debug_port u_ila_0 probe
 #set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe13]
-#set_property port_width 8 [get_debug_ports u_ila_0/probe13]
-#connect_debug_port u_ila_0/probe13 [get_nets [list {sdcard_inst/sd_dout[0]} {sdcard_inst/sd_dout[1]} {sdcard_inst/sd_dout[2]} {sdcard_inst/sd_dout[3]} {sdcard_inst/sd_dout[4]} {sdcard_inst/sd_dout[5]} {sdcard_inst/sd_dout[6]} {sdcard_inst/sd_dout[7]}]]
+#set_property port_width 1 [get_debug_ports u_ila_0/probe13]
+#connect_debug_port u_ila_0/probe13 [get_nets [list pmem_instr]]
 #create_debug_port u_ila_0 probe
 #set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe14]
 #set_property port_width 1 [get_debug_ports u_ila_0/probe14]
-#connect_debug_port u_ila_0/probe14 [get_nets [list sdcard_inst/sd_controller_inst/miso]]
+#connect_debug_port u_ila_0/probe14 [get_nets [list pmem_ready]]
 #create_debug_port u_ila_0 probe
 #set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe15]
 #set_property port_width 1 [get_debug_ports u_ila_0/probe15]
-#connect_debug_port u_ila_0/probe15 [get_nets [list sdcard_inst/sd_controller_inst/mosi]]
+#connect_debug_port u_ila_0/probe15 [get_nets [list pmem_valid]]
 #create_debug_port u_ila_0 probe
 #set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe16]
 #set_property port_width 1 [get_debug_ports u_ila_0/probe16]
@@ -612,137 +611,24 @@ set_property INTERNAL_VREF 0.75 [get_iobanks 35]
 #create_debug_port u_ila_0 probe
 #set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe18]
 #set_property port_width 1 [get_debug_ports u_ila_0/probe18]
-#connect_debug_port u_ila_0/probe18 [get_nets [list sd_cmd_OBUF]]
+#connect_debug_port u_ila_0/probe18 [get_nets [list rst]]
 #create_debug_port u_ila_0 probe
 #set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe19]
 #set_property port_width 1 [get_debug_ports u_ila_0/probe19]
-#connect_debug_port u_ila_0/probe19 [get_nets [list sdcard_inst/sd_rd]]
+#connect_debug_port u_ila_0/probe19 [get_nets [list uart_inst/rx_r]]
 #create_debug_port u_ila_0 probe
 #set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe20]
 #set_property port_width 1 [get_debug_ports u_ila_0/probe20]
-#connect_debug_port u_ila_0/probe20 [get_nets [list sd_sck_OBUF]]
+#connect_debug_port u_ila_0/probe20 [get_nets [list uartreset_inst/uart_ready]]
 #create_debug_port u_ila_0 probe
 #set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe21]
 #set_property port_width 1 [get_debug_ports u_ila_0/probe21]
-#connect_debug_port u_ila_0/probe21 [get_nets [list sd_we]]
+#connect_debug_port u_ila_0/probe21 [get_nets [list uartreset_inst/uart_rst]]
 #create_debug_port u_ila_0 probe
 #set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe22]
 #set_property port_width 1 [get_debug_ports u_ila_0/probe22]
-#connect_debug_port u_ila_0/probe22 [get_nets [list sdcard_inst/sd_wr]]
-#create_debug_port u_ila_0 probe
-#set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe23]
-#set_property port_width 1 [get_debug_ports u_ila_0/probe23]
-#connect_debug_port u_ila_0/probe23 [get_nets [list highmapper_inst/we]]
+#connect_debug_port u_ila_0/probe22 [get_nets [list highmapper_inst/we]]
 #set_property C_CLK_INPUT_FREQ_HZ 300000000 [get_debug_cores dbg_hub]
 #set_property C_ENABLE_CLK_DIVIDER false [get_debug_cores dbg_hub]
 #set_property C_USER_SCAN_CHAIN 1 [get_debug_cores dbg_hub]
 #connect_debug_port dbg_hub/clk [get_nets clk_main]
-
-
-
-create_debug_core u_ila_0 ila
-set_property ALL_PROBE_SAME_MU true [get_debug_cores u_ila_0]
-set_property ALL_PROBE_SAME_MU_CNT 1 [get_debug_cores u_ila_0]
-set_property C_ADV_TRIGGER false [get_debug_cores u_ila_0]
-set_property C_DATA_DEPTH 4096 [get_debug_cores u_ila_0]
-set_property C_EN_STRG_QUAL false [get_debug_cores u_ila_0]
-set_property C_INPUT_PIPE_STAGES 0 [get_debug_cores u_ila_0]
-set_property C_TRIGIN_EN false [get_debug_cores u_ila_0]
-set_property C_TRIGOUT_EN false [get_debug_cores u_ila_0]
-set_property port_width 1 [get_debug_ports u_ila_0/clk]
-connect_debug_port u_ila_0/clk [get_nets [list clock_wizard_inst/inst/clk_main]]
-set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe0]
-set_property port_width 32 [get_debug_ports u_ila_0/probe0]
-connect_debug_port u_ila_0/probe0 [get_nets [list {spo[0]} {spo[1]} {spo[2]} {spo[3]} {spo[4]} {spo[5]} {spo[6]} {spo[7]} {spo[8]} {spo[9]} {spo[10]} {spo[11]} {spo[12]} {spo[13]} {spo[14]} {spo[15]} {spo[16]} {spo[17]} {spo[18]} {spo[19]} {spo[20]} {spo[21]} {spo[22]} {spo[23]} {spo[24]} {spo[25]} {spo[26]} {spo[27]} {spo[28]} {spo[29]} {spo[30]} {spo[31]}]]
-create_debug_port u_ila_0 probe
-set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe1]
-set_property port_width 4 [get_debug_ports u_ila_0/probe1]
-connect_debug_port u_ila_0/probe1 [get_nets [list {pmem_wstrb[0]} {pmem_wstrb[1]} {pmem_wstrb[2]} {pmem_wstrb[3]}]]
-create_debug_port u_ila_0 probe
-set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe2]
-set_property port_width 32 [get_debug_ports u_ila_0/probe2]
-connect_debug_port u_ila_0/probe2 [get_nets [list {pmem_wdata[0]} {pmem_wdata[1]} {pmem_wdata[2]} {pmem_wdata[3]} {pmem_wdata[4]} {pmem_wdata[5]} {pmem_wdata[6]} {pmem_wdata[7]} {pmem_wdata[8]} {pmem_wdata[9]} {pmem_wdata[10]} {pmem_wdata[11]} {pmem_wdata[12]} {pmem_wdata[13]} {pmem_wdata[14]} {pmem_wdata[15]} {pmem_wdata[16]} {pmem_wdata[17]} {pmem_wdata[18]} {pmem_wdata[19]} {pmem_wdata[20]} {pmem_wdata[21]} {pmem_wdata[22]} {pmem_wdata[23]} {pmem_wdata[24]} {pmem_wdata[25]} {pmem_wdata[26]} {pmem_wdata[27]} {pmem_wdata[28]} {pmem_wdata[29]} {pmem_wdata[30]} {pmem_wdata[31]}]]
-create_debug_port u_ila_0 probe
-set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe3]
-set_property port_width 32 [get_debug_ports u_ila_0/probe3]
-connect_debug_port u_ila_0/probe3 [get_nets [list {pmem_rdata[0]} {pmem_rdata[1]} {pmem_rdata[2]} {pmem_rdata[3]} {pmem_rdata[4]} {pmem_rdata[5]} {pmem_rdata[6]} {pmem_rdata[7]} {pmem_rdata[8]} {pmem_rdata[9]} {pmem_rdata[10]} {pmem_rdata[11]} {pmem_rdata[12]} {pmem_rdata[13]} {pmem_rdata[14]} {pmem_rdata[15]} {pmem_rdata[16]} {pmem_rdata[17]} {pmem_rdata[18]} {pmem_rdata[19]} {pmem_rdata[20]} {pmem_rdata[21]} {pmem_rdata[22]} {pmem_rdata[23]} {pmem_rdata[24]} {pmem_rdata[25]} {pmem_rdata[26]} {pmem_rdata[27]} {pmem_rdata[28]} {pmem_rdata[29]} {pmem_rdata[30]} {pmem_rdata[31]}]]
-create_debug_port u_ila_0 probe
-set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe4]
-set_property port_width 32 [get_debug_ports u_ila_0/probe4]
-connect_debug_port u_ila_0/probe4 [get_nets [list {pmem_addr[0]} {pmem_addr[1]} {pmem_addr[2]} {pmem_addr[3]} {pmem_addr[4]} {pmem_addr[5]} {pmem_addr[6]} {pmem_addr[7]} {pmem_addr[8]} {pmem_addr[9]} {pmem_addr[10]} {pmem_addr[11]} {pmem_addr[12]} {pmem_addr[13]} {pmem_addr[14]} {pmem_addr[15]} {pmem_addr[16]} {pmem_addr[17]} {pmem_addr[18]} {pmem_addr[19]} {pmem_addr[20]} {pmem_addr[21]} {pmem_addr[22]} {pmem_addr[23]} {pmem_addr[24]} {pmem_addr[25]} {pmem_addr[26]} {pmem_addr[27]} {pmem_addr[28]} {pmem_addr[29]} {pmem_addr[30]} {pmem_addr[31]}]]
-create_debug_port u_ila_0 probe
-set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe5]
-set_property port_width 32 [get_debug_ports u_ila_0/probe5]
-connect_debug_port u_ila_0/probe5 [get_nets [list {d[0]} {d[1]} {d[2]} {d[3]} {d[4]} {d[5]} {d[6]} {d[7]} {d[8]} {d[9]} {d[10]} {d[11]} {d[12]} {d[13]} {d[14]} {d[15]} {d[16]} {d[17]} {d[18]} {d[19]} {d[20]} {d[21]} {d[22]} {d[23]} {d[24]} {d[25]} {d[26]} {d[27]} {d[28]} {d[29]} {d[30]} {d[31]}]]
-create_debug_port u_ila_0 probe
-set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe6]
-set_property port_width 8 [get_debug_ports u_ila_0/probe6]
-connect_debug_port u_ila_0/probe6 [get_nets [list {uartreset_inst/uart_data[0]} {uartreset_inst/uart_data[1]} {uartreset_inst/uart_data[2]} {uartreset_inst/uart_data[3]} {uartreset_inst/uart_data[4]} {uartreset_inst/uart_data[5]} {uartreset_inst/uart_data[6]} {uartreset_inst/uart_data[7]}]]
-create_debug_port u_ila_0 probe
-set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe7]
-set_property port_width 8 [get_debug_ports u_ila_0/probe7]
-connect_debug_port u_ila_0/probe7 [get_nets [list {uart_inst/data_rx[0]} {uart_inst/data_rx[1]} {uart_inst/data_rx[2]} {uart_inst/data_rx[3]} {uart_inst/data_rx[4]} {uart_inst/data_rx[5]} {uart_inst/data_rx[6]} {uart_inst/data_rx[7]}]]
-create_debug_port u_ila_0 probe
-set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe8]
-set_property port_width 32 [get_debug_ports u_ila_0/probe8]
-connect_debug_port u_ila_0/probe8 [get_nets [list {pirorv32_inst/reg_pc[0]} {pirorv32_inst/reg_pc[1]} {pirorv32_inst/reg_pc[2]} {pirorv32_inst/reg_pc[3]} {pirorv32_inst/reg_pc[4]} {pirorv32_inst/reg_pc[5]} {pirorv32_inst/reg_pc[6]} {pirorv32_inst/reg_pc[7]} {pirorv32_inst/reg_pc[8]} {pirorv32_inst/reg_pc[9]} {pirorv32_inst/reg_pc[10]} {pirorv32_inst/reg_pc[11]} {pirorv32_inst/reg_pc[12]} {pirorv32_inst/reg_pc[13]} {pirorv32_inst/reg_pc[14]} {pirorv32_inst/reg_pc[15]} {pirorv32_inst/reg_pc[16]} {pirorv32_inst/reg_pc[17]} {pirorv32_inst/reg_pc[18]} {pirorv32_inst/reg_pc[19]} {pirorv32_inst/reg_pc[20]} {pirorv32_inst/reg_pc[21]} {pirorv32_inst/reg_pc[22]} {pirorv32_inst/reg_pc[23]} {pirorv32_inst/reg_pc[24]} {pirorv32_inst/reg_pc[25]} {pirorv32_inst/reg_pc[26]} {pirorv32_inst/reg_pc[27]} {pirorv32_inst/reg_pc[28]} {pirorv32_inst/reg_pc[29]} {pirorv32_inst/reg_pc[30]} {pirorv32_inst/reg_pc[31]}]]
-create_debug_port u_ila_0 probe
-set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe9]
-set_property port_width 32 [get_debug_ports u_ila_0/probe9]
-connect_debug_port u_ila_0/probe9 [get_nets [list {highmapper_inst/d[0]} {highmapper_inst/d[1]} {highmapper_inst/d[2]} {highmapper_inst/d[3]} {highmapper_inst/d[4]} {highmapper_inst/d[5]} {highmapper_inst/d[6]} {highmapper_inst/d[7]} {highmapper_inst/d[8]} {highmapper_inst/d[9]} {highmapper_inst/d[10]} {highmapper_inst/d[11]} {highmapper_inst/d[12]} {highmapper_inst/d[13]} {highmapper_inst/d[14]} {highmapper_inst/d[15]} {highmapper_inst/d[16]} {highmapper_inst/d[17]} {highmapper_inst/d[18]} {highmapper_inst/d[19]} {highmapper_inst/d[20]} {highmapper_inst/d[21]} {highmapper_inst/d[22]} {highmapper_inst/d[23]} {highmapper_inst/d[24]} {highmapper_inst/d[25]} {highmapper_inst/d[26]} {highmapper_inst/d[27]} {highmapper_inst/d[28]} {highmapper_inst/d[29]} {highmapper_inst/d[30]} {highmapper_inst/d[31]}]]
-create_debug_port u_ila_0 probe
-set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe10]
-set_property port_width 32 [get_debug_ports u_ila_0/probe10]
-connect_debug_port u_ila_0/probe10 [get_nets [list {highmapper_inst/spo[0]} {highmapper_inst/spo[1]} {highmapper_inst/spo[2]} {highmapper_inst/spo[3]} {highmapper_inst/spo[4]} {highmapper_inst/spo[5]} {highmapper_inst/spo[6]} {highmapper_inst/spo[7]} {highmapper_inst/spo[8]} {highmapper_inst/spo[9]} {highmapper_inst/spo[10]} {highmapper_inst/spo[11]} {highmapper_inst/spo[12]} {highmapper_inst/spo[13]} {highmapper_inst/spo[14]} {highmapper_inst/spo[15]} {highmapper_inst/spo[16]} {highmapper_inst/spo[17]} {highmapper_inst/spo[18]} {highmapper_inst/spo[19]} {highmapper_inst/spo[20]} {highmapper_inst/spo[21]} {highmapper_inst/spo[22]} {highmapper_inst/spo[23]} {highmapper_inst/spo[24]} {highmapper_inst/spo[25]} {highmapper_inst/spo[26]} {highmapper_inst/spo[27]} {highmapper_inst/spo[28]} {highmapper_inst/spo[29]} {highmapper_inst/spo[30]} {highmapper_inst/spo[31]}]]
-create_debug_port u_ila_0 probe
-set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe11]
-set_property port_width 32 [get_debug_ports u_ila_0/probe11]
-connect_debug_port u_ila_0/probe11 [get_nets [list {highmapper_inst/a[0]} {highmapper_inst/a[1]} {highmapper_inst/a[2]} {highmapper_inst/a[3]} {highmapper_inst/a[4]} {highmapper_inst/a[5]} {highmapper_inst/a[6]} {highmapper_inst/a[7]} {highmapper_inst/a[8]} {highmapper_inst/a[9]} {highmapper_inst/a[10]} {highmapper_inst/a[11]} {highmapper_inst/a[12]} {highmapper_inst/a[13]} {highmapper_inst/a[14]} {highmapper_inst/a[15]} {highmapper_inst/a[16]} {highmapper_inst/a[17]} {highmapper_inst/a[18]} {highmapper_inst/a[19]} {highmapper_inst/a[20]} {highmapper_inst/a[21]} {highmapper_inst/a[22]} {highmapper_inst/a[23]} {highmapper_inst/a[24]} {highmapper_inst/a[25]} {highmapper_inst/a[26]} {highmapper_inst/a[27]} {highmapper_inst/a[28]} {highmapper_inst/a[29]} {highmapper_inst/a[30]} {highmapper_inst/a[31]}]]
-create_debug_port u_ila_0 probe
-set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe12]
-set_property port_width 6 [get_debug_ports u_ila_0/probe12]
-connect_debug_port u_ila_0/probe12 [get_nets [list {ddr3_top_inst/ddr3_controller_inst/state_calibrate[0]} {ddr3_top_inst/ddr3_controller_inst/state_calibrate[1]} {ddr3_top_inst/ddr3_controller_inst/state_calibrate[2]} {ddr3_top_inst/ddr3_controller_inst/state_calibrate[3]} {ddr3_top_inst/ddr3_controller_inst/state_calibrate[4]} {ddr3_top_inst/ddr3_controller_inst/state_calibrate[5]}]]
-create_debug_port u_ila_0 probe
-set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe13]
-set_property port_width 1 [get_debug_ports u_ila_0/probe13]
-connect_debug_port u_ila_0/probe13 [get_nets [list pmem_instr]]
-create_debug_port u_ila_0 probe
-set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe14]
-set_property port_width 1 [get_debug_ports u_ila_0/probe14]
-connect_debug_port u_ila_0/probe14 [get_nets [list pmem_ready]]
-create_debug_port u_ila_0 probe
-set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe15]
-set_property port_width 1 [get_debug_ports u_ila_0/probe15]
-connect_debug_port u_ila_0/probe15 [get_nets [list pmem_valid]]
-create_debug_port u_ila_0 probe
-set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe16]
-set_property port_width 1 [get_debug_ports u_ila_0/probe16]
-connect_debug_port u_ila_0/probe16 [get_nets [list highmapper_inst/rd]]
-create_debug_port u_ila_0 probe
-set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe17]
-set_property port_width 1 [get_debug_ports u_ila_0/probe17]
-connect_debug_port u_ila_0/probe17 [get_nets [list highmapper_inst/ready]]
-create_debug_port u_ila_0 probe
-set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe18]
-set_property port_width 1 [get_debug_ports u_ila_0/probe18]
-connect_debug_port u_ila_0/probe18 [get_nets [list rst]]
-create_debug_port u_ila_0 probe
-set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe19]
-set_property port_width 1 [get_debug_ports u_ila_0/probe19]
-connect_debug_port u_ila_0/probe19 [get_nets [list uart_inst/rx_r]]
-create_debug_port u_ila_0 probe
-set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe20]
-set_property port_width 1 [get_debug_ports u_ila_0/probe20]
-connect_debug_port u_ila_0/probe20 [get_nets [list uartreset_inst/uart_ready]]
-create_debug_port u_ila_0 probe
-set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe21]
-set_property port_width 1 [get_debug_ports u_ila_0/probe21]
-connect_debug_port u_ila_0/probe21 [get_nets [list uartreset_inst/uart_rst]]
-create_debug_port u_ila_0 probe
-set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe22]
-set_property port_width 1 [get_debug_ports u_ila_0/probe22]
-connect_debug_port u_ila_0/probe22 [get_nets [list highmapper_inst/we]]
-set_property C_CLK_INPUT_FREQ_HZ 300000000 [get_debug_cores dbg_hub]
-set_property C_ENABLE_CLK_DIVIDER false [get_debug_cores dbg_hub]
-set_property C_USER_SCAN_CHAIN 1 [get_debug_cores dbg_hub]
-connect_debug_port dbg_hub/clk [get_nets clk_main]

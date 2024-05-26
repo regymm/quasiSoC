@@ -41,7 +41,12 @@ module riscv_multicyc
 		output we,
 		output rd,
 		input [31:0]spo,
-		input ready
+		input ready,
+
+		output [31:0]dbg_pc,
+		output [31:0]dbg_instr,
+		output [31:0]dbg_ra,
+		output [31:0]dbg_rb
     );
 
 	// basic control signals
@@ -71,6 +76,7 @@ module riscv_multicyc
 			oldpc <= pc;
 		end
 	end
+	assign dbg_pc = oldpc;
 	// ~~~~datapath~~~~
 	reg [31:0]newpc;
 	always @ (*) begin case (PCSrc)
@@ -88,6 +94,7 @@ module riscv_multicyc
 
 	// instruction register
 	(*mark_debug = "true"*) reg [31:0]instruction;
+	assign dbg_instr = instruction;
 	//reg [31:0]instr_reg;
 	always @ (posedge clk) begin
 		if(IRWrite) instruction <= new_instr;
@@ -118,6 +125,8 @@ module riscv_multicyc
 		A <= ReadData1;
 		B <= ReadData2;
 	end
+	assign dbg_ra = A;
+	assign dbg_rb = B;
 	// ~~~~datapath~~~~
 	always @ (*) begin case (RegSrc)
 		0: WriteData = ALUOut;
