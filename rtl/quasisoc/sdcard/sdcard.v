@@ -65,16 +65,17 @@ module sdcard
     // slow clock
     reg [4:0]clkcounter = 0;
     always @ (posedge clk) begin
-        if (rst) clkcounter <= 5'b0;
-        else clkcounter <= clkcounter + 1;
+        //if (rst) clkcounter <= 5'b0;
+        //else 
+        clkcounter <= clkcounter + 1;
     end
-    wire clk_pulse_slow = (clkcounter[0:0] == 1'b0);
+    wire clk_pulse_slow = (clkcounter[0:0] == 0);
 
     assign sd_dat1 = 1;
     assign sd_dat2 = 1;
     //assign sd_reset = 0;
 
-    reg [31:0]sd_address = 32'hffffffff; // init as an invalid address
+    (*mark_debug = "true"*) reg [31:0]sd_address = 32'hffffffff; // init as an invalid address
     reg [31:0]block[127:0];
     reg dirty = 0;
 
