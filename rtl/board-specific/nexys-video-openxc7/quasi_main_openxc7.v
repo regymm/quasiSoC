@@ -50,14 +50,14 @@ module quasi_main_openxc7
 		inout [15:0]       ddr3_dq,
 		inout [1:0]        ddr3_dqs_n,
 		inout [1:0]        ddr3_dqs_p,
-		output [14:0]     ddr3_addr,
+		output [14-1:0]     ddr3_addr,
 		output [2:0]        ddr3_ba,
 		output            ddr3_ras_n,
 		output            ddr3_cas_n,
 		output            ddr3_we_n,
 		output            ddr3_reset_n,
-		output [0:0]       ddr3_ck_p,
-		output [0:0]       ddr3_ck_n,
+		output        ddr3_ck_p,
+		output        ddr3_ck_n,
 		output [0:0]       ddr3_cke,
 		output [1:0]     ddr3_dm,
 		output [0:0]       ddr3_odt
@@ -565,11 +565,11 @@ module quasi_main_openxc7
     ddr3_top #(
         .CONTROLLER_CLK_PERIOD(UBERDDR3_CTRL_CLK_PERIOD), //12_000ps, controller interface
         .DDR3_CLK_PERIOD(UBERDDR3_CLK_PERIOD), //3_000ps, DDR3 RAM device (1/4 CONTROLLER_CLK_PERIOD) 
-        .ROW_BITS(15), //width of row address
+        .ROW_BITS(14), //width of row address
         .COL_BITS(10), //width of column address
         .BA_BITS(3), //width of bank address
         .DQ_BITS(8),  //width of DQ
-        .LANES(2),
+        .LANES(1),
         .AUX_WIDTH(4),
         .WB2_ADDR_BITS(32),
         .WB2_DATA_BITS(32),
@@ -759,41 +759,44 @@ module quasi_main_openxc7
 `endif
 
     // cpu-multi-cycle
+`ifndef PICORV32
+	riscv_multicyc riscv_multicyc_inst(
+		.clk(clk_main),
+		.rst(rst),
+
+		.tip(irq_timer_pending),
+		.eip(cpu_eip),
+		.eip_reply(cpu_eip_reply),
+
+		.mode(mode),
+		.paging(paging),
+		.root_ppn(root_ppn),
+		.pagefault(pagefault),
+		.accessfault(accessfault),
+
+		.req(vreq),
+		.gnt(vgnt),
+		.hrd(vhrd),
+		.a(va),
+		.d(vd),
+		.we(vwe),
+		.rd(vrd),
+		.spo(vspo),
+		.ready(vready),
+
+		.dbg_pc(dbg_pc),
+		.dbg_instr(dbg_instr),
+		.dbg_ra(dbg_ra),
+		.dbg_rb(dbg_rb)
+	);
+
+`else
 	wire [1:0]mode = 2'b11;
 	wire paging = 0;
 	wire [21:0]root_ppn = 0;
 	wire pagefault = 0;
 	wire accessfault = 0;
 	assign vreq = 1;
-	//riscv_multicyc riscv_multicyc_inst(
-		//.clk(clk_main),
-		//.rst(rst),
-
-		//.tip(irq_timer_pending),
-		//.eip(cpu_eip),
-		//.eip_reply(cpu_eip_reply),
-
-		//.mode(mode),
-		//.paging(paging),
-		//.root_ppn(root_ppn),
-		//.pagefault(pagefault),
-		//.accessfault(accessfault),
-
-		//.req(vreq),
-		//.gnt(vgnt),
-		//.hrd(vhrd),
-		//.a(va),
-		//.d(vd),
-		//.we(vwe),
-		//.rd(vrd),
-		//.spo(vspo),
-		//.ready(vready),
-
-		//.dbg_pc(dbg_pc),
-		//.dbg_instr(dbg_instr),
-		//.dbg_ra(dbg_ra),
-		//.dbg_rb(dbg_rb)
-	//);
 
 	// picorv32 hart transplant
 	(* mark_debug = "TRUE"*) wire pmem_valid;
@@ -826,7 +829,7 @@ module quasi_main_openxc7
 	picorv32 #(
 		.PROGADDR_RESET(32'hf0000000),
 		.ENABLE_MUL(1),
-		.ENABLE_FAST_MUL(1),
+		.ENABLE_FAST_MUL(0),
 		.ENABLE_DIV(1),
 		.ENABLE_COUNTERS(0),
 		.ENABLE_COUNTERS64(0),
@@ -851,6 +854,7 @@ module quasi_main_openxc7
 		.mem_rdata({pmem_rdata[7:0], pmem_rdata[15:8], pmem_rdata[23:16], pmem_rdata[31:24]})
 		//.mem_rdata(mem_rdata)
 	);
+`endif
 
 	// MMU
 	wire vreq;
