@@ -1,0 +1,49 @@
+DB_DIR = /nextpnr-xilinx/xilinx/external/prjxray-db
+CHIPDB = /chipdb
+
+BUILDDIR := ${CURDIR}/build
+TOP := quasi_main_openxc7
+#SOURCES :=  $(wildcard *.v)  $(wildcard ../../../rtl/pcpu/*.v)  $(wildcard ../../../rtl/quasisoc/*.v)  $(wildcard ../../../rtl/quasisoc/bus/*.v)  $(wildcard ../../../rtl/quasisoc/gpio/*.v)  $(wildcard ../../../rtl/quasisoc/interrupt/*.v)  $(wildcard ../../../rtl/quasisoc/sdcard/*.v)  $(wildcard ../../../rtl/quasisoc/uart/*.v)  $(wildcard ../../../rtl/3rdparty/DDR3_Controller/rtl/ddr3*.v)  $(wildcard ../../../rtl/quasisoc/hdmi/*.v)  $(wildcard ../../../rtl/quasisoc/hdmi/*.sv)  $(wildcard ../../../rtl/hart_transplant/picorv32/*.v) 
+XDC := $(wildcard  $(wildcard ../../../rtl/board-specific/nexys-video-openxc7/Nexys-Video-Master.xdc) )
+
+CHIPFAM := artix7
+PART := xc7a200tsbg484-1
+
+LOGFILE := ${BUILDDIR}/top.log
+
+all: ${CHIPDB} ${BUILDDIR} ${BUILDDIR}/top.bit
+
+${BUILDDIR}:
+	mkdir -m 777 -p ${BUILDDIR} && chown -R nobody ${BUILDDIR} | true
+
+${CHIPDB}:
+	mkdir -m 777 -p ${CHIPDB} && chown -R nobody ${CHIPDB} | true
+
+# we run this in parent directory to seeminglessly import user source files
+# otherwise have to parse user pattern and add ../
+${BUILDDIR}/top.json:  $(wildcard *.v)  $(wildcard ../../../rtl/pcpu/*.v)  $(wildcard ../../../rtl/quasisoc/*.v)  $(wildcard ../../../rtl/quasisoc/bus/*.v)  $(wildcard ../../../rtl/quasisoc/gpio/*.v)  $(wildcard ../../../rtl/quasisoc/interrupt/*.v)  $(wildcard ../../../rtl/quasisoc/sdcard/*.v)  $(wildcard ../../../rtl/quasisoc/uart/*.v)  $(wildcard ../../../rtl/3rdparty/DDR3_Controller/rtl/ddr3*.v)  $(wildcard ../../../rtl/quasisoc/hdmi/*.v)  $(wildcard ../../../rtl/quasisoc/hdmi/*.sv)  $(wildcard ../../../rtl/hart_transplant/picorv32/*.v) 
+	yosys -p "synth_xilinx -flatten -abc9 -arch xc7 -top ${TOP}; write_json ${BUILDDIR}/top.json" $^ >> ${LOGFILE} 2>&1
+
+# The chip database only needs to be generated once
+# that is why we don't clean it with make clean
+${CHIPDB}/${PART}.bin:
+	pypy3 /nextpnr-xilinx/xilinx/python/bbaexport.py --device ${PART} --bba ${PART}.bba
+	bbasm -l ${PART}.bba ${CHIPDB}/${PART}.bin
+	rm -f ${PART}.bba
+
+${BUILDDIR}/top.fasm: ${BUILDDIR}/top.json ${CHIPDB}/${PART}.bin
+	nextpnr-xilinx --chipdb ${CHIPDB}/${PART}.bin --xdc ${XDC} --json ${BUILDDIR}/top.json --pre-place constraints.py --pre-route show_bels.py --fasm $@ >> ${LOGFILE} 2>&1
+	#nextpnr-xilinx --chipdb ${CHIPDB}/${PART}.bin --xdc ${XDC} --json ${BUILDDIR}/top.json --fasm $@ >> ${LOGFILE} 2>&1
+	
+${BUILDDIR}/top.frames: ${BUILDDIR}/top.fasm
+	fasm2frames --part ${PART} --db-root ${DB_DIR}/${CHIPFAM} $< > $@
+
+${BUILDDIR}/top.bit: ${BUILDDIR}/top.frames
+	xc7frames2bit --part_file ${DB_DIR}/${CHIPFAM}/${PART}/part.yaml --part_name ${PART} --frm_file $< --output_file $@ >> ${LOGFILE} 2>&1
+
+.PHONY: clean
+clean:
+	@rm -f *.bit
+	@rm -f *.frames
+	@rm -f *.fasm
+	@rm -f *.json

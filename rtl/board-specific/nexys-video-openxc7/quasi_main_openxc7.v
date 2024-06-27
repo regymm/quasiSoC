@@ -184,7 +184,7 @@ module quasi_main_openxc7
 		.DEPTH(10),
 `ifndef SIMULATION
 	`ifdef OPENXC7
-		.INIT("firmware/bootrom/bootrom.dat")
+		.INIT("../../../firmware/bootrom/bootrom.dat")
 	`else
 		.INIT("/home/petergu/quasiSoC/firmware/bootrom/bootrom.dat")
 	`endif
