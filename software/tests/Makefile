@@ -1,4 +1,4 @@
-RISCV_PATH=/nfs/opt/riscv32i/bin
+RISCV_PATH=/opt/rv32ima/bin
 TESTS_PATH=./riscv_tests
 all: 
 	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32im  firmware/start.S -o firmware/start.o
@@ -95,31 +95,31 @@ all:
 	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32im -o $(TESTS_PATH)/xor.o -DTEST_FUNC_NAME=xor \
 		-DTEST_FUNC_TXT='"xor"' -DTEST_FUNC_RET=xor_ret $(TESTS_PATH)/xor.S
 	\
-	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima -o $(TESTS_PATH)/csr.o -DTEST_FUNC_NAME=csr \
+	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima_zicsr -o $(TESTS_PATH)/csr.o -DTEST_FUNC_NAME=csr \
 		-DTEST_FUNC_TXT='"csr"' -DTEST_FUNC_RET=csr_ret $(TESTS_PATH)/csr.S
-	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima -o $(TESTS_PATH)/mcsr.o -DTEST_FUNC_NAME=mcsr \
+	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima_zicsr -o $(TESTS_PATH)/mcsr.o -DTEST_FUNC_NAME=mcsr \
 		-DTEST_FUNC_TXT='"mcsr"' -DTEST_FUNC_RET=mcsr_ret $(TESTS_PATH)/mcsr.S
-	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima -o $(TESTS_PATH)/amoadd_w.o -DTEST_FUNC_NAME=amoadd_w \
+	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima_zicsr -o $(TESTS_PATH)/amoadd_w.o -DTEST_FUNC_NAME=amoadd_w \
 		-DTEST_FUNC_TXT='"amoadd_w"' -DTEST_FUNC_RET=amoadd_w_ret $(TESTS_PATH)/amoadd_w.S
-	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima -o $(TESTS_PATH)/amoand_w.o -DTEST_FUNC_NAME=amoand_w \
+	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima_zicsr -o $(TESTS_PATH)/amoand_w.o -DTEST_FUNC_NAME=amoand_w \
 		-DTEST_FUNC_TXT='"amoand_w"' -DTEST_FUNC_RET=amoand_w_ret $(TESTS_PATH)/amoand_w.S
-	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima -o $(TESTS_PATH)/amoor_w.o -DTEST_FUNC_NAME=amoor_w \
+	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima_zicsr -o $(TESTS_PATH)/amoor_w.o -DTEST_FUNC_NAME=amoor_w \
 		-DTEST_FUNC_TXT='"amoor_w"' -DTEST_FUNC_RET=amoor_w_ret $(TESTS_PATH)/amoor_w.S
-	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima -o $(TESTS_PATH)/amoswap_w.o -DTEST_FUNC_NAME=amoswap_w \
+	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima_zicsr -o $(TESTS_PATH)/amoswap_w.o -DTEST_FUNC_NAME=amoswap_w \
 		-DTEST_FUNC_TXT='"amoswap_w"' -DTEST_FUNC_RET=amoswap_w_ret $(TESTS_PATH)/amoswap_w.S
-	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima -o $(TESTS_PATH)/amoxor_w.o -DTEST_FUNC_NAME=amoxor_w \
+	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima_zicsr -o $(TESTS_PATH)/amoxor_w.o -DTEST_FUNC_NAME=amoxor_w \
 		-DTEST_FUNC_TXT='"amoxor_w"' -DTEST_FUNC_RET=amoxor_w_ret $(TESTS_PATH)/amoxor_w.S
-	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima -o $(TESTS_PATH)/amomax_w.o -DTEST_FUNC_NAME=amomax_w \
+	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima_zicsr -o $(TESTS_PATH)/amomax_w.o -DTEST_FUNC_NAME=amomax_w \
 		-DTEST_FUNC_TXT='"amomax_w"' -DTEST_FUNC_RET=amomax_w_ret $(TESTS_PATH)/amomax_w.S
-	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima -o $(TESTS_PATH)/amomaxu_w.o -DTEST_FUNC_NAME=amomaxu_w \
+	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima_zicsr -o $(TESTS_PATH)/amomaxu_w.o -DTEST_FUNC_NAME=amomaxu_w \
 		-DTEST_FUNC_TXT='"amomaxu_w"' -DTEST_FUNC_RET=amomaxu_w_ret $(TESTS_PATH)/amomaxu_w.S
-	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima -o $(TESTS_PATH)/amomin_w.o -DTEST_FUNC_NAME=amomin_w \
+	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima_zicsr -o $(TESTS_PATH)/amomin_w.o -DTEST_FUNC_NAME=amomin_w \
 		-DTEST_FUNC_TXT='"amomin_w"' -DTEST_FUNC_RET=amomin_w_ret $(TESTS_PATH)/amomin_w.S
-	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima -o $(TESTS_PATH)/amominu_w.o -DTEST_FUNC_NAME=amominu_w \
+	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima_zicsr -o $(TESTS_PATH)/amominu_w.o -DTEST_FUNC_NAME=amominu_w \
 		-DTEST_FUNC_TXT='"amominu_w"' -DTEST_FUNC_RET=amominu_w_ret $(TESTS_PATH)/amominu_w.S
-	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima -o $(TESTS_PATH)/lrsc.o -DTEST_FUNC_NAME=lrsc \
+	$(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima_zicsr -o $(TESTS_PATH)/lrsc.o -DTEST_FUNC_NAME=lrsc \
 		-DTEST_FUNC_TXT='"lrsc_w"' -DTEST_FUNC_RET=lrsc_ret $(TESTS_PATH)/lrsc.S
-	# $(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima -o $(TESTS_PATH)/scall.o -DTEST_FUNC_NAME=scall \
+	# $(RISCV_PATH)/riscv32-unknown-elf-gcc -c -march=rv32ima_zicsr -o $(TESTS_PATH)/scall.o -DTEST_FUNC_NAME=scall \
 	#	-DTEST_FUNC_TXT='"scall"' -DTEST_FUNC_RET=scall_ret $(TESTS_PATH)/scall.S
 	\
 	$(RISCV_PATH)/riscv32-unknown-elf-gcc -Os -ffreestanding -nostdlib -o firmware/firmware.elf \

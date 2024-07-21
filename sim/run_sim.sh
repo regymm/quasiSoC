@@ -52,7 +52,7 @@ rm -rf obj_dir
 verilator -j 0 -DSIMULATION -DINTERACTIVE_SIM --top-module quasi_main \
 	--no-timing \
 	-Wno-width -Wno-pinmissing -Wno-implicit -Wno-caseincomplete -Wno-stmtdly -Wno-infiniteloop \
-	-I../rtl/board-specific/nexys-video/ \
+	-I./ \
 	--cc \
 	../rtl/pcpu/alu.v \
 	../rtl/pcpu/mmu.v \
@@ -78,7 +78,7 @@ verilator -j 0 -DSIMULATION -DINTERACTIVE_SIM --top-module quasi_main \
 	--exe sim_main.cpp 
 make -C obj_dir -f Vquasi_main.mk  Vquasi_main
 
-iverilog -DSIMULATION -I../rtl/board-specific/nexys-video/ \
+iverilog -DSIMULATION -I./ \
 	iv_simu.v \
 	../rtl/pcpu/alu.v \
 	../rtl/pcpu/mmu.v \

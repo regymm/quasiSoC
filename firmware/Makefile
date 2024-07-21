@@ -2,13 +2,14 @@
 RISCVDIR=	/opt/riscv32i
 RISCV	=	riscv32-unknown-elf-
 AS		=	$(RISCV)as
-ASFLAGS	=	-march=rv32ima -mabi=ilp32
+ASFLAGS	=	-march=rv32ima_zicsr -mabi=ilp32
+#ASFLAGS	=	-march=rv32ima -mabi=ilp32
 LD 		=	$(RISCV)ld
 #LDFLAGS	=	-m elf32lriscv --nostdlib
 LDFLAGS	=	-m elf32lriscv
 CC		=	$(RISCV)gcc
 CPP		=	$(RISCV)g++
-CC_L_F	=	-march=rv32i -mabi=ilp32 -nostdlib -mstrict-align -O0 -static
+#CC_L_F	=	-march=rv32i -mabi=ilp32 -nostdlib -mstrict-align -O0 -static
 CFLAGS	=	-march=rv32ima -mabi=ilp32 -mstrict-align -O0 -static
 CPPFLAGS=	$(CFLAGS) -nostdlib
 OBJCOPY	=	$(RISCV)objcopy
