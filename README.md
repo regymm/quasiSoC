@@ -2,9 +2,19 @@
 
 RISC-V CPU and rich bunch of peripherals designed to be useful. Runs Linux. Free-software toolchain ready. Prioritize compatibility and easy-to-understand -- if I can write this, you also can. 
 
+### Build & Run
+
+*Boardless start* [Simulation](Simulation.md)
+
+*Quick start* [Build & run instructions](BuildnRun.md)
+
+*Free-as-in-freedom* [Free software toolchain (Vivado-free!)](fstc.md)
+
 ![](doc/design.png)
 
-### ∂CPU (partial CPU)
+### Functionalities
+
+#### ∂CPU (partial CPU)
 
 - [x] Multiple-cycle RISC-V RV32IMA Zicsr\* @ 62.5 MHz, ~0.27 CoreMark/MHz
 - [x] M, S, U-mode, interrupt, exception\*
@@ -31,11 +41,12 @@ RISC-V CPU and rich bunch of peripherals designed to be useful. Runs Linux. Free
 
 </details>
 
-### Peripherals
+#### Peripherals
 
 - [x] AXI MIG DDR2/DDR3
+- [x] UberDDR3
+- [x] SDRAM
 - [x] ESP-PSRAM64H (8 MB) QPI mode @ 62.5 M, burst R/W
-- [ ] SDRAM
 - [x] GPIO (LEDs, buttons, switches)
 - [x] UART (115200/921600/1843200 baud), boot from UART, rest from UART
 - [x] SD card (SPI mode, SDHC)
@@ -45,7 +56,6 @@ RISC-V CPU and rich bunch of peripherals designed to be useful. Runs Linux. Free
   - [x] HDMI, character terminal, frame buffer graphics(320x240 8-bit color, 640x480 2-bit monochrome)
   - [ ] Old good VGA
   - [x] ILI9486 480x320 LCD
-    - [ ] Refresh rate upgrade
 - [x] CH375 USB disk
 - [x] W5500 ethernet module
   - [ ] W5500 as MAC with LwIP stack
@@ -70,12 +80,12 @@ RISC-V CPU and rich bunch of peripherals designed to be useful. Runs Linux. Free
 
 </details>
 
-### Software
+#### Software
 
-- [x] **Linux kernel** 32-bit No-MMU with uClibc
 - [x] **Linux kernel** 32-bit with MMU
   - [x] busybox userspace
   - [x] driver for my UART
+- [x] **Linux kernel** 32-bit No-MMU with uClibc
 - [x] **MicroPython** [port](https://github.com/regymm/micropython/tree/master/ports/QuasiSoC)
 
 <details>
@@ -90,12 +100,12 @@ RISC-V CPU and rich bunch of peripherals designed to be useful. Runs Linux. Free
 
 </details>
 
-### Boards & FPGAs
+#### Boards & FPGAs
 
 <details open>
 <summary>Xilinx 7 series</summary>
 
-- [x] xc7a200t @ Nexys Video, main dev platform [ref](https://digilent.com/reference/programmable-logic/nexys-video/start)
+- [x] xc7a200t @ Nexys Video, main dev platform, with Vivado or OpenXC7 [ref](https://digilent.com/reference/programmable-logic/nexys-video/start)
 - [x] xc7z010 PL @ SqueakyBoard, previous main dev platform [ref](https://github.com/ustcpetergu/SqueakyBoard)
 - [x] xc7z020 PL @ PYNQ-Z1 w/ extension PMOD module [ref](https://reference.digilentinc.com/programmable-logic/pynq-z1/start)
 - [x] xc7k325t @ Memblaze PBlaze 3 w/ extension board  [ref](https://www.tweaktown.com/reviews/6797/memblaze-pblaze3l-1-2tb-enterprise-pcie-ssd-review/index.html)
@@ -115,23 +125,6 @@ RISC-V CPU and rich bunch of peripherals designed to be useful. Runs Linux. Free
 - [ ] lfe5u or iCE40 w/ free software toolchain(Symbiflow, icestorm)
 
 </details>
-
-
-### Build & Run
-
-*Boardless start*</br>
-[Simulation](Simulation.md)
-
-*Quick start*</br>
-[Build & run instructions](BuildnRun.md)
-
-*Free-as-in-freedom*</br>
-[Free software toolchain (Vivado-free!)](fstc.md)
-
-### Linux Kernel
-
-*At least you saw a fancy kernel panic.*</br>
-[It's hacky and dirty(TODO)](Linux.md)
 
 ### Alternative RISC-V Cores
 
@@ -171,6 +164,10 @@ Many peripherals' code are based on other's work. If I miss something please poi
 [HDMI module](https://github.com/hdl-util/hdmi), modified
 
 [HDMI module](https://www.fpga4fun.com/HDMI.html)
+
+[DDR3 module](https://github.com/AngeloJacobo/UberDDR3)
+
+[SDRAM module](https://github.com/hdl-util/sdram-controller/blob/master/src/sdram_controller.sv)
 
 [SD card module](http://web.mit.edu/6.111/volume2/www/f2018/tools/sd_controller.v), [modified](https://github.com/regymm/mit_sd_controller_improved)
 
