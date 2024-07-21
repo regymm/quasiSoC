@@ -177,6 +177,8 @@ Many peripherals' code are based on other's work. If I miss something please poi
 
 [UART module](https://github.com/jamieiles/uart), heavily modified
 
+The awesome ahead-of-its-years SBI by [UltraEmbedded](https://github.com/ultraembedded/riscv-linux-boot)
+
 [Computer Organization and Design](https://enszhou.github.io/cod/), where everything started
 
 ### License

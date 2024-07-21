@@ -2,17 +2,19 @@
 
 **Preparation**
 
-You should first have RISC-V 32-bit toolchain with Newlib -- [RISC-V GNU Compiler Toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain), probably configure with `./configure --prefix=/opt/riscv32_xxx --with-arch=rv32im --with-abi=ilp32 && make newlib`. 
+You should first have RISC-V 32-bit toolchain with Newlib -- [RISC-V GNU Compiler Toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain), probably configure with `./configure --prefix=/opt/riscv32_xxx --with-arch=rv32ima_zicsr --with-abi=ilp32 && make newlib`. 
+
+Or you can use pre-built Docker containers including the tools: `regymm/rv32ima`
 
 **Hardware**
 
-Then run `make` in `firmware/` to generate SoC boot ROM. 
+Then run `make` in `firmware/` to generate SoC boot ROM. Or `docker run -it --rm -v .:/mnt regymm/rv32ima:latest` and `make -C /mnt/firmware`. 
 
 If error occurs, probably it's just some minor path problems or environment variables, just export variables, modify `Makefile`, and fix according your own case. 
 
-Use `eda_projects/pCPU-squeakyboard-vivado/proj.tcl` to re-create Vivado project. Or just create a new project and add all verilog files and constraints. That's it, because no IP core is used. Clocking is (by default) instantiated via PLLE2_ADV directly instead of clocking_wizard. 
+~~Use `eda_projects/pCPU-squeakyboard-vivado/proj.tcl` to re-create Vivado project.~~ Just create a new project and add all verilog files and constraints. See `sim/run_sim.sh` for an idea of what files are required. That's it, because no IP core is used. Clocking is (by default) instantiated via PLL or MMCM directly instead of clocking_wizard. 
 
-Of course you should modify files in `rtl/board-specific/squeakyboard/` according to your own board and peripherals(you can just disconnect input/output wires without disabling modules, no problem). 
+Of course you should modify files in `rtl/board-specific/nexys_video/` according to your own board and peripherals(you can just disconnect input/output wires without disabling modules, no problem). 
 
 Then run synthesis/implementation/bitstream as usual -- just take special care that no critical warnings about `result_bootrom.dat` occur -- boot ROM must be compiled into bitstream, while RAM and register inital values usually don't matter. It's recommended to have ILA hooked up to ∂CPU program counter(PC) and memory buses, in case memory hangs or PC flies away. 
 
@@ -20,7 +22,7 @@ Then run synthesis/implementation/bitstream as usual -- just take special care t
 
 UART is recommended for interaction, program downloading, and reseting -- instead of hardware buttons, SD card, or HDMI. 
 
-Open serial port at 921600-baud with like `sudo picocom -b 921600 -p 1 /dev/ttyUSB1`. Picocom is recommend while screen is not -- when pasting a bunch of characters and transferring at full speed, screen seems to miss characters. 
+Open serial port at 921600-baud with like `sudo picocom -b 921600 -p 1 /dev/ttyUSB1`. Picocom is recommend while screen is not -- when pasting a bunch of characters and transferring at full speed, screen seems to miss characters. Baud rate can be changed at `BAUD_RATE_UART` parameter in `quasi_main.v` 
 
 When system starts, you should see messages like these: 
 
