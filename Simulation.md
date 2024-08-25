@@ -8,7 +8,7 @@ The 32-bit RISC-V toolchain is required to build firmware files.
 
 You should first have RISC-V 32-bit toolchain with Newlib -- [RISC-V GNU Compiler Toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain), probably configure with `./configure --prefix=/opt/riscv32_xxx --with-arch=rv32ima_zicsr --with-abi=ilp32 && make newlib`. 
 
-Or you can use pre-built Docker containers including the tools: `regymm/rv32ima`
+Or you can use pre-built Docker containers including the tools (much easier!): `regymm/rv32ima`
 
 Then run `make` in `firmware/` to generate SoC boot ROM. Or `docker run -it --rm -v .:/mnt regymm/rv32ima:latest` and `make -C /mnt/firmware`. 
 
@@ -24,6 +24,24 @@ Ordinary firmware, like the riscv_tests:
 
 `./run_sim.sh ../software/tests/firmware/firmware.bin`
 
+You're expected to see something like this right after simulation starts:
+
+```
+Launching simulation...
+[bootrom_sim]c_start
+[bootrom_sim]xfer ctrl to 0x20001000
+00
+00
+31
+OKlui..ok
+auipc..ok
+j..ok
+jal..ok
+jalr..ok
+beq..ok
+(omitted)
+```
+
 No MMU Linux kernel, kernel binary and device tree included in the repo:
 
 `./run_sim.sh kernel ../software/kernel/Image  ../software/kernel/quasi.dtb`
@@ -33,7 +51,5 @@ MMU Linux kernel, loaded via a simple SBI implementation:
 `./run_sim.sh mmukernel ../software/mmukernel/Image   ../software/mmukernel/mmu0x2000.dtb  ../software/ssbi/sbi.bin`
 
 An executable file for iverilog will also be compiled as `./a.out`, but the speed is much slower. 
-
-#### 
 
 
