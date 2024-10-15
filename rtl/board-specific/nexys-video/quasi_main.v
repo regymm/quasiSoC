@@ -213,7 +213,7 @@ module quasi_main
 `ifndef SIMULATION
 		.INIT("/home/petergu/quasiSoC/firmware/bootrom/bootrom.dat")
 `else
-		.INIT("/home/petergu/quasiSoC/firmware/bootrom/bootrom_sim.dat")
+		.INIT("../firmware/bootrom/bootrom_sim.dat")
 `endif
 	) bootrom(
 		.clk(clk_main),

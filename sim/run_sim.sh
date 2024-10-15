@@ -1,9 +1,9 @@
 #!/bin/bash
 set -e
 
-echo -e "\033[37mPreparing boot loader...\033[0m"
-make -C ../firmware
-make -C ../software/ssbi
+#echo -e "\033[37mPreparing boot loader...\033[0m"
+#make -C ../firmware
+#make -C ../software/ssbi
 
 if [[ "$1" == "" ]]; then
 	echo -e "\033[31mRun without payload.\033[0m"
@@ -78,29 +78,29 @@ verilator -j 0 -DSIMULATION -DINTERACTIVE_SIM --top-module quasi_main \
 	--exe sim_main.cpp 
 make -C obj_dir -f Vquasi_main.mk  Vquasi_main
 
-iverilog -DSIMULATION -I./ \
-	iv_simu.v \
-	../rtl/pcpu/alu.v \
-	../rtl/pcpu/mmu.v \
-	../rtl/pcpu/privilege.v \
-	../rtl/pcpu/register_file.v \
-	../rtl/pcpu/riscv-multicyc.v \
-	../rtl/pcpu/rv32a.v \
-	../rtl/pcpu/rv32m.v \
-	../rtl/board-specific/nexys-video/quasi_main.v \
-	../rtl/quasisoc/simple_ram.v \
-	../rtl/quasisoc/debounce.v \
-	../rtl/quasisoc/clocked_rom.v \
-	../rtl/quasisoc/bus/arbitrator.v \
-	../rtl/quasisoc/bus/highmapper.v \
-	../rtl/quasisoc/bus/lowmapper.v \
-	../rtl/quasisoc/gpio/gpio.v \
-	../rtl/quasisoc/interrupt/aclint.v \
-	../rtl/quasisoc/interrupt/interrupt_unit.v \
-	../rtl/quasisoc/uart/serialboot.v \
-	../rtl/quasisoc/fifo.v \
-	../rtl/quasisoc/uart/uartnew.v \
-	../rtl/quasisoc/uart/uartreset.v
+#iverilog -DSIMULATION -I./ \
+	#iv_simu.v \
+	#../rtl/pcpu/alu.v \
+	#../rtl/pcpu/mmu.v \
+	#../rtl/pcpu/privilege.v \
+	#../rtl/pcpu/register_file.v \
+	#../rtl/pcpu/riscv-multicyc.v \
+	#../rtl/pcpu/rv32a.v \
+	#../rtl/pcpu/rv32m.v \
+	#../rtl/board-specific/nexys-video/quasi_main.v \
+	#../rtl/quasisoc/simple_ram.v \
+	#../rtl/quasisoc/debounce.v \
+	#../rtl/quasisoc/clocked_rom.v \
+	#../rtl/quasisoc/bus/arbitrator.v \
+	#../rtl/quasisoc/bus/highmapper.v \
+	#../rtl/quasisoc/bus/lowmapper.v \
+	#../rtl/quasisoc/gpio/gpio.v \
+	#../rtl/quasisoc/interrupt/aclint.v \
+	#../rtl/quasisoc/interrupt/interrupt_unit.v \
+	#../rtl/quasisoc/uart/serialboot.v \
+	#../rtl/quasisoc/fifo.v \
+	#../rtl/quasisoc/uart/uartnew.v \
+	#../rtl/quasisoc/uart/uartreset.v
 
 
 echo -e "\033[37mLaunching simulation...\033[0m"

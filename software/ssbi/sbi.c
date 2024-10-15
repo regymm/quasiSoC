@@ -431,7 +431,7 @@ void sbi_main()
 	csr_write(mscratch, &_sp);
 
 	register uintptr_t a0 asm ("a0") = 0; // hart ID
-	register uintptr_t a1 asm ("a1") = kernel_dtb_addr; // dtb addr
+	register uintptr_t a1 asm ("a1") = (unsigned int) kernel_dtb_addr; // dtb addr
 	asm volatile ("mret" :: "r" (a0), "r" (a1));
 
 	while (1);
