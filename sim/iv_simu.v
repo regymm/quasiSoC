@@ -36,8 +36,8 @@ module top_simu ();
     end
 
     initial begin
-		//$dumpfile("wave.vcd");
-		//$dumpvars(0, quasisoc_inst);
+		$dumpfile("wave.vcd");
+		$dumpvars(0, quasisoc_inst);
         sw = 2'b01;
 		btn = 2'b11;
         #4000
@@ -45,6 +45,6 @@ module top_simu ();
 		btn = 2'b00;
 
 		#2000000.0;
-		//$finish;
+		$finish;
     end
 endmodule
