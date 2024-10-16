@@ -23,7 +23,7 @@ else
 		truncate -s 32M /tmp/meminit
 		#dd if="/home/petergu/quasiSoC/software/tests_S/firmware/firmware.bin" of=/tmp/meminit bs=512 seek=16389 conv=notrunc
 		xxd -p -c 4 /tmp/meminit > /tmp/meminit.dat
-		ls;
+		timeout=$5
 	elif [[ "$1" == "kernel" ]]; then
 		echo -e "\033[37mPreparing for Linux kernel...\033[0m"
 		rm -f /tmp/meminit
@@ -34,6 +34,7 @@ else
 		cat $3 >> /tmp/meminit
 		truncate -s 8M /tmp/meminit
 		xxd -p -c 4 /tmp/meminit > /tmp/meminit.dat
+		timeout=$4
 	else
 		echo -e "\033[37mPreparing payload...\033[0m"
 		rm -f /tmp/meminit
@@ -42,6 +43,7 @@ else
 		cat $1 >> /tmp/meminit
 		truncate -s 8M /tmp/meminit
 		xxd -p -c 4 /tmp/meminit > /tmp/meminit.dat
+		timeout=$2
 	fi
 fi
 
@@ -105,6 +107,6 @@ make -C obj_dir -f Vquasi_main.mk  Vquasi_main
 
 echo -e "\033[37mLaunching simulation...\033[0m"
 #vvp -n a.out
-obj_dir/Vquasi_main
+obj_dir/Vquasi_main $timeout
 
 echo -e "\033[37mFinished.\033[0m"

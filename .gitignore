@@ -6,6 +6,15 @@
 *.txt
 *.dtb
 *.bak
+a.out
+obj_dir
+build
 work
 eda_projects
-
+run_caas.sh
+*.vcd
+*.stash
+*.fasm
+*.frames
+*.json
+*.bit

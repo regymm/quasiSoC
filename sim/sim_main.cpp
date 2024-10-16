@@ -5,12 +5,18 @@
 #include "unistd.h"
 #include <iostream>
 #include <cstdio>
+#include <ctime>
 #include <SDL2/SDL.h>
 
 int main (int argc, char* argv[])
 {
 	Verilated::commandArgs(argc, argv);
 	Vquasi_main *top = new Vquasi_main;
+
+	int timeout = 3600;
+	if (argc == 2)
+		timeout = atoi(argv[1]);
+
 	int i = 0;
 	int j = 0;
 	top->sw = 1;
@@ -22,6 +28,8 @@ int main (int argc, char* argv[])
 	raw.c_lflag &= ~(ECHO | ICANON);
 	tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
 
+	time_t start = time(0);
+	unsigned long start_sec = (unsigned long) start;
 	while(1) {
 		if (top->uart_rxsim_en == 1) top->uart_rxsim_en = 0;
 		if (j == 20) {
@@ -45,6 +53,10 @@ int main (int argc, char* argv[])
 		top->eval();
 		top->sysclk = 1;
 		top->eval();
+		time_t now = time(0);
+		unsigned long now_sec = (unsigned long) now;
+		if (now_sec - start_sec > timeout)
+			break;
 	}
 	top->final();
 	delete top;
