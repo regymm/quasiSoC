@@ -14,7 +14,7 @@ SECTIONS
 {
 	__heap_size = DEFINED(__heap_size) ? __heap_size : 0x1000;
 
-	. = 0x20001000;
+	. = 0x20000000;
 	.text : { *(.text.boot) }
 	.text : { *(.text) }
 	.data : { *(.data) }

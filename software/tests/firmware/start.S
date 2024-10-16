@@ -23,10 +23,10 @@ _start:
     #lw t0, 8(t2)
     #beq t0, zero, 2b
 
-	#li a0, 'O'
-	#jal uart_putchar
-	#li a0, 'K'
-	#jal uart_putchar
+	li a0, 'O'
+	jal uart_putchar
+	li a0, 'K'
+	jal uart_putchar
 	/* zero-initialize all registers */
 
 	addi x1, zero, 0
