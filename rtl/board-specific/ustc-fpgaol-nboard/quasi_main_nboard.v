@@ -14,7 +14,7 @@ module quasi_main_nboard
 		parameter INTERACTIVE_SIM = 0,
 		parameter CLOCK_FREQ = 62500000,
 		//parameter CLOCK_FREQ = 75000000,
-		parameter BAUD_RATE_UART = 115200,
+		parameter BAUD_RATE_UART = 9600,
 		//parameter BAUD_RATE_UART = 3686400,
 		parameter TIMER_RATE = 10000000,
 		parameter PSPI_WIDTH = 1,

@@ -7,7 +7,7 @@ TOP := quasi_main_openxc7
 XDC := $(wildcard  $(wildcard microphase-a7-lite.xdc) )
 
 CHIPFAM := artix7
-PART := xc7a35tfgg484-2
+PART := xc7a100tfgg484-2
 
 LOGFILE := ${BUILDDIR}/top.log
 
@@ -21,7 +21,7 @@ ${CHIPDB}:
 
 # we run this in parent directory to seeminglessly import user source files
 # otherwise have to parse user pattern and add ../
-${BUILDDIR}/top.json:  $(wildcard *.v)  $(wildcard ../../../rtl/pcpu/*.v)  $(wildcard ../../../rtl/quasisoc/*.v)  $(wildcard ../../../rtl/quasisoc/bus/*.v)  $(wildcard ../../../rtl/quasisoc/gpio/*.v)  $(wildcard ../../../rtl/quasisoc/interrupt/*.v)  $(wildcard ../../../rtl/quasisoc/sdcard/*.v)  $(wildcard ../../../rtl/quasisoc/uart/*.v)  $(wildcard ../../../rtl/3rdparty/DDR3_Controller/rtl/ddr3*.v)  $(wildcard ../../../rtl/quasisoc/hdmi/*.v)  $(wildcard ../../../rtl/quasisoc/hdmi/*.sv #openxc7) 
+${BUILDDIR}/top.json:  $(wildcard *.v)  $(wildcard ../../../rtl/pcpu/*.v)  $(wildcard ../../../rtl/quasisoc/*.v)  $(wildcard ../../../rtl/quasisoc/bus/*.v)  $(wildcard ../../../rtl/quasisoc/gpio/*.v)  $(wildcard ../../../rtl/quasisoc/interrupt/*.v)  $(wildcard ../../../rtl/quasisoc/sdcard/*.v)  $(wildcard ../../../rtl/quasisoc/uart/*.v)  $(wildcard ../../../rtl/3rdparty/DDR3_Controller/rtl/ddr3*.v)  $(wildcard ../../../rtl/quasisoc/hdmi/*.v)  $(wildcard ../../../rtl/quasisoc/hdmi/*.sv)  $(wildcard ../../../rtl/quasisoc/vt100/vt100.v #openxc7) 
 	yosys -p "synth_xilinx -flatten -abc9 -arch xc7 -top ${TOP}; write_json ${BUILDDIR}/top.json" $^ >> ${LOGFILE} 2>&1
 
 # The chip database only needs to be generated once

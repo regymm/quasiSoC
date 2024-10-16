@@ -1,7 +1,8 @@
 //Bob: put some macro here such that the IDE SDK do not need to specify the macro specially
 #define FLAGS_STR "-O2 -fno-common -funroll-loops -finline-functions --param max-inline-insns-auto=20 -falign-functions=4 -falign-jumps=4 -falign-loops=4"
 #define PERFORMANCE_RUN 1
-#define ITERATIONS 50
+#define ITERATIONS 40
+//#define CORE_DEBUG
 
 #ifndef FESDK_CORE_PORTME_H
 #define FESDK_CORE_PORTME_H

@@ -7,7 +7,7 @@
  */
 #define false 0
 #define true 1
-#define MMUKERNEL
+//#define MMUKERNEL
 #define UNTETHERED
 
 /*extern volatile int* BOOT_ENTRY;*/

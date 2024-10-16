@@ -3,6 +3,8 @@
 .globl c_start
 
 _start:
+	nop
+	nop
 	la a0, foo
 	lr.w a4, (a0)
 	addi a0, a0, 0

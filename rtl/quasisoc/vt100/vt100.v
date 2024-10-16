@@ -68,7 +68,6 @@ module vt100
 		.clk(clk),
 		.rst(rst),
 		.tip(0),
-		.sip(0),
 		.eip(0),
 		.gnt(1),
 		.hrd(0),
@@ -85,7 +84,11 @@ module vt100
 	clocked_rom #(
 		.WIDTH(32),
 		.DEPTH(11),
-		.INIT("/home/petergu/quasiSoC/firmware/vt100/vt100.dat")
+		`ifdef OPENXC7
+			.INIT("/mnt/firmware/vt100/vt100.dat")
+		`else
+			.INIT("/home/petergu/quasiSoC/firmware/vt100/vt100.dat")
+		`endif
 	) rom_vt100 (
 		.clk(clk),
 		.a(rv_v_a[12:2]),

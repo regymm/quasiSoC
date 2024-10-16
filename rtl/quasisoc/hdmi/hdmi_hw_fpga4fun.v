@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps
+`default_nettype wire
 
 module hdmi_fpga4fun
     (
@@ -9,12 +10,12 @@ module hdmi_fpga4fun
 
 		output reg [9:0]cx, // 0 to 799
 		output reg [9:0]cy, // 0 to 524
-		output [9:0]cx_next,
-		output [9:0]cy_next,
+		output wire [9:0]cx_next,
+		output wire [9:0]cy_next,
 
         // 8 differential signals output
-        output [2:0] TMDSp, TMDSn,
-        output TMDSp_clock, TMDSn_clock
+        output wire [2:0] TMDSp, TMDSn,
+        output wire TMDSp_clock, TMDSn_clock
     );
 
 	// 800x525 frame counter

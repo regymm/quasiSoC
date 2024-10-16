@@ -10,4 +10,4 @@ docker run --pull never -it --rm -m 8G \
 	-v `pwd`:/mnt \
 	-v /chipdb:/chipdb \
 	--tmpfs /tmp \
-	regymm/openxc7${append} make -C /mnt/rtl/board-specific/nexys-video-openxc7 -f Makefile.caas
+	regymm/openxc7${append} make -C /mnt/rtl/board-specific/nexys-video-openxc7 -f Makefile.openxc7.caas

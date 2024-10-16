@@ -13,6 +13,10 @@ module mkrvidor4000_top
 	parameter FBEXT_ENABLE = 0
 )
 (
+	input [31:0]dbg_pc,
+	input [31:0]dbg_instr,
+	input [31:0]dbg_ra,
+	input [31:0]dbg_rb,
 	input clk,
 	input clk_2x,
 	input rst,
@@ -217,7 +221,11 @@ module mkrvidor4000_top
 	// character console RAM, 8KB
 	wire [15:0]char_vram_spo;
 	simple_dp_ram #(
+	`ifdef OPENXC7
+		.INIT("../../../firmware/bootrom/bootrom.dat"),
+	`else
 		.INIT("/home/petergu/quasiSoC/firmware/bootrom/bootrom.dat"),
+	`endif
 		.WIDTH(16),
 		.DEPTH(12)
 	) video_ram (
@@ -230,13 +238,58 @@ module mkrvidor4000_top
 		.rd2(1),
 		.spo2(char_vram_spo)
 	);
+	reg [3:0]pc_active;
+	always @ (*) begin
+		case (char_a_v[11:0])
+			0: pc_active = dbg_pc[31:28];
+			1: pc_active = dbg_pc[27:24];
+			2: pc_active = dbg_pc[23:20];
+			3: pc_active = dbg_pc[19:16];
+			4: pc_active = dbg_pc[15:12];
+			5: pc_active = dbg_pc[11:8];
+			6: pc_active = dbg_pc[7:4];
+			7: pc_active = dbg_pc[3:0];
+
+			8: pc_active = dbg_instr[31:28];
+			9: pc_active = dbg_instr[27:24];
+			10: pc_active = dbg_instr[23:20];
+			11: pc_active = dbg_instr[19:16];
+			12: pc_active = dbg_instr[15:12];
+			13: pc_active = dbg_instr[11:8];
+			14: pc_active = dbg_instr[7:4];
+			15: pc_active = dbg_instr[3:0];
+
+			28: pc_active = dbg_ra[31:28];
+			29: pc_active = dbg_ra[27:24];
+			30: pc_active = dbg_ra[23:20];
+			31: pc_active = dbg_ra[19:16];
+			32: pc_active = dbg_ra[15:12];
+			33: pc_active = dbg_ra[11:8];
+			34: pc_active = dbg_ra[7:4];
+			35: pc_active = dbg_ra[3:0];
+
+			38: pc_active = dbg_rb[31:28];
+			39: pc_active = dbg_rb[27:24];
+			40: pc_active = dbg_rb[23:20];
+			41: pc_active = dbg_rb[19:16];
+			42: pc_active = dbg_rb[15:12];
+			43: pc_active = dbg_rb[11:8];
+			44: pc_active = dbg_rb[7:4];
+			45: pc_active = dbg_rb[3:0];
+
+			default: pc_active = 0;
+		endcase
+	end
+	wire [7:0]pc_code = pc_active < 4'hA ? {4'h0, pc_active} + 8'h30 : {4'h0, pc_active} + 8'h57;
 	
 	// fetch rgb from glyphmap
 	wire [23:0]char_rgb;
 	console console(
 		.clk_pixel(clk_pix), 
 		.codepoint(char_vram_spo[7:0]), 
+		//.codepoint(pc_code), 
 		.attribute(char_vram_spo[15:8]), 
+		//.attribute(16'h0F), 
 		//.attribute({cx[9], cy[8:6], cx[8:5]}), 
 		.cx(cx_next), 
 		.cy(cy_next), 

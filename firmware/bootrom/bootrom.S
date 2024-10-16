@@ -3,10 +3,10 @@
 .globl c_start
 
 _start:
-	la a0, foo
-	lr.w a4, (a0)
-	addi a0, a0, 0
-	sc.w a4, a4, (a0)
+	#la a0, foo
+	#lr.w a4, (a0)
+	#addi a0, a0, 0
+	#sc.w a4, a4, (a0)
 #	j _start
 # AXI4 DDR2
 #	la a0, 0x20000084
@@ -40,6 +40,14 @@ _start:
 	li a1, 0xffffffff
 	sw a1, 24(a0)
 	sw a1, 28(a0)
+# skip all tests
+	la sp, 0x10001ffc
+	j c_start
+	j real_end
+	nop
+	nop
+	nop
+	nop
 # some timer test
 	la a0, 0x9b000000
 	lw a1, 0(a0)
