@@ -10,6 +10,18 @@ if [[ "$1" == "" ]]; then
 else
 	if [[ "$1" == "mmukernel" ]]; then
 		echo -e "\033[37mPreparing for MMU-Linux kernel...\033[0m"
+		if [ ! -f $2 ]; then
+			echo "Kernel $2 not found!"
+			exit 1
+		fi
+		if [ ! -f $3 ]; then
+			echo "Device tree $3 not found!"
+			exit 1
+		fi
+		if [ ! -f $4 ]; then
+			echo "SBI $4 not found!"
+			exit 1
+		fi
 		rm -f /tmp/meminit
 		touch /tmp/meminit
 		truncate -s 4K /tmp/meminit
@@ -26,6 +38,14 @@ else
 		timeout=$5
 	elif [[ "$1" == "kernel" ]]; then
 		echo -e "\033[37mPreparing for Linux kernel...\033[0m"
+		if [ ! -f $2 ]; then
+			echo "Kernel $2 not found!"
+			exit 1
+		fi
+		if [ ! -f $3 ]; then
+			echo "Device tree $3 not found!"
+			exit 1
+		fi
 		rm -f /tmp/meminit
 		touch /tmp/meminit
 		truncate -s 4K /tmp/meminit
