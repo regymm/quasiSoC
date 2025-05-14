@@ -1,6 +1,6 @@
 //`define SIMULATION
 
-`define CLOCK_FREQ 62500000;
+`define CLOCK_FREQ 50000000;
 
 // peripheral features
 `define GPIO_EN

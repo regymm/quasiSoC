@@ -6,12 +6,10 @@
  * Last Modified Date: 2022.07.02
  */
 
-module myfifo
-#(
+module myfifo #(
 	parameter WIDTH = 32,
 	parameter DEPTH = 16
-)
-(
+)(
 	input clk,
 	input rst,
 
@@ -20,12 +18,14 @@ module myfifo
 	input deq,
 	output [WIDTH-1:0]dout,
 	output empty,
-	output full
+	output full,
+    output [$clog2(DEPTH)-1:0]filled
 );
 	reg [$clog2(DEPTH)-1:0]head = 0;
 	reg [$clog2(DEPTH)-1:0]tail = 0;
 	assign empty = head == tail;
 	assign full = tail+1 == head;
+    assign filled = (head - tail + DEPTH);
 
 	reg [WIDTH-1:0]d[DEPTH-1:0];
 
@@ -35,6 +35,7 @@ module myfifo
 		if (rst) begin
 			head <= 0;
 			tail <= 0;
+			d[0] <= 0;
 		end else begin
 			// ignore illegal requests
 			if (enq & (!full | deq)) begin

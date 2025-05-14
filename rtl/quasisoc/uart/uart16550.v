@@ -1,73 +1,44 @@
-/**
- * File              : uart16550.v
- * License           : GPL-3.0-or-later
- * Author            : Peter Gu <github.com/ustcpetergu>
- * Date              : 2021.01.24
- * Last Modified Date: 2025.04.20
- */
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Author: regymm
 `timescale 1ns / 1ps
-// pComputer UART
-// a better version (arbitary input clk freq, fifo, ...)
-// TODO: fifo? fifo w/ uartboot?
-//
-// write 0x00: transmit data -- (tx fifo enqueue)
-// read 0x00: received data -- (first data in rx fifo)
-// write 0x01: begin receiving -- (rx fifo dequeue, ignore empty)
-// read 0x01: new data received? -- (rx fifo empty?)
-// read 0x02: transmit done? -- (tx fifo full?)
-// 0x03: 
-// rxnew/rxdata: real-time, extra fifo required in serialboot
-// *need to x4 these addresses in assembly!
-//`include "quasi.vh"
 
-module uart_16550
-	#(
-		parameter CLOCK_FREQ = 62500000,
-        parameter RESET_BAUD_RATE = 9600,
-        parameter FIFODEPTH = 16,
-        parameter AXI = 0,
-        parameter SIM = 0
-		//parameter BAUD_RATE = 115200, 
-	)
-    (
-        input clk,
-        input rst,
+module uart16550 #(
+    parameter CLOCK_FREQ = 62500000,
+    parameter RESET_BAUD_RATE = 9600,
+    parameter FIFODEPTH = 16,
+    parameter LENDIAN = 0,
+    parameter SIM = 0
+)(
+    input clk,
+    input rst,
+    (*mark_debug = "true"*)input [2:0]a,
+    (*mark_debug = "true"*)input [31:0]d,
+    (*mark_debug = "true"*)input rd,
+    (*mark_debug = "true"*)input we,
+    (*mark_debug = "true"*)output reg [31:0]spo,
+    (*mark_debug = "true"*)output ready,
 
-        input rx,
-        output tx,
+    input rx, // sin
+    output tx, // sout
+    (*mark_debug = "true"*)output irq,
 
-        input [2:0]a,
-        input [31:0]d,
-        input rd,
-        input we,
-        output reg [31:0]spo,
-
-        output irq,
-
-        // for interactive simulation
-        input rxsim_en,
-        input [7:0]rxsim_data,
-
-        // for uartboot and uartreset, unused for standard 16550
-		output reg rxnew,
-		output [7:0]rxdata
-    );
-
-	wire [7:0]data = d[31:24];
+    // for interactive simulation
+    input rxsim_en,
+    input [7:0]rxsim_data,
+    // for uartboot and uartreset, unused for standard 16550
+    output rxnew,
+    output [7:0]rxdata
+);
+	(*mark_debug = "true"*) wire [7:0]data = LENDIAN ? d[7:0] : d[31:24];
 
 	(*mark_debug = "true"*) reg rx_r = 1;
 	(*mark_debug = "true"*) reg tx_r = 1;
-
-    // baud_rate = clock_freq / (16 * divisor_latch)
-	//localparam SAMPLE_COUNT = CLOCK_FREQ / BAUD_RATE;
-	//localparam SAMPLE_SAMPLE = SAMPLE_COUNT / 2;
-	//localparam SAMPLE_REMEDY = SAMPLE_COUNT / 4;
 
     localparam TX_IDLE = 2'b00;
     localparam TX_START = 2'b01;
     localparam TX_DATA = 2'b10;
     localparam TX_STOP = 2'b11;
-    reg [1:0]state_tx = IDLE;
+    reg [1:0]state_tx = TX_IDLE;
     reg [7:0]data_tx = 8'h00;
     reg [2:0]bitpos_tx = 3'b0;
 
@@ -77,11 +48,11 @@ module uart_16550
     localparam RX_STATE_STOP = 2'b11;
     (*mark_debug = "true"*) reg [1:0]state_rx = RX_STATE_START;
     (*mark_debug = "true"*) reg [15:0]sample = 0;
-    reg [3:0]bitpos_rx = 0;
+    (*mark_debug = "true"*) reg [3:0]bitpos_rx = 0;
     (*mark_debug = "true"*) reg [7:0]tmp_rx = 8'b0;
 
     (*mark_debug = "true"*)wire [7:0]rbr; // R
-    (*mark_debug = "true"*)wire [7:0]thr = data; // W
+    (*mark_debug = "true"*)wire [7:0]thr = tx_fifo_enq ? data : 0; // W
     (*mark_debug = "true"*)reg [7:0]ier = 0; // RW
     wire edssi = ier[3];
     wire elsi = ier[2];
@@ -89,12 +60,21 @@ module uart_16550
     wire erbfi = ier[0];
     (*mark_debug = "true"*)wire [7:0]iir = {fifoen, 2'b0, intid2, intpend}; // R
     // 011: receiver line status
+    wire rls_irq = oe;
     // 010: received data available
+    reg rda_irq = 0;
     // 110: character timeout
+    reg ct_irq = 0;
+    reg [31:0]ct_cnt = 0;
     // 001: THR empty
-    // 000: modem status
-    reg [2:0]intid2 = 0;
-    reg intpend = 0;
+    reg thre_irq = 0;
+    // 000: modem status, unused, indicates no interrupt here
+    wire [2:0]intid2 = (rls_irq  & elsi ) ? 3'b011 : 
+                       (rda_irq  & erbfi) ? 3'b010 : 
+                       (ct_irq   & erbfi) ? 3'b110 : 
+                       (thre_irq & elsi ) ? 3'b001 : 3'b000;
+    wire intpend = intid2 == 3'b000; // use unused 3'b000 as indicator
+    assign irq = !intpend;
     (*mark_debug = "true"*)reg [7:0]fcr = 0; // W
     wire rcvr_fifo_trigger_level = fcr[7:6];
     wire dma_mode = fcr[3];
@@ -115,15 +95,8 @@ module uart_16550
     wire out1 = mcr[2];
     wire rts = mcr[1];
     wire dtr = mcr[0]; // in "modern" TX/RX only UART, only loopback used
-    (*mark_debug = "true"*)wire [7:0]lsr = {
-        error_in_rcvr_fifo,
-        temt,
-        thre,
-        bi,
-        fe,
-        pe,
-        oe,
-        dr }; // R
+    (*mark_debug = "true"*)wire [7:0]lsr = { error_in_rcvr_fifo,
+        temt, thre, bi, fe, pe, oe, dr }; // R
     reg error_in_rcvr_fifo = 0;
     reg temt;
     reg thre;
@@ -135,61 +108,66 @@ module uart_16550
     (*mark_debug = "true"*)wire [7:0]msr = 8'b10110000; // R
     // use dummy dcd, ri, dsr, cts = 1, 0, 1, 1
     (*mark_debug = "true"*)reg [7:0]spr = 0; // RW
-    (*mark_debug = "true"*)reg [7:0]dll = 0; // RW
-    (*mark_debug = "true"*)reg [7:0]dlm = 0; // RW
+    localparam DLL_INIT = (CLOCK_FREQ/(16*RESET_BAUD_RATE)) & 8'hFF;
+    localparam DLM_INIT = ((CLOCK_FREQ/(16*RESET_BAUD_RATE)) & 16'hFF00) >> 8;
+    (*mark_debug = "true"*)reg [7:0]dll = DLL_INIT; // RW
+    (*mark_debug = "true"*)reg [7:0]dlm = DLM_INIT; // RW
     // no pre-scaler division
     wire [15:0]dl = {dlm, dll};
     wire [19:0]tx_count = {dl, 4'b0}; // dl * 16
 	reg  [19:0]tx_en_cnt = 0;
-    wire txclk_en = tx_en_cnt == 0;
+    (*mark_debug = "true"*)wire txclk_en = tx_en_cnt == 0;
 	always @ (posedge clk) begin
 		if (rst) tx_en_cnt <= 0;
-		else tx_en_cnt <= tx_en_cnt == tx_count ?
-			0 : tx_en_cnt + 1;
+		else tx_en_cnt <= tx_en_cnt == tx_count ? 0 : tx_en_cnt + 1;
 	end
-    wire [15:0]rx_count = dl;
-    wire [15:0]rx_count_sample = rx_count/2;
-    wire [15:0]rx_count_remedy = rx_count/4;
+    (*mark_debug = "true"*)wire [15:0]rx_count = dl * 16;
+    (*mark_debug = "true"*)wire [15:0]rx_count_sample = rx_count/2;
+    (*mark_debug = "true"*)wire [15:0]rx_count_remedy = rx_count/4;
 
     // illegal reads/writes are automatically discarded
-    wire tx_fifo_empty;
-    wire tx_fifo_full;
-    wire [7:0]tx_fifo_data;
+    (*mark_debug = "true"*)wire tx_fifo_empty;
+    (*mark_debug = "true"*)wire tx_fifo_full;
+    (*mark_debug = "true"*)wire tx_fifo_enq = we && a == 3'b000 && !dlab;
+    (*mark_debug = "true"*)wire [7:0]tx_fifo_data;
     myfifo #(.WIDTH(8), .DEPTH(FIFODEPTH)) uart_16550_txfifo (
         .clk(clk),
         .rst(xmit_fifo_reset),
-        .enq(we && a == 3'b000 && !dlab),
+        .enq(tx_fifo_enq),
         .din(thr),
         .deq(state_tx == TX_IDLE && !tx_fifo_empty),
         .dout(tx_fifo_data),
         .empty(tx_fifo_empty),
         .full(tx_fifo_full)
     );
-    wire rx_fifo_empty;
-    wire rx_fifo_full;
-    reg [7:0] rx_fifo_data;
-    reg rx_fifo_enq;
+    (*mark_debug = "true"*)wire rx_fifo_empty;
+    (*mark_debug = "true"*)wire rx_fifo_full;
+    (*mark_debug = "true"*)wire [$clog2(FIFODEPTH)-1:0]rx_filled; 
+    (*mark_debug = "true"*)reg [7:0] rx_fifo_data;
+    (*mark_debug = "true"*)reg rx_fifo_enq;
+    (*mark_debug = "true"*)wire rx_fifo_deq = rd && a == 3'b000 && !dlab;
     myfifo #(.WIDTH(8), .DEPTH(FIFODEPTH)) uart_16550_rxfifo (
         .clk(clk),
         .rst(rcvr_fifo_reset),
         .enq(rx_fifo_enq),
         .din(rx_fifo_data),
-        .deq(rd && a == 3'b000 && !dlab),
+        .deq(rx_fifo_deq),
         .dout(rbr),
         .empty(rx_fifo_empty),
-        .full(rx_fifo_full)
+        .full(rx_fifo_full),
+        .filled(rx_filled)
     );
     
     // ordinary registe writes
     always @ (*) begin
-        if      (a == 3'b000) spo = {dlab ? dll : rbr, 24'b0};
-        else if (a == 3'b001) spo = {dlab ? dlm : ier, 24'b0};
-        else if (a == 3'b010) spo = {iir, 24'b0};
-        else if (a == 3'b011) spo = {lcr, 24'b0};
-        else if (a == 3'b100) spo = {mcr, 24'b0};
-        else if (a == 3'b101) spo = {lsr, 24'b0};
-        else if (a == 3'b110) spo = {msr, 24'b0};
-        else if (a == 3'b111) spo = {spr, 24'b0};
+        if      (a == 3'b000) spo = LENDIAN ? {24'b0, dlab ? dll : rbr} : {dlab ? dll : rbr, 24'b0};
+        else if (a == 3'b001) spo = LENDIAN ? {24'b0, dlab ? dlm : ier} : {dlab ? dlm : ier, 24'b0};
+        else if (a == 3'b010) spo = LENDIAN ? {24'b0, iir} : {iir, 24'b0};
+        else if (a == 3'b011) spo = LENDIAN ? {24'b0, lcr} : {lcr, 24'b0};
+        else if (a == 3'b100) spo = LENDIAN ? {24'b0, mcr} : {mcr, 24'b0};
+        else if (a == 3'b101) spo = LENDIAN ? {24'b0, lsr} : {lsr, 24'b0};
+        else if (a == 3'b110) spo = LENDIAN ? {24'b0, msr} : {msr, 24'b0};
+        else if (a == 3'b111) spo = LENDIAN ? {24'b0, spr} : {spr, 24'b0};
         else spo = 32'b0;
     end
     always @ (posedge clk) begin
@@ -211,8 +189,8 @@ module uart_16550
             mcr <= 8'h0;
             //lsr <= 8'b01100000;
             spr <= 8'h0;
-            dll <= $floor(CLOCK_FREQ/(16*RESET_BAUD_RATE)) & 8'hFF;
-            dlm <= ($floor(CLOCK_FREQ/(16*RESET_BAUD_RATE)) & 16'hFF00) >> 8;
+            dll <= DLL_INIT;
+            dlm <= DLM_INIT;
 
             temt <= 0;
             thre <= 0;
@@ -221,37 +199,70 @@ module uart_16550
             pe <= 0;
             oe <= 0;
             dr <= 0;
+
+            rda_irq <= 0;
+            thre_irq <= 0;
+
+            ct_cnt <= 0;
+            ct_irq <= 0;
         end
         else begin
-            // link status register
+            // LSR contents
+            // an instant empty will occur after the first of a serial of writes lands,  
+            //  giving an unwanted interrupt
+            // because our THR is just the FIFO's tail
+            temt <= tx_fifo_empty && state_tx == TX_IDLE;
+            thre <= tx_fifo_empty && state_tx == TX_IDLE;
+            dr <= !rx_fifo_empty;
+            // Interrupts
+            // LSR interrupts
+            // overrun error: read LSR to clear
             if (rd && a == 3'b101) begin
-                temt <= 0;
-                thre <= 0;
-                bi <= 0;
-                fe <= 0;
-                pe <= 0;
                 oe <= 0;
-                dr <= 0;
             end else begin
-                if (tx_fifo_empty) begin
-                    temt <= 1;
-                    thre <= 1;
-                end
-                if (rx_fifo_full && rx_fifo_enq) begin
+                if (rx_fifo_full && rx_fifo_enq)
                     oe <= 1;
-                end
-                if (!rx_fifo_empty) begin
-                    dr <= 1;
-                end
+            end 
+            // transmitter holding register empty interrupt:
+            // clear by reading iir or writing to thr
+            if (rd && a == 3'b010) begin
+                thre_irq <= 0;
+            end else if (tx_fifo_enq) begin
+                thre_irq <= 0;
+            end else if (tx_fifo_empty && state_tx == TX_IDLE && !thre) begin
+                thre_irq <= 1;
             end
-            // ordinary registe writes
+            // received data available (auto)
+            case (rcvr_fifo_trigger_level)
+                2'b00: rda_irq <= rx_filled >= 1;
+                2'b01: rda_irq <= rx_filled >= 4;
+                2'b10: rda_irq <= rx_filled >= 8;
+                2'b11: rda_irq <= rx_filled >= 14;
+            endcase
+            // character timeout (read RBR to clear)
+            if (rd && a == 3'b000) begin
+                ct_cnt <= 0;
+                ct_irq <= 0;
+            end else begin
+                // 48 bits at current baud rate for timeout
+                // Just use 64
+                if (rx_filled && !rx_fifo_enq && !rx_fifo_deq)
+                    ct_cnt <= ct_cnt + 1;
+                else
+                    ct_cnt <= 0;
+                if (ct_cnt > 64 * tx_count)
+                    ct_irq <= 1;
+            end
+            // ordinary register writes
             if (we) begin
                 if      (a == 3'b000 && dlab)  dll <= data;
                 else if (a == 3'b000 && !dlab) ; // TX Fifo Enq
                 else if (a == 3'b001 && dlab)  dlm <= data;
                 else if (a == 3'b001 && !dlab) ier <= data;
                 else if (a == 3'b010)          fcr <= data;
+                else if (a == 3'b011)          lcr <= data;
                 else if (a == 3'b100)          mcr <= data;
+                else if (a == 3'b111)          spr <= data;
             end
             // TX and RX FSM, runs on its own
             case (state_tx)
@@ -278,7 +289,7 @@ module uart_16550
                     state_tx <= TX_IDLE;
                 end
             endcase
-            if (SIM == 1) begin
+            if (SIM == 0) begin
 			case (state_rx)
 				RX_STATE_START: begin
                     rx_fifo_enq <= 0;
@@ -322,10 +333,6 @@ module uart_16550
         end
     end
 
-	// single-cycle pulse receive done indication, for quasisoc serialboot
-    assign rxnew = rx_fifo_enq;
-	assign rxdata = rx_fifo_data;
-
     // 2 beats at in/out
 	reg rx_r0 = 1;
 	reg tx_r0 = 1;
@@ -339,4 +346,53 @@ module uart_16550
         tx_r0 <= tx_r;
 	end
     assign tx = tx_r0;
+
+    assign ready = 1;
+
+	// single-cycle pulse receive done indication, for quasisoc serialboot
+    assign rxnew = rx_fifo_enq;
+	assign rxdata = rx_fifo_data;
+endmodule
+
+module myfifo #(
+	parameter WIDTH = 32,
+	parameter DEPTH = 16
+)(
+	input clk,
+	input rst,
+
+	input enq,
+	input [WIDTH-1:0]din,
+	input deq,
+	output [WIDTH-1:0]dout,
+	output empty,
+	output full,
+    output [$clog2(DEPTH)-1:0]filled
+);
+	reg [$clog2(DEPTH)-1:0]head = 0;
+	reg [$clog2(DEPTH)-1:0]tail = 0;
+	assign empty = head == tail;
+	assign full = tail+1 == head;
+    assign filled = (tail - head + DEPTH);
+
+	reg [WIDTH-1:0]d[DEPTH-1:0];
+
+	assign dout = d[head];
+
+	always @ (posedge clk) begin
+		if (rst) begin
+			head <= 0;
+			tail <= 0;
+			d[0] <= 0;
+		end else begin
+			// ignore illegal requests
+			if (enq & (!full | deq)) begin
+				tail <= tail + 1;
+				d[tail] <= din;
+			end
+			if (deq & !empty) begin
+				head <= head + 1;
+			end
+		end
+	end
 endmodule

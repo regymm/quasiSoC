@@ -4,13 +4,13 @@
 `timescale 1ns / 1ps
 `include "quasi.vh"
 
-module quasi_main 
+module quasi_loong_main 
 	#(
 		parameter SIMULATION = 0,
 		parameter INTERACTIVE_SIM = 0,
-		parameter CLOCK_FREQ = 80000000,
+		parameter CLOCK_FREQ = 50000000,
 		parameter BAUD_RATE_UART = 115200,
-		//parameter BAUD_RATE_UART2 = 3686400,
+		parameter BAUD_RATE_UART2 = 115200,
 		parameter TLBNUM = 16
 	)
     (
@@ -116,26 +116,20 @@ module quasi_main
     wire clk_hdmi_250;
 	wire clk_ref;
 `ifndef SIMULATION
-	clocking_wizard clock_wizard_inst(
+	mmcm_50_to_50 mmcm_50_to_50_inst(
+        .resetn(1'b1),
 		.clk_in1(sysclk),
-		.clk_main(),
-		.clk_mem(clk_mem),
-		.clk_hdmi_25(clk_hdmi_25),
-		.clk_hdmi_250(clk_hdmi_250),
-		.clk_hdmi_50(clk_2x),
-		.clk_ref(clk_ref)
+		.clk_out1(clk_main),
+        .locked()
+		//.clk_mem(clk_mem),
+		//.clk_hdmi_25(clk_hdmi_25),
+		//.clk_hdmi_250(clk_hdmi_250),
+		//.clk_hdmi_50(clk_2x),
+		//.clk_ref(clk_ref)
 	);
 `else
 	assign clk_main = sysclk;
 `endif
-	//clocking_xc7 clocking_xc7_inst (
-		//.clk_50(sysclk),
-		//.clk1_62d5(clk_main),
-		//.clk2_125(clk_mem),
-		//.clk3_25(clk_hdmi_25),
-		//.clk4_250(clk_hdmi_250),
-		//.clk5_50(clk_2x)
-	//);
 
     wire [1:0]sw_d;
     debounce #(.N(2)) debounce_inst_0(
