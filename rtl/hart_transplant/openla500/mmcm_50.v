@@ -25,7 +25,7 @@ module mmcm_50_to_50 (
         .CLKOUT0_PHASE        (0.000),
         .CLKOUT0_DUTY_CYCLE   (0.500),
         .CLKOUT0_USE_FINE_PS  ("FALSE"),
-        .CLKIN1_PERIOD        (100.000)
+        .CLKIN1_PERIOD        (20.000)
         ) mmcm_adv_inst (
         .CLKFBOUT            (fb),
         .CLKFBOUTB           (),

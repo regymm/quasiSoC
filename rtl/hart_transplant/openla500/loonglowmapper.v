@@ -10,7 +10,7 @@ module lowmapper
 
         input [31:0]a,
         input [31:0]d,
-        input we,
+        input [3:0]web,
         input rd,
         output [31:0]spo,
         output ready,
@@ -124,7 +124,8 @@ module lowmapper
 
 	reg [31:0]a_r;
 	reg [31:0]d_r;
-	reg we_r;
+	reg [3:0]web_r;
+	reg [3:0]web_rr;
 	reg rd_r;
 	reg [31:0]required_spo;
 	reg required_ready;
@@ -132,7 +133,7 @@ module lowmapper
 	wire [15:0]aid = a_r[31:16];
 
 	reg state = 0;
-	assign ready = (state == 0) & !(we | rd);
+	assign ready = (state == 0) & !(|web | rd);
 	assign spo = required_spo;
 
 	always @ (posedge clk) begin
@@ -141,45 +142,55 @@ module lowmapper
 		end else begin
 			case (state)
 				// latch request
-				0: if (we | rd) begin
+				0: if (|web | rd) begin
 					state <= 1;
 					a_r <= a;
 					d_r <= d;
-					we_r <= we;
+					web_r <= web;
+					web_rr <= web;
 					rd_r <= rd;
 				end
-				// issue r/w and wait till ready
-				1: if (required_ready) state <= 0;
+				// issue r/w for 1 cycle, and wait till ready
+				1: begin
+					web_r <= 0;
+					rd_r <= 0;
+					if (required_ready) state <= 0;
+				end
 			endcase
 		end
 	end
 
-	assign gpio_we = (state == 1 & aid == 16'h9200) ? we_r : 0;
-	assign uart_we = (state == 1 & aid == 16'h1fe0) ? we_r : 0;
+	assign gpio_we = (state == 1 & aid == 16'h9200) ? |web_r : 0;
+	assign uart_we = (state == 1 & aid == 16'h1fe0) ? |web_r : 0;
 	assign uart_rd = (state == 1 & aid == 16'h1fe0) ? rd_r : 0;
-	assign uart2_we = (state == 1 & aid == 16'h1fe2) ? we_r : 0;
+	assign uart2_we = (state == 1 & aid == 16'h1fe2) ? |web_r : 0;
 	assign uart2_rd = (state == 1 & aid == 16'h1fe2) ? rd_r : 0;
-	assign video_we = (state == 1 & aid == 16'h9400) ? we_r : 0;
-	assign sd_we = (state == 1 & aid == 16'h9600) ? we_r : 0;
-	assign usb_we = (state == 1 & aid == 16'h9700) ? we_r : 0;
-	assign int_we = (state == 1 & aid == 16'h9800) ? we_r : 0;
-	assign sb_we = (state == 1 & aid == 16'h9900) ? we_r : 0;
-	assign t_we = (state == 1 & aid == 16'h9b00) ? we_r : 0;
-	assign eth_we = (state == 1 & aid == 16'h9c00) ? we_r : 0;
-	assign distm_we = (state == 1 & aid == 16'h1d00) ? we_r : 0;
+	assign video_we = (state == 1 & aid == 16'h9400) ? |web_r : 0;
+	assign sd_we = (state == 1 & aid == 16'h9600) ? |web_r : 0;
+	assign usb_we = (state == 1 & aid == 16'h9700) ? |web_r : 0;
+	assign int_we = (state == 1 & aid == 16'h9800) ? |web_r : 0;
+	assign sb_we = (state == 1 & aid == 16'h9900) ? |web_r : 0;
+	assign t_we = (state == 1 & aid == 16'h9b00) ? |web_r : 0;
+	assign eth_we = (state == 1 & aid == 16'h9c00) ? |web_r : 0;
+	assign distm_we = (state == 1 & aid == 16'h1d00) ? |web_r : 0;
 	assign distm_rd = (state == 1 & aid == 16'h1d00) ? rd_r : 0;
 	assign bootm_rd = (state == 1 & aid == 16'h1c00) ? rd_r : 0;
 	assign pspi_rd = (state == 1 & aid == 16'he000) ? rd_r : 0;
-	assign pspi_we = (state == 1 & aid == 16'he000) ? we_r : 0;
+	assign pspi_we = (state == 1 & aid == 16'he000) ? |web_r : 0;
+
+	wire [31:0]uart_spo_shift = a_r[0]==0 ? uart_spo : 
+								a_r[1]==0 ? uart_spo << 8 : 
+								a_r[2]==0 ? uart_spo << 16 : 
+								uart_spo << 24;
 
 	always @ (posedge clk) begin
-		if (state == 0 & (we | rd)) begin
+		if (state == 0 & (|web | rd)) begin
 			required_spo <= 0;
 			required_ready <= 0;
 		end else if (state == 1) begin
 			case (aid)
 				16'h9200: required_spo <= gpio_spo;
-				16'h1fe0: begin required_spo <= uart_spo; required_ready <= uart_ready; end // loongson uart16500 
+				16'h1fe0: begin required_spo <= uart_spo_shift; required_ready <= uart_ready; end // loongson uart16500 
 				16'h9400: required_spo <= video_spo; 
 				16'h9600: required_spo <= sd_spo; 
 				16'h9700: required_spo <= usb_spo; 
@@ -206,9 +217,10 @@ module lowmapper
 		//cache_d = d_r;
         gpio_a = a_r[5:2];
         gpio_d = d_r;
-        uart_a = a_r[4:2];
-        uart_d = d_r;
-        uart2_a = a_r[4:2];
+		// UART 8-bit data with unaligned rw
+        uart_a = a_r;
+        uart_d = d_r >> (web_rr[3:1]*8);
+        uart2_a = a_r;
         uart2_d = d_r;
 		sb_a = a_r[4:2];
 		sb_d = d_r;

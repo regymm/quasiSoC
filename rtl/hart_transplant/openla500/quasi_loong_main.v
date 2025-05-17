@@ -4,7 +4,7 @@
 `timescale 1ns / 1ps
 `include "quasi.vh"
 
-module quasi_loong_main 
+module quasi_main 
 	#(
 		parameter SIMULATION = 0,
 		parameter INTERACTIVE_SIM = 0,
@@ -65,7 +65,7 @@ module quasi_loong_main
 	wire hrd0;
     wire [31:0]a0;
     wire [31:0]d0;
-    wire we0;
+    wire [3:0]web0;
     wire rd0;
     wire [31:0]spo0;
     wire ready0;
@@ -74,28 +74,28 @@ module quasi_loong_main
 	wire gnt1;
 	wire [31:0]a1;
 	wire [31:0]d1;
-	wire we1;
+	wire [3:0]web1;
 	wire rd1;
 	wire [31:0]spo1;
 	wire ready1;
 	// arb output(bottleneck)
     wire [31:0]a;
     wire [31:0]d;
-    wire we;
+    wire [3:0]web;
     wire rd;
     wire [31:0]spo;
     wire ready;
 	// MMIO
 	wire [31:0]mmio_a;
 	wire [31:0]mmio_d;
-	wire mmio_we;
+	wire [3:0]mmio_web;
 	wire mmio_rd;
 	wire [31:0]mmio_spo;
 	wire mmio_ready;
 	// main memory
 	wire [31:0]mem_a;
 	wire [31:0]mem_d;
-	wire mem_we;
+	wire [3:0]mem_web;
 	wire mem_rd;
 	wire [31:0]mem_spo;
 	wire mem_ready;
@@ -104,7 +104,7 @@ module quasi_loong_main
 	wire [7:0]mainm_burst_length;
 	wire [31:0]mainm_a;
 	wire [31:0]mainm_d;
-	wire mainm_we;
+	wire [3:0]mainm_web;
 	wire mainm_rd;
 	wire [31:0]mainm_spo;
 	wire mainm_ready;
@@ -115,7 +115,7 @@ module quasi_loong_main
     wire clk_hdmi_25;
     wire clk_hdmi_250;
 	wire clk_ref;
-`ifndef SIMULATION
+// `ifndef SIMULATION
 	mmcm_50_to_50 mmcm_50_to_50_inst(
         .resetn(1'b1),
 		.clk_in1(sysclk),
@@ -127,9 +127,9 @@ module quasi_loong_main
 		//.clk_hdmi_50(clk_2x),
 		//.clk_ref(clk_ref)
 	);
-`else
-	assign clk_main = sysclk;
-`endif
+// `else
+// 	assign clk_main = sysclk;
+// `endif
 
     wire [1:0]sw_d;
     debounce #(.N(2)) debounce_inst_0(
@@ -160,11 +160,11 @@ module quasi_loong_main
 	clocked_rom #(
 		.WIDTH(32),
 		.DEPTH(10),
-`ifndef SIMULATION
-		.INIT("/home/petergu/quasiSoC/firmware/bootrom/bootrom.dat")
-`else
-		.INIT("../firmware/bootrom/bootrom_sim.dat")
-`endif
+//`ifndef SIMULATION
+		.INIT("/home/petergu/quasiSoC/rtl/hart_transplant/openla500/firmware/start.dat")
+//`else
+		//.INIT("../firmware/bootrom/bootrom_sim.dat")
+//`endif
 	) bootrom(
 		.clk(clk_main),
         .a(bootm_a),
@@ -241,7 +241,8 @@ module quasi_loong_main
 	uart16550 #(
 		.CLOCK_FREQ(CLOCK_FREQ),
 		.RESET_BAUD_RATE(BAUD_RATE_UART),
-		.SIM(SIMULATION | INTERACTIVE_SIM)
+		.LENDIAN(1),
+		.SIM(SIMULATION)
 	) uart_inst (
         .clk(clk_main),
 		`ifdef UART_RST_EN
@@ -265,6 +266,9 @@ module quasi_loong_main
 	`ifdef INTERACTIVE_SIM
 		.rxsim_en(uart_rxsim_en),
 		.rxsim_data(uart_rxsim_data),
+	`else
+		.rxsim_en(0),
+		.rxsim_data(0),
 	`endif
 
 		.rxnew(sb_rxnew),
@@ -325,37 +329,6 @@ module quasi_loong_main
 	assign sd_dat3 = 1'bZ;
 	assign sd_cmd = 1'bZ;
 	assign sd_sck = 1'bZ;
-`endif
-
-	// CH375b
-	wire [2:0]usb_a;
-	wire [31:0]usb_d;
-	wire usb_we;
-	wire [31:0]usb_spo;
-	wire irq_usb;
-`ifdef CH375B_EN
-	ch375b #(
-		.CLOCK_FREQ(CLOCK_FREQ),
-		.BAUD_RATE(BAUD_RATE_CH375)
-	) ch375b_inst
-	(
-		.clk(clk_main),
-		.rst(rst),
-
-		.a(usb_a),
-		.d(usb_d),
-		.we(usb_we),
-		.spo(usb_spo),
-
-		.irq(irq_usb),
-
-		.ch375_tx(ch375_tx),
-		.ch375_rx(ch375_rx),
-		.ch375_nint(ch375_nint)
-	);
-`else
-	assign usb_spo = 0;
-	assign ch375_rx = 1;
 `endif
 
 	// serial boot
@@ -522,7 +495,7 @@ module quasi_loong_main
 		.burst_length(mainm_burst_length),
 		.lowmem_a(mainm_a),
 		.lowmem_d(mainm_d),
-		.lowmem_we(mainm_we),
+		.lowmem_we(mainm_web),
 		.lowmem_rd(mainm_rd),
 		.lowmem_spo(mainm_spo),
 		.lowmem_ready(mainm_ready)
@@ -532,7 +505,7 @@ module quasi_loong_main
 	assign mainm_burst_length = 1;
 	assign mainm_a = mem_a;
 	assign mainm_d = mem_d;
-	assign mainm_we = mem_we;
+	assign mainm_web = mem_web;
 	assign mainm_rd = mem_rd;
 	assign mem_spo = mainm_spo;
 	assign mem_ready = mainm_ready;
@@ -761,36 +734,43 @@ module quasi_loong_main
 	);
 `else
 	assign ui_clk_sync_rst = 0;
-	`ifndef SIMULATION
-		// 2**14 * 32 64KB -- have to be w/o cache and ...
-		simple_ram #(
-			.WIDTH(32),
-			.DEPTH(14),
-			.INIT("/dev/null")
-		) distram_mainm (
-			.clk(clk_main),
-			.a({2'b0, mainm_a[31:2]}),
-			.d(mainm_d),
-			.we(mainm_we),
-			.rd(mainm_rd),
-			.spo(mainm_spo),
-			.ready(mainm_ready)
-		);
-	`else
+	generate if (SIMULATION) begin
 		// 2**27 * 32 64MB
 		simple_ram #(
 			.WIDTH(32),
 			.DEPTH(27),
-			.INIT("/tmp/meminit.dat")
-		) distram_mainm (
+			.WEB(1),
+			.INIT("/home/petergu/quasiSoC/rtl/hart_transplant/openla500/firmware/meminit.dat")
+		) distram_mainm_sim (
 			.clk(clk_main),
 			.a({2'b0, mainm_a[31:2]}),
 			.d(mainm_d),
-			.we(mainm_we),
+			// .we(mainm_we),
+			.web(mainm_web),
 			.rd(mainm_rd),
 			.spo(mainm_spo),
 			.ready(mainm_ready)
 		);
+	end
+	else begin
+		// 2**14 * 32 64KB -- no external memory at all, use a small block ram as main memory
+		simple_ram #(
+			.WIDTH(32),
+			.DEPTH(14),
+			.WEB(1),
+			.INIT("/dev/null")
+		) distram_mainm_noextmem (
+			.clk(clk_main),
+			.a({2'b0, mainm_a[31:2]}),
+			.d(mainm_d),
+			// .we(mainm_we),
+			.web(mainm_web),
+			.rd(mainm_rd),
+			.spo(mainm_spo),
+			.ready(mainm_ready)
+		);
+	end
+	endgenerate
 		//wire [31:0]mainm_spo_l;
 		//wire [31:0]mainm_spo_h;
 		//wire mainm_ready_l;
@@ -825,45 +805,44 @@ module quasi_loong_main
 			//.spo(mainm_spo_h),
 			//.ready(mainm_ready_h)
 		//);
-	`endif
 `endif
 `endif
 
 	// arbitrator, 0: cpu, 1: serialboot
-	arbitrator arb_inst (
-		.clk(clk_main),
-		.rst(rst),
+	// arbitrator arb_inst (
+	// 	.clk(clk_main),
+	// 	.rst(rst),
 
-		.req0(req0),
-		.gnt0(gnt0),
-		.hrd0(hrd0),
-		.a0(a0),
-		.d0(d0),
-		.we0(we0),
-		.rd0(rd0),
-		.spo0(spo0),
-		.ready0(ready0),
+	// 	.req0(req0),
+	// 	.gnt0(gnt0),
+	// 	.hrd0(hrd0),
+	// 	.a0(a0),
+	// 	.d0(d0),
+	// 	.we0(we0),
+	// 	.rd0(rd0),
+	// 	.spo0(spo0),
+	// 	.ready0(ready0),
 
-		.req1(req1),
-		.gnt1(gnt1),
-		.a1(a1),
-		.d1(d1),
-		.we1(we1),
-		.rd1(rd1),
-		.spo1(spo1),
-		.ready1(ready1),
+	// 	.req1(req1),
+	// 	.gnt1(gnt1),
+	// 	.a1(a1),
+	// 	.d1(d1),
+	// 	.we1(we1),
+	// 	.rd1(rd1),
+	// 	.spo1(spo1),
+	// 	.ready1(ready1),
 
-		.req2(0),
+	// 	.req2(0),
 
-		.req3(0),
+	// 	.req3(0),
 
-		.a(a),
-		.d(d),
-		.we(we),
-		.rd(rd),
-		.spo(spo),
-		.ready(ready)
-	);
+	// 	.a(a),
+	// 	.d(d),
+	// 	.we(we),
+	// 	.rd(rd),
+	// 	.spo(spo),
+	// 	.ready(ready)
+	// );
 
 	// loongson openla500
 	wire [7:0]cpu_intrpt;
@@ -967,17 +946,68 @@ module quasi_loong_main
 		.bresp(bresp),
 		.bvalid(bvalid),
 		.bready(bready),
-		.break_point(),
-		.infor_flag(),
-		.reg_num(),
+		.break_point(1'b0),
+		.infor_flag(1'b0),
+		.reg_num(5'b0),
 		.ws_valid(),
 		.rf_rdata(),
-		.debug_wb_pc(),
-		.debug_wb_rf_wen(),
-		.debug_wb_rf_wnum(),
-		.debug_wb_rf_wdata(),
-		.debug_wb_inst()
+		.debug0_wb_pc(),
+		.debug0_wb_rf_wen(),
+		.debug0_wb_rf_wnum(),
+		.debug0_wb_rf_wdata(),
+		.debug0_wb_inst()
 	);
+	// soc_axi_sram_bridge #(
+	// 	.BUS_WIDTH(32),
+	// 	.DATA_WIDTH(32),
+	// 	.CPU_WIDTH(32)
+	// ) soc_axi_sram_bridge_inst(
+	// 	.aclk(clk_main),
+	// 	.aresetn(~rst),
+	// 	.ram_raddr(a0),
+	// 	.ram_rdata(32'h001503c6),
+	// 	.ram_ren(rd0),
+	// 	.ram_waddr(a0),
+	// 	.ram_wdata(d0),
+	// 	.ram_wen(we0),
+	// 	.m_araddr(araddr),
+	// 	.m_arburst(arburst),
+	// 	.m_arcache(arcache),
+	// 	.m_arid(arid),
+	// 	.m_arlen(arlen),
+	// 	.m_arlock(arlock),
+	// 	.m_arprot(arprot),
+	// 	.m_arready(arready),
+	// 	.m_arsize(arsize),
+	// 	.m_arvalid(arvalid),
+	// 	.m_awaddr(awaddr),
+	// 	.m_awburst(awburst),
+	// 	.m_awcache(awcache),
+	// 	.m_awid(awid),
+	// 	.m_awlen(awlen),
+	// 	.m_awlock(awlock),
+	// 	.m_awprot(awprot),
+	// 	.m_awready(awready),
+	// 	.m_awsize(awsize),
+	// 	.m_awvalid(awvalid),
+	// 	.m_bid(bid),
+	// 	.m_bready(bready),
+	// 	.m_bresp(bresp),
+	// 	.m_bvalid(bvalid),
+	// 	.m_rdata(rdata),
+	// 	.m_rid(rid),
+	// 	.m_rlast(rlast),
+	// 	.m_rready(rready),
+	// 	.m_rresp(rresp),
+	// 	.m_rvalid(rvalid),
+	// 	.m_wdata(wdata),
+	// 	.m_wstrb(wstrb),
+	// 	.m_wlast(wlast),
+	// 	.m_wvalid(wvalid),
+	// 	.m_wready(wready),
+	// 	.m_wid(wid)
+	// );
+
 	axi2axilite #(
 		.C_AXI_ID_WIDTH(4),
 		.C_AXI_DATA_WIDTH(32),
@@ -1066,35 +1096,37 @@ module quasi_loong_main
 		.s_axi_rvalid(m_axi_rvalid),
 		.s_axi_rready(m_axi_rready),
 		.s_axi_rresp(m_axi_rresp),
-		.a(a0),
-		.d(d0),
-		.rd(rd0),
-		.we(we0),
-		.spo(spo0),
-		.ready(ready0),
-		.req(req0), // unsupported now, assume always granted
-		.gnt(gnt0),
-		.hrd(hrd0),
+		.a(a),
+		// .d({d0[31:28], d0[27:20], d0[15:8], d0[7:0]}),
+		.d(d),
+		.rd(rd),
+		.web(web),
+		// .spo({spo0[31:28], spo0[27:20], spo0[15:8], spo0[7:0]}),
+		.spo(spo),
+		.ready(ready)
+		// .req(req0), // unsupported now, assume always granted
+		// .gnt(gnt0),
+		// .hrd(hrd0)
 	);
 
 	highmapper highmapper_inst (
 		.a(a),
 		.d(d),
-		.we(we),
+		.web(web),
 		.rd(rd),
 		.spo(spo),
 		.ready(ready),
 
         .mem_a(mem_a),
         .mem_d(mem_d),
-        .mem_we(mem_we),
+        .mem_web(mem_web),
         .mem_rd(mem_rd),
         .mem_spo(mem_spo),
         .mem_ready(mem_ready),
 
         .mmio_a(mmio_a),
         .mmio_d(mmio_d),
-        .mmio_we(mmio_we),
+        .mmio_web(mmio_web),
         .mmio_rd(mmio_rd),
         .mmio_spo(mmio_spo),
         .mmio_ready(mmio_ready)
@@ -1106,7 +1138,7 @@ module quasi_loong_main
 
         .a(mmio_a),
         .d(mmio_d),
-        .we(mmio_we),
+        .web(mmio_web),
         .rd(mmio_rd),
         .spo(mmio_spo),
         .ready(mmio_ready),
@@ -1154,10 +1186,10 @@ module quasi_loong_main
         .sd_d(sd_d),
         .sd_we(sd_we),
 
-        .usb_spo(usb_spo),
-        .usb_a(usb_a),
-        .usb_d(usb_d),
-        .usb_we(usb_we),
+        .usb_spo(0),
+        .usb_a(),
+        .usb_d(),
+        .usb_we(),
 
         // .int_spo(int_spo),
         // .int_a(int_a),
@@ -1167,7 +1199,6 @@ module quasi_loong_main
         .sb_a(sb_a),
         .sb_d(sb_d),
         .sb_we(sb_we),
-        .sb_spo(sb_spo),
 		.sb_ready(sb_ready),
 
 		.ps2_spo(ps2_spo),
@@ -1182,6 +1213,6 @@ module quasi_loong_main
 		.eth_we(eth_we),
 		.eth_spo(eth_spo),
 
-        .irq(pirq)
+        .irq()
     );
 endmodule

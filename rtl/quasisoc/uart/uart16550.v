@@ -253,6 +253,10 @@ module uart16550 #(
                 if (ct_cnt > 64 * tx_count)
                     ct_irq <= 1;
             end
+            // FIFO reset clearing
+            if (xmit_fifo_reset || rcvr_fifo_reset) begin
+                fcr <= fcr & 8'b11111001;
+            end
             // ordinary register writes
             if (we) begin
                 if      (a == 3'b000 && dlab)  dll <= data;
