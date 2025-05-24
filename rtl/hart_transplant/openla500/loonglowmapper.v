@@ -218,9 +218,9 @@ module lowmapper
         gpio_a = a_r[5:2];
         gpio_d = d_r;
 		// UART 8-bit data with unaligned rw
-        uart_a = a_r;
+        uart_a = a_r[2:0];
         uart_d = d_r >> (web_rr[3:1]*8);
-        uart2_a = a_r;
+        uart2_a = a_r[2:0];
         uart2_d = d_r;
 		sb_a = a_r[4:2];
 		sb_d = d_r;
