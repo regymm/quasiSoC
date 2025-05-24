@@ -71,11 +71,11 @@ echo -e "\033[37mCompiling...\033[0m"
 rm -rf obj_dir
 #verilator --binary -j 0 -DSIMULATION --top-module top_simu \
 	#iv_simu.v \
-verilator -j 0 -O3 -DSIMULATION -DINTERACTIVE_SIM --top-module quasi_main \
+verilator -j 0 -O3 --x-assign fast --x-initial fast --noassert -DSIMULATION -DINTERACTIVE_SIM --top-module quasi_main \
 	--no-timing \
 	-Wno-width -Wno-pinmissing -Wno-implicit -Wno-caseincomplete -Wno-stmtdly -Wno-infiniteloop \
     -Wno-timescalemod \
-    -GSIMULATION=1 -GINTERACTIVE_SIM=1 -GBAUD_RATE_UART=50000000 \
+    -GSIMULATION=1 -GINTERACTIVE_SIM=1 -GCLOCK_FREQ=33000000 -GBAUD_RATE_UART=115200 \
     -y ../../../../rtl/hart_transplant/openla500/open-la500 \
     -y ../../../../rtl/hart_transplant/openla500 \
     -cc \
@@ -148,6 +148,6 @@ make -j16 OPT_FAST="-O3 -march=native" -C obj_dir -f Vquasi_main.mk  Vquasi_main
 
 echo -e "\033[37mLaunching simulation...\033[0m"
 #vvp -n a.out
-obj_dir/Vquasi_main $timeout
+obj_dir/Vquasi_main 100000 # $timeout
 
 echo -e "\033[37mFinished.\033[0m"
