@@ -242,6 +242,7 @@ module quasi_main
 		.CLOCK_FREQ(CLOCK_FREQ),
 		.RESET_BAUD_RATE(BAUD_RATE_UART),
 		.LENDIAN(1),
+        //.FIFODEPTH(32),
 		.SIM(SIMULATION)
 	) uart_inst (
         .clk(clk_main),
@@ -904,7 +905,7 @@ module quasi_main
 	wire [31:0]m_axi_rdata;
 	wire [1:0]m_axi_rresp;
 	// interrupt mapping, specify in device tree
-	assign cpu_intrpt = {5'b0, irq_uart, 2'b0};
+	assign cpu_intrpt = {6'b0, irq_uart, 1'b0};
 	// BRAM-like bus
 	core_top #(.TLBNUM(TLBNUM)) core_top_inst (
 		.aclk(clk_main),
