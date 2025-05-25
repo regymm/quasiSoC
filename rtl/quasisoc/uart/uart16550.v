@@ -7,7 +7,8 @@ module uart16550 #(
     parameter RESET_BAUD_RATE = 9600,
     parameter FIFODEPTH = 16,
     parameter LENDIAN = 0,
-    parameter SIM = 0
+    parameter SIM = 0,
+    parameter VERBOSELOG = 0
 )(
     input clk,
     input rst,
@@ -52,13 +53,15 @@ module uart16550 #(
     (*mark_debug = "true"*) reg [7:0]tmp_rx = 8'b0;
 
     (*mark_debug = "true"*)wire [7:0]rbr; // R
+    reg [7:0]rbr_r;
+    wire [7:0]rbr_o;
     (*mark_debug = "true"*)wire [7:0]thr = tx_fifo_enq ? data : 0; // W
     (*mark_debug = "true"*)reg [7:0]ier = 0; // RW
     wire edssi = ier[3];
     wire elsi = ier[2];
     wire etbei = ier[1];
     wire erbfi = ier[0];
-    (*mark_debug = "true"*)wire [7:0]iir = {fifoen, 2'b0, intid2, intpend}; // R
+    (*mark_debug = "true"*)wire [7:0]iir = {fifoen, fifoen, 2'b0, intid2, intpend}; // R
     // 011: receiver line status
     wire rls_irq = oe;
     // 010: received data available
@@ -72,11 +75,11 @@ module uart16550 #(
     wire [2:0]intid2 = (rls_irq  & elsi ) ? 3'b011 : 
                        (rda_irq  & erbfi) ? 3'b010 : 
                        (ct_irq   & erbfi) ? 3'b110 : 
-                       (thre_irq & elsi ) ? 3'b001 : 3'b000;
+                       (thre_irq & etbei ) ? 3'b001 : 3'b000;
     wire intpend = intid2 == 3'b000; // use unused 3'b000 as indicator
     assign irq = !intpend;
     (*mark_debug = "true"*)reg [7:0]fcr = 0; // W
-    wire rcvr_fifo_trigger_level = fcr[7:6];
+    wire [1:0]rcvr_fifo_trigger_level = fcr[7:6];
     wire dma_mode = fcr[3];
     wire xmit_fifo_reset = fcr[2];
     wire rcvr_fifo_reset = fcr[1];
@@ -130,9 +133,9 @@ module uart16550 #(
     (*mark_debug = "true"*)wire tx_fifo_full;
     (*mark_debug = "true"*)wire tx_fifo_enq = we && a == 3'b000 && !dlab;
     (*mark_debug = "true"*)wire [7:0]tx_fifo_data;
-    myfifo #(.WIDTH(8), .DEPTH(FIFODEPTH)) uart_16550_txfifo (
+    myfifo #(.SIMLOG(0), .WIDTH(8), .DEPTH(FIFODEPTH)) uart_16550_txfifo (
         .clk(clk),
-        .rst(xmit_fifo_reset),
+        .rst(xmit_fifo_reset | rst),
         .enq(tx_fifo_enq),
         .din(thr),
         .deq(state_tx == TX_IDLE && !tx_fifo_empty),
@@ -146,9 +149,9 @@ module uart16550 #(
     (*mark_debug = "true"*)reg [7:0] rx_fifo_data;
     (*mark_debug = "true"*)reg rx_fifo_enq;
     (*mark_debug = "true"*)wire rx_fifo_deq = rd && a == 3'b000 && !dlab;
-    myfifo #(.WIDTH(8), .DEPTH(FIFODEPTH)) uart_16550_rxfifo (
+    myfifo #(.SIMLOG(0), .WIDTH(8), .DEPTH(FIFODEPTH)) uart_16550_rxfifo (
         .clk(clk),
-        .rst(rcvr_fifo_reset),
+        .rst(rcvr_fifo_reset | rst),
         .enq(rx_fifo_enq),
         .din(rx_fifo_data),
         .deq(rx_fifo_deq),
@@ -157,10 +160,12 @@ module uart16550 #(
         .full(rx_fifo_full),
         .filled(rx_filled)
     );
+    assign rbr_o = rx_fifo_deq ? rbr : rbr_r;
     
+    reg [2:0]intid2_old = 0;
     // ordinary registe writes
     always @ (*) begin
-        if      (a == 3'b000) spo = LENDIAN ? {24'b0, dlab ? dll : rbr} : {dlab ? dll : rbr, 24'b0};
+        if      (a == 3'b000) spo = LENDIAN ? {24'b0, dlab ? dll : rbr_o} : {dlab ? dll : rbr_o, 24'b0};
         else if (a == 3'b001) spo = LENDIAN ? {24'b0, dlab ? dlm : ier} : {dlab ? dlm : ier, 24'b0};
         else if (a == 3'b010) spo = LENDIAN ? {24'b0, iir} : {iir, 24'b0};
         else if (a == 3'b011) spo = LENDIAN ? {24'b0, lcr} : {lcr, 24'b0};
@@ -182,6 +187,8 @@ module uart16550 #(
 			bitpos_rx <= 0;
             sample <= 0;
 			tmp_rx <= 0;
+
+            rbr_r <= 0;
 
             ier <= 8'h0;
             fcr <= 8'h0;
@@ -207,6 +214,28 @@ module uart16550 #(
             ct_irq <= 0;
         end
         else begin
+            if (VERBOSELOG == 1) begin
+                intid2_old <= intid2;
+                if (intid2 != intid2_old) begin
+                    $write("intid2 changes to: %03x\n", intid2);
+                    $write("ier: %08x\n", ier);
+                    $write("thr: %08x\n", thr);
+                    $write("iir: %08x\n", iir);
+                    $write("fcr: %08x\n", fcr);
+                    $write("lcr: %08x\n", lcr);
+                    $write("mcr: %08x\n", mcr);
+                    $write("lsr: %08x\n", lsr);
+                end
+                if (rd) begin
+                    $write("\033[43mRD_%x_%08x\033[0m ", a, spo);
+                end
+                if (we) begin
+                    $write("\033[42mWE_%x_%08x\033[0m ", a, d);
+                end
+            end
+            // Latch RBR, so after RX FIFO deq, top value remains, until next deq
+            if (rx_fifo_deq) rbr_r <= rbr;
+            else rbr_r <= rbr_r;
             // LSR contents
             // an instant empty will occur after the first of a serial of writes lands,  
             //  giving an unwanted interrupt
@@ -229,8 +258,9 @@ module uart16550 #(
                 thre_irq <= 0;
             end else if (tx_fifo_enq) begin
                 thre_irq <= 0;
-            end else if (tx_fifo_empty && state_tx == TX_IDLE && !thre) begin
+            end else if (thre) begin
                 thre_irq <= 1;
+                //$write("\033[35mT\033[0m");
             end
             // received data available (auto)
             case (rcvr_fifo_trigger_level)
@@ -250,8 +280,10 @@ module uart16550 #(
                     ct_cnt <= ct_cnt + 1;
                 else
                     ct_cnt <= 0;
-                if (ct_cnt > 64 * tx_count)
+                if (ct_cnt > 64 * tx_count) begin
                     ct_irq <= 1;
+                    //$write("\033[35mT\033[0m");
+                end
             end
             // FIFO reset clearing
             if (xmit_fifo_reset || rcvr_fifo_reset) begin
@@ -271,10 +303,6 @@ module uart16550 #(
             // TX and RX FSM, runs on its own
             case (state_tx)
                 TX_IDLE: if (!tx_fifo_empty) begin
-                    if (SIM == 1) begin
-                        $write("%c", data);
-                        $fflush();
-                    end
                     data_tx <= tx_fifo_data;
                     state_tx <= TX_START;
                 end
@@ -289,6 +317,10 @@ module uart16550 #(
                     tx_r <= data_tx[bitpos_tx];
                 end
                 TX_STOP: if (txclk_en) begin
+                    if (SIM == 1) begin
+                        $write("%c", data_tx);
+                        $fflush();
+                    end
                     tx_r <= 1'b1;
                     state_tx <= TX_IDLE;
                 end
@@ -333,6 +365,8 @@ module uart16550 #(
             end else begin
                 rx_fifo_enq <= rxsim_en;
                 rx_fifo_data <= rxsim_data;
+                if (VERBOSELOG & rxsim_en)
+                    $write("SIMW: %c\n", rxsim_data);
             end
         end
     end
@@ -359,6 +393,7 @@ module uart16550 #(
 endmodule
 
 module myfifo #(
+    parameter SIMLOG = 0,
 	parameter WIDTH = 32,
 	parameter DEPTH = 16
 )(
@@ -393,9 +428,17 @@ module myfifo #(
 			if (enq & (!full | deq)) begin
 				tail <= tail + 1;
 				d[tail] <= din;
+                if (SIMLOG) begin
+                    $write("\033[34mENQ %c(%02x) (h:%d t:%d l:%d)\033[0m\n", din, din, head, tail, filled);
+                    $write("%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n", d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8], d[9], d[10], d[11], d[12], d[13], d[14], d[15]);
+                end
 			end
 			if (deq & !empty) begin
 				head <= head + 1;
+                if (SIMLOG) begin
+                    $write("\033[33mDEQ %c(%02x) (h:%d t:%d l:%d)\033[0m\n", dout, dout, head, tail, filled);
+                    $write("%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n", d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8], d[9], d[10], d[11], d[12], d[13], d[14], d[15]);
+                end
 			end
 		end
 	end
