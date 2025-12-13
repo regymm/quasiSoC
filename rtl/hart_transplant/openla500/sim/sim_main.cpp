@@ -1,21 +1,47 @@
-#include "Vquasi_main.h"
+#include "Vquasi_main_sim.h"
+#include "verilated_vcd_c.h"
 #include "verilated.h"
 #include "fcntl.h"
 #include "termios.h"
 #include "unistd.h"
 #include <iostream>
 #include <cstdio>
+#include <cstring>
 #include <ctime>
 #include <SDL2/SDL.h>
 
 int main (int argc, char* argv[])
 {
 	Verilated::commandArgs(argc, argv);
-	Vquasi_main *top = new Vquasi_main;
+	Vquasi_main_sim *top = new Vquasi_main_sim;
+	
+	// Check if --trace flag is present
+	bool enable_trace = false;
+	for (int arg_i = 1; arg_i < argc; arg_i++) {
+		if (strcmp(argv[arg_i], "--trace") == 0) {
+			enable_trace = true;
+			break;
+		}
+	}
+	
+	// Setup VCD tracing if enabled
+	VerilatedVcdC *tfp = nullptr;
+	if (enable_trace) {
+		Verilated::traceEverOn(true);
+		tfp = new VerilatedVcdC;
+		top->trace(tfp, 99);
+		tfp->open("sim.vcd");
+	}
 
 	int timeout = 3600;
-	if (argc == 2)
-		timeout = atoi(argv[1]);
+	if (argc >= 2) {
+		for (int arg_i = 1; arg_i < argc; arg_i++) {
+			if (strcmp(argv[arg_i], "--trace") != 0) {
+				timeout = atoi(argv[arg_i]);
+				break;
+			}
+		}
+	}
 
 	int i = 0;
 	int j = 0;
@@ -51,14 +77,25 @@ int main (int argc, char* argv[])
 		}
 		top->sysclk = 0;
 		top->eval();
+		if (tfp) {
+			tfp->dump(Verilated::time());
+			Verilated::timeInc(2.5);
+		}
 		top->sysclk = 1;
 		top->eval();
+		if (tfp) {
+			tfp->dump(Verilated::time());
+			Verilated::timeInc(2.5);
+		}
 		time_t now = time(0);
 		unsigned long now_sec = (unsigned long) now;
 		if (now_sec - start_sec > timeout)
 			break;
 	}
-	top->final();
+	if (tfp) {
+		tfp->close();
+		delete tfp;
+	}
 	delete top;
 	return 0;
 }

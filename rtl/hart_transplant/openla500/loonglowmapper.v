@@ -3,7 +3,7 @@
 
 `timescale 1ns / 1ps
 
-module lowmapper
+module loonglowmapper
     (
 		input clk,
 		input rst,
@@ -15,13 +15,19 @@ module lowmapper
         output [31:0]spo,
         output ready,
 
-        // 1024*32(8KB) boot rom: 0xf0000000 to 0xf00007fc
+        // 1024*32(8KB) boot rom: 0x1c000000 to 0x1c0007fc
         output reg [9:0]bootm_a,
 		output bootm_rd,
         input [31:0]bootm_spo,
 		input bootm_ready,
 
-        // 4096*32(32KB) distributed memory: 0x10000000 to 0x10007ffc
+        // 1024*32(8KB) boot rom: 0x1c100000 to 0x1c1007fc
+        output reg [9:0]bootm_rv_a,
+		output bootm_rv_rd,
+        input [31:0]bootm_rv_spo,
+		input bootm_rv_ready,
+
+        // 4096*32(32KB) distributed memory: 0x1d000000 to 0x1d007ffc
         output reg [31:0]distm_a,
         output reg [31:0]distm_d,
         output distm_we,
@@ -39,7 +45,7 @@ module lowmapper
         //input [31:0]cache_spo,
         //input cache_ready,
 
-        // gpio: 0x92000000
+        // gpio: 0x12000000
         output reg [3:0]gpio_a,
         output reg [31:0]gpio_d,
         output gpio_we,
@@ -79,7 +85,7 @@ module lowmapper
         output video_we,
         input [31:0]video_spo,
 
-        // SD card control: 0x96000000
+        // SD card control: 0x1e000000
         output reg [31:0]sd_a,
         output reg [31:0]sd_d,
         output sd_we,
@@ -160,13 +166,13 @@ module lowmapper
 		end
 	end
 
-	assign gpio_we = (state == 1 & aid == 16'h9200) ? |web_r : 0;
+	assign gpio_we = (state == 1 & aid == 16'h1200) ? |web_r : 0;
 	assign uart_we = (state == 1 & aid == 16'h1fe0) ? |web_r : 0;
 	assign uart_rd = (state == 1 & aid == 16'h1fe0) ? rd_r : 0;
-	assign uart2_we = (state == 1 & aid == 16'h1fe2) ? |web_r : 0;
-	assign uart2_rd = (state == 1 & aid == 16'h1fe2) ? rd_r : 0;
+	assign uart2_we = (state == 1 & aid == 16'h1300) ? |web_r : 0;
+	assign uart2_rd = (state == 1 & aid == 16'h1300) ? rd_r : 0;
 	assign video_we = (state == 1 & aid == 16'h9400) ? |web_r : 0;
-	assign sd_we = (state == 1 & aid == 16'h9600) ? |web_r : 0;
+	assign sd_we = (state == 1 & aid == 16'h1e00) ? |web_r : 0;
 	assign usb_we = (state == 1 & aid == 16'h9700) ? |web_r : 0;
 	assign int_we = (state == 1 & aid == 16'h9800) ? |web_r : 0;
 	assign sb_we = (state == 1 & aid == 16'h9900) ? |web_r : 0;
@@ -175,6 +181,7 @@ module lowmapper
 	assign distm_we = (state == 1 & aid == 16'h1d00) ? |web_r : 0;
 	assign distm_rd = (state == 1 & aid == 16'h1d00) ? rd_r : 0;
 	assign bootm_rd = (state == 1 & aid == 16'h1c00) ? rd_r : 0;
+	assign bootm_rv_rd = (state == 1 & aid == 16'h1c10) ? rd_r : 0;
 	assign pspi_rd = (state == 1 & aid == 16'he000) ? rd_r : 0;
 	assign pspi_we = (state == 1 & aid == 16'he000) ? |web_r : 0;
 
@@ -189,20 +196,21 @@ module lowmapper
 			required_ready <= 0;
 		end else if (state == 1) begin
 			case (aid)
-				16'h9200: required_spo <= gpio_spo;
-				16'h1fe0: begin required_spo <= uart_spo_shift; required_ready <= uart_ready; end // loongson uart16500 
+                16'h1200: begin required_spo <= gpio_spo; required_ready <= 1'b1; end
+				16'h1fe0: begin required_spo <= uart_spo_shift; required_ready <= uart_ready; end // rvson uart16500 
 				16'h9400: required_spo <= video_spo; 
-				16'h9600: required_spo <= sd_spo; 
+				16'h1e00: required_spo <= sd_spo; 
 				16'h9700: required_spo <= usb_spo; 
 				16'h9800: required_spo <= int_spo; 
 				16'h9900: begin required_spo <= sb_spo; required_ready <= sb_ready; end
 				16'h9a00: required_spo <= ps2_spo;
 				16'h9b00: required_spo <= t_spo; 
 				16'h9c00: required_spo <= eth_spo;
-				16'h1fe2: required_spo <= uart2_spo; // loongson uart16500
-				16'h1c00: begin required_spo <= bootm_spo; required_ready <= bootm_ready; end // loongson bootrom
-				16'h1d00: begin required_spo <= distm_spo; required_ready <= distm_ready; end // loongson ram
+				16'h1300: begin required_spo <= uart2_spo; required_ready <= uart2_ready; end // rv uart "lite"
+				16'h1c00: begin required_spo <= bootm_spo; required_ready <= bootm_ready; end // rvson bootrom
+				16'h1d00: begin required_spo <= distm_spo; required_ready <= distm_ready; end // rvson ram
 				16'he000: begin required_spo <= pspi_spo; required_ready <= pspi_ready; end
+				16'h1c10: begin required_spo <= bootm_rv_spo; required_ready <= bootm_rv_ready; end // risc-v bootrom
 				default: begin required_spo <= 32'hdeadbeef; required_ready <= 1; end
 			endcase
 		end
@@ -211,6 +219,7 @@ module lowmapper
 	// due to some old issues, addresses need to be tuned
     always @ (*) begin 
         bootm_a = a_r[11:2];
+        bootm_rv_a = a_r[11:2];
         distm_a = {2'b0, a_r[31:2]};
         distm_d = d_r;
 		//cache_a = a_r;
@@ -220,7 +229,7 @@ module lowmapper
 		// UART 8-bit data with unaligned rw
         uart_a = a_r[2:0];
         uart_d = d_r >> (web_rr[3:1]*8);
-        uart2_a = a_r[2:0];
+        uart2_a = a_r[4:2];
         uart2_d = d_r;
 		sb_a = a_r[4:2];
 		sb_d = d_r;

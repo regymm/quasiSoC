@@ -5,7 +5,7 @@
 // high mapper -- mux memory and MMIO slow devices apart
 // should have good timing
 
-module highmapper
+module loonghighmapper
     (
         (*mark_debug = "true"*)input [31:0]a,
         (*mark_debug = "true"*)input [31:0]d,

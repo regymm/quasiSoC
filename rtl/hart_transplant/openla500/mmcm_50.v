@@ -3,7 +3,7 @@
 
 `timescale 1ps/1ps
 
-module mmcm_50_to_50 (
+module mmcm_50_to_50 ( // 33.333 to 50
     input wire    resetn,
     input wire    clk_in1,
     output wire   clk_out1,
@@ -18,7 +18,7 @@ module mmcm_50_to_50 (
         .COMPENSATION         ("ZHOLD"),
         .STARTUP_WAIT         ("FALSE"),
         .DIVCLK_DIVIDE        (1),
-        .CLKFBOUT_MULT_F      (20.000), // PLL 1000 MHz
+        .CLKFBOUT_MULT_F      (30.000), // PLL 1000 MHz
         .CLKFBOUT_PHASE       (0.000),
         .CLKFBOUT_USE_FINE_PS ("FALSE"),
         .CLKOUT0_DIVIDE_F     (20.000), // 50 MHz
