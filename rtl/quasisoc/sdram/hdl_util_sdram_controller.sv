@@ -99,7 +99,7 @@ localparam int STEP_WIDTH = $clog2(READ_BURST_LENGTH == 1 ? $unsigned(8) : $unsi
 logic [STEP_WIDTH-1:0] step = STEP_WIDTH'(0);
 
 logic [DATA_WIDTH-1:0] internal_dq = DATA_WIDTH'(0);
-assign dq = state == STATE_WRITING ? internal_dq : {DATA_WIDTH{1'bz}}; // Tri-State driver
+assign #3 dq = state == STATE_WRITING ? internal_dq : {DATA_WIDTH{1'bz}}; // Tri-State driver
 
 
 localparam bit [3:0] CMD_BANK_ACTIVATE = 4'd0;
@@ -137,15 +137,15 @@ begin
 			destination_state <= STATE_UNINIT;
 			clock_enable <= 1'b0;
 			internal_command <= CMD_NO_OP;
-			bank_activate <= {BANK_ADDRESS_WIDTH{1'bx}};
-			address <= {CHIP_ADDRESS_WIDTH{1'bx}};
+			bank_activate <= {BANK_ADDRESS_WIDTH{1'b0}};
+			address <= {CHIP_ADDRESS_WIDTH{1'b0}};
 		end
 		else if (step == 3'd1) // Power Down Mode Exit
 		begin
 			clock_enable <= 1'b1;
 			internal_command <= CMD_NO_OP;
-			bank_activate <= {BANK_ADDRESS_WIDTH{1'bx}};
-			address <= {CHIP_ADDRESS_WIDTH{1'bx}};
+			bank_activate <= {BANK_ADDRESS_WIDTH{1'b0}};
+			address <= {CHIP_ADDRESS_WIDTH{1'b0}};
 		end
 		else if (step == 3'd2) // Pre-charge all banks
 		begin
@@ -153,11 +153,11 @@ begin
 			countdown <= COUNTER_WIDTH'(PRECHARGE_TO_REFRESH_OR_ROW_ACTIVATE_SAME_BANK_CLOCKS - 1);
 			destination_state <= STATE_UNINIT;
 			internal_command <= CMD_PRECHARGE_ALL;
-			bank_activate <= {BANK_ADDRESS_WIDTH{1'bx}};
+			bank_activate <= {BANK_ADDRESS_WIDTH{1'b0}};
 			if (CHIP_ADDRESS_WIDTH > 11)
-				address[CHIP_ADDRESS_WIDTH-1:11] <= {CHIP_ADDRESS_WIDTH-11{1'bx}};
+				address[CHIP_ADDRESS_WIDTH-1:11] <= {CHIP_ADDRESS_WIDTH-11{1'b0}};
 			address[10] <= 1'b1;
-			address[9:0] <= 10'dx;
+			address[9:0] <= 10'd0;
 		end
 		// else if (step == 3'd3) // Extended mode register set
 		// begin
@@ -190,8 +190,8 @@ begin
 			countdown <= COUNTER_WIDTH'(ROW_CYCLE_CLOCKS - 1);
 			destination_state <= step == 3'd5 ? STATE_IDLE : STATE_UNINIT;
 			internal_command <= CMD_AUTO_REFRESH;
-			bank_activate <= {BANK_ADDRESS_WIDTH{1'bx}};
-			address <= {CHIP_ADDRESS_WIDTH{1'bx}};
+			bank_activate <= {BANK_ADDRESS_WIDTH{1'b0}};
+			address <= {CHIP_ADDRESS_WIDTH{1'b0}};
 		end
 	end
 	else if (state == STATE_IDLE)
@@ -207,8 +207,8 @@ begin
 			countdown <= COUNTER_WIDTH'(ROW_CYCLE_CLOCKS - 1);
 			destination_state <= STATE_IDLE;
 			internal_command <= CMD_AUTO_REFRESH;
-			bank_activate <= {BANK_ADDRESS_WIDTH{1'bx}};
-			address <= {CHIP_ADDRESS_WIDTH{1'bx}};
+			bank_activate <= {BANK_ADDRESS_WIDTH{1'b0}};
+			address <= {CHIP_ADDRESS_WIDTH{1'b0}};
 		end
 		else if (command == 2'd1 || command == 2'd2) // Write or Read (does a bank activate)
 		begin
@@ -284,17 +284,17 @@ begin
 	end
 	else if (state == STATE_READING)
 	begin
-		internal_dq <= {DATA_WIDTH{1'bx}};
+		internal_dq <= {DATA_WIDTH{1'b0}};
 		step <= step + 1'd1;
 		if (step == STEP_WIDTH'(0)) // Read
 		begin
 			internal_command <= CMD_READ;
 			bank_activate <= data_address[USER_ADDRESS_WIDTH - 1 : USER_ADDRESS_WIDTH - BANK_ADDRESS_WIDTH];
 			if (CHIP_ADDRESS_WIDTH > 11)
-				address[CHIP_ADDRESS_WIDTH-1:11] <= {CHIP_ADDRESS_WIDTH-11{1'bx}};
+				address[CHIP_ADDRESS_WIDTH-1:11] <= {CHIP_ADDRESS_WIDTH-11{1'b0}};
 			address[10] <= 1'b0;
 			if (COLUMN_ADDRESS_WIDTH < 10)
-				address[9:COLUMN_ADDRESS_WIDTH] <= {10-COLUMN_ADDRESS_WIDTH{1'bx}};
+				address[9:COLUMN_ADDRESS_WIDTH] <= {10-COLUMN_ADDRESS_WIDTH{1'b0}};
 			address[COLUMN_ADDRESS_WIDTH-1:0] <= data_address[USER_ADDRESS_WIDTH - 1 - BANK_ADDRESS_WIDTH - ROW_ADDRESS_WIDTH : 0];
 		end
 		else // No-Operation
@@ -304,7 +304,7 @@ begin
 			address <= address;
 		end
 
-		if (step == STEP_WIDTH'(CAS_LATENCY + READ_BURST_LENGTH + 2)) // Last read just finished
+		if (step == STEP_WIDTH'(CAS_LATENCY + READ_BURST_LENGTH + 2 - 1)) // Last read just finished // TODO: I added -1 here
 		begin
 			if (bank_or_row_differs)
 			begin
@@ -318,14 +318,14 @@ begin
 			end
 			data_read_valid <= 1'b0;
 		end
-		else if (step >= STEP_WIDTH'(CAS_LATENCY + 2)) // Still reading
+		else if (step >= STEP_WIDTH'(CAS_LATENCY + 2 -1)) // Still reading // TODO: I added -1 here
 		begin
 			data_read <= dq;
 			data_read_valid <= 1'b1;
 		end
 		else
 		begin
-			data_read <= {DATA_WIDTH{1'bx}};
+			data_read <= {DATA_WIDTH{1'b0}};
 			data_read_valid <= 1'd0;
 		end
 	end
@@ -349,9 +349,9 @@ begin
 
 		bank_activate <= bank_activate;
 		if (CHIP_ADDRESS_WIDTH > 11)
-			address[CHIP_ADDRESS_WIDTH-1:11] <= {CHIP_ADDRESS_WIDTH-11{1'bx}};
+			address[CHIP_ADDRESS_WIDTH-1:11] <= {CHIP_ADDRESS_WIDTH-11{1'b0}};
 		address[10] <= 1'b1;
-		address[9:0] <= 10'dx;
+		address[9:0] <= 10'd0;
 	end
 end
 

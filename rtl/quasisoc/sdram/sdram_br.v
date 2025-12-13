@@ -17,8 +17,8 @@
 // 0x1004 -> 0x1004, ...
 //
 // data_address (DATA_WIDTH=16):
-// 0x1000 -> 0x500, 0x501
-// 0x1004 -> 0x502, 0x503
+// 0x1000 -> 0x800, 0x801
+// 0x1004 -> 0x802, 0x803
 //
 // LSB(7:0) at low address
 // ONLY 16-bit TESTED FOR NOW!
@@ -83,9 +83,12 @@ module sdram_br #(
 					command <= 2'b00;
 				end
 			end else if (data_read_valid) begin
-				state <= IDLE;
-				ready_reg <= 1;
-				command <= 2'b00;
+                cnt <= cnt + 1;
+                if (cnt == CNT - 1) begin
+				    state <= IDLE;
+				    ready_reg <= 1;
+				    command <= 2'b00;
+				end
 			end
 		end
     end
