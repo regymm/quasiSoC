@@ -4,11 +4,11 @@
 `timescale 1ns / 1ps
 `include "quasi.vh"
 
-module quasi_main 
+module quasi_main  
 	#(
 		parameter SIMULATION = 0,
 		parameter INTERACTIVE_SIM = 0,
-		parameter CLOCK_FREQ = 50000000,
+		parameter CLOCK_FREQ = 33333333,
 		parameter BAUD_RATE_UART = 115200,
 		parameter BAUD_RATE_UART2 = 115200,
 		parameter TLBNUM = 16
@@ -301,9 +301,12 @@ module quasi_main
 	wire [2:0]uartrv_a;
 	wire [31:0]uartrv_d;
 	wire uartrv_we;
+	wire uartrv_rd;
     wire [31:0]uartrv_spo;
 	wire uartrv_tx;
 	wire uartrv_rx_in;
+	wire uartrv_rxnew;
+	wire [7:0]uartrv_rxdata;
 	assign uartrv_rx_in = uart_rx;
 `ifdef UART_RV_EN
 	uart_new #(
@@ -318,7 +321,9 @@ module quasi_main
 		.a(uartrv_a),
 		.d(uartrv_d),
 		.we(uartrv_we),
-		.spo(uartrv_spo)
+		.spo(uartrv_spo),
+		.rxnew(uartrv_rxnew),
+		.rxdata(uartrv_rxdata)
 	);
 `else
 	assign uartrv_spo = 0;
@@ -344,6 +349,7 @@ module quasi_main
     wire [15:0]sd_a;
     wire [31:0]sd_d;
     wire sd_we;
+    wire sd_rd;
     wire [31:0]sd_spo;
     wire irq_sd;
 `ifdef SDCARD_EN
@@ -400,8 +406,8 @@ module quasi_main
 		.m_spo(spo1),
 		.m_ready(ready1),
 
-		.uart_data(sb_rxdata),
-		.uart_ready(sb_rxnew)
+		.uart_data(/*sb_rxdata*/ uartrv_rxdata),
+		.uart_ready(/*sb_rxnew*/ uartrv_rxnew)
 	);
 `else
 	assign req1 = 0;
@@ -767,8 +773,39 @@ module quasi_main
 	assign ui_clk_sync_rst = 0;
 `endif
 `ifdef SDRAM_EN
-	sdram#(
-	) sdram_inst (
+`ifndef NO_SDRAM
+	// sdram#(
+	// ) sdram_inst (
+	// 	.clk(clk_main),
+	// 	.rst(rst),
+
+	// 	.a(mainm_a),
+	// 	.d(mainm_d),
+	// 	.we(|mainm_web),
+	// 	.rd(mainm_rd),
+	// 	.spo(mainm_spo),
+	// 	.ready(mainm_ready), 
+
+	// 	.ck(sdram_clk),
+	// 	.ce(sdram_ce),
+	// 	.ba(sdram_ba),
+	// 	.addr(sdram_a),
+	// 	.cs_n(sdram_cs),
+	// 	.ras_n(sdram_ras),
+	// 	.cas_n(sdram_cas),
+	// 	.we_n(sdram_we),
+	// 	.dqm(),
+	// 	.dq(sdram_dq)
+	// );
+
+	wire [1:0]command;
+	wire [31:0]data_address;
+	wire [31:0]data_write;
+	wire [31:0]data_read;
+	wire data_read_valid;
+	wire data_write_done;
+
+	sdram_br #(.DATA_WIDTH(16)) sdram_br_inst (
 		.clk(clk_main),
 		.rst(rst),
 
@@ -779,32 +816,71 @@ module quasi_main
 		.spo(mainm_spo),
 		.ready(mainm_ready), 
 
-		.ck(sdram_clk),
-		.ce(sdram_ce),
-		.ba(sdram_ba),
-		.addr(sdram_a),
-		.cs_n(sdram_cs),
-		.ras_n(sdram_ras),
-		.cas_n(sdram_cas),
-		.we_n(sdram_we),
+		.command(command),
+		.data_address(data_address),
+		.data_write(data_write),
+		.data_read(data_read),
+		.data_read_valid(data_read_valid),
+		.data_write_done(data_write_done)
+	);
+
+	localparam SPEED_GRADE = 99;
+	sdram_controller #(
+		.CLK_RATE(CLOCK_FREQ),
+		.READ_BURST_LENGTH(32 / 16),
+		.WRITE_BURST(1),
+		.BANK_ADDRESS_WIDTH(2),
+		.ROW_ADDRESS_WIDTH(12),
+		.COLUMN_ADDRESS_WIDTH(8),
+		.DATA_WIDTH(16),
+		.DQM_WIDTH(2),
+		.CAS_LATENCY(3),
+		.ROW_CYCLE_TIME(SPEED_GRADE == 5 ? 55E-9 : SPEED_GRADE == 6 ? 60E-9 : 63E-9),
+		.RAS_TO_CAS_DELAY(SPEED_GRADE == 5 ? 15E-9 : SPEED_GRADE == 6 ? 18E-9 : 21E-9),
+		.PRECHARGE_TO_REFRESH_OR_ROW_ACTIVATE_SAME_BANK_TIME(SPEED_GRADE == 5 ? 15E-9 : SPEED_GRADE == 6 ? 18E-9 : 21E-9),
+		.ROW_ACTIVATE_TO_ROW_ACTIVATE_DIFFERENT_BANK_TIME(SPEED_GRADE == 5 ? 10E-9 : SPEED_GRADE == 6 ? 12E-9 : 14E-9),
+		.ROW_ACTIVATE_TO_PRECHARGE_SAME_BANK_TIME(SPEED_GRADE == 5 ? 40E-9 : SPEED_GRADE == 6 ? 42E-9 : 42E-9),
+		.MINIMUM_STABLE_CONDITION_TIME(200E-6), // 200 us
+		.MODE_REGISTER_SET_CYCLE_TIME(2.0 / CLOCK_FREQ), // 2 clocks
+		.WRITE_RECOVERY_TIME(2.0 / CLOCK_FREQ), // 2 clocks
+		.AVERAGE_REFRESH_INTERVAL_TIME(15.6E-6) // 15.6 us
+	) sdram_controller (
+		.clk(clk_main),
+		.command(command),
+		.data_address(data_address),
+		.data_write(data_write),
+		.data_read(data_read),
+		.data_read_valid(data_read_valid),
+		.data_write_done(data_write_done),
+		.clock_enable(sdram_ce),
+		.bank_activate(sdram_ba),
+		.address(sdram_a),
+		.chip_select(sdram_cs),
+		.row_address_strobe(sdram_ras),
+		.column_address_strobe(sdram_cas),
+		.write_enable(sdram_we),
 		.dqm(),
 		.dq(sdram_dq)
 	);
+
+	assign sdram_clk = clk_main;
+
+`endif
 `endif
 `ifdef BRAM_EN
 	generate if (SIMULATION) begin
 		// simulated 2**27 * 32 64MB
 		simple_ram #(
 			.WIDTH(32),
-			.DEPTH(27),
-			.WEB(1),
+			.DEPTH(27-4),
+			.WEB(0),
 			.INIT("/home/petergu/quasiSoC/rtl/hart_transplant/openla500/firmware/meminit.dat")
 		) distram_mainm_sim (
 			.clk(clk_main),
 			.a({2'b0, mainm_a[31:2]}),
 			.d(mainm_d),
-			// .we(mainm_we),
-			.web(mainm_web),
+			.we(|mainm_web),
+			// .web(mainm_web),
 			.rd(mainm_rd),
 			.spo(mainm_spo),
 			.ready(mainm_ready)
@@ -1402,6 +1478,8 @@ module quasi_main
         .sd_a(sd_a),
         .sd_d(sd_d),
         .sd_we(sd_we),
+        .sd_rd(sd_rd),
+        .sd_ready(!(sd_we | sd_rd)),
 
         .usb_spo(0),
         .usb_a(),

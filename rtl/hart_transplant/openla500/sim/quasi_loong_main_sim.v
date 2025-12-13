@@ -78,7 +78,7 @@ module quasi_main_sim
 		.uart_rxsim_en(uart_rxsim_en),
 		.uart_rxsim_data(uart_rxsim_data),
 	`endif
-		.sd_ncd(sd_ncd),
+		.sd_ncd(1'b1),
 		.sd_dat0(sd_dat0),
 		.sd_dat1(sd_dat1),
 		.sd_dat2(sd_dat2),
@@ -103,6 +103,7 @@ module quasi_main_sim
 	);
 
 `ifdef SDRAM_EN
+`ifndef NO_SDRAM
 	// Instantiate the SDRAM simulation model
 	mt48lc16m16a2 sdram_model (
 		.Dq(sdram_dq_int),
@@ -116,6 +117,7 @@ module quasi_main_sim
 		.We_n(sdram_we_int),        // Active high to active low
 		.Dqm(2'b00)                  // Data mask not used, enable all bytes
 	);
+`endif
 `endif
 
 endmodule

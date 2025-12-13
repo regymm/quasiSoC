@@ -89,7 +89,9 @@ module loonglowmapper
         output reg [31:0]sd_a,
         output reg [31:0]sd_d,
         output sd_we,
+        output sd_rd,
         input [31:0]sd_spo,
+        input sd_ready,
 
 		// CH375b: 0x97000000
 		output reg [2:0]usb_a,
@@ -173,6 +175,7 @@ module loonglowmapper
 	assign uart2_rd = (state == 1 & aid == 16'h1300) ? rd_r : 0;
 	assign video_we = (state == 1 & aid == 16'h9400) ? |web_r : 0;
 	assign sd_we = (state == 1 & aid == 16'h1e00) ? |web_r : 0;
+	assign sd_rd = (state == 1 & aid == 16'h1e00) ? rd_r : 0;
 	assign usb_we = (state == 1 & aid == 16'h9700) ? |web_r : 0;
 	assign int_we = (state == 1 & aid == 16'h9800) ? |web_r : 0;
 	assign sb_we = (state == 1 & aid == 16'h9900) ? |web_r : 0;
@@ -199,7 +202,7 @@ module loonglowmapper
                 16'h1200: begin required_spo <= gpio_spo; required_ready <= 1'b1; end
 				16'h1fe0: begin required_spo <= uart_spo_shift; required_ready <= uart_ready; end // rvson uart16500 
 				16'h9400: required_spo <= video_spo; 
-				16'h1e00: required_spo <= sd_spo; 
+				16'h1e00: begin required_spo <= sd_spo; required_ready <= sd_ready; end
 				16'h9700: required_spo <= usb_spo; 
 				16'h9800: required_spo <= int_spo; 
 				16'h9900: begin required_spo <= sb_spo; required_ready <= sb_ready; end

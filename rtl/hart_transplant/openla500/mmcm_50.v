@@ -21,7 +21,7 @@ module mmcm_50_to_50 ( // 33.333 to 50
         .CLKFBOUT_MULT_F      (30.000), // PLL 1000 MHz
         .CLKFBOUT_PHASE       (0.000),
         .CLKFBOUT_USE_FINE_PS ("FALSE"),
-        .CLKOUT0_DIVIDE_F     (20.000), // 50 MHz
+        .CLKOUT0_DIVIDE_F     (30.000), // 50 MHz -> 40 MHz
         .CLKOUT0_PHASE        (0.000),
         .CLKOUT0_DUTY_CYCLE   (0.500),
         .CLKOUT0_USE_FINE_PS  ("FALSE"),
