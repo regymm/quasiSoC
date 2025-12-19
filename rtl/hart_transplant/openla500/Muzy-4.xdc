@@ -106,7 +106,7 @@ set_property -dict {PACKAGE_PIN J15 IOSTANDARD LVCMOS33} [get_ports sd_dat3]
 #set_property PULLUP true [get_ports sd_dat2];
 #set_property PULLUP true [get_ports sd_dat3];
 
-# HDMI
+## HDMI
 set_property -dict {PACKAGE_PIN H17 IOSTANDARD TMDS_33} [get_ports TMDSn_clock]
 set_property -dict {PACKAGE_PIN H16 IOSTANDARD TMDS_33} [get_ports TMDSp_clock]
 set_property -dict {PACKAGE_PIN E19 IOSTANDARD TMDS_33} [get_ports {TMDSn[0]}]
@@ -116,3 +116,16 @@ set_property -dict {PACKAGE_PIN G17 IOSTANDARD TMDS_33} [get_ports {TMDSp[1]}]
 set_property -dict {PACKAGE_PIN D18 IOSTANDARD TMDS_33} [get_ports {TMDSn[2]}]
 set_property -dict {PACKAGE_PIN E17 IOSTANDARD TMDS_33} [get_ports {TMDSp[2]}]
 
+## VGA
+set_property -dict {PACKAGE_PIN K19 IOSTANDARD LVCMOS33} [get_ports {hsync}]
+set_property -dict {PACKAGE_PIN L19 IOSTANDARD LVCMOS33} [get_ports {vsync}]
+
+set_property -dict {PACKAGE_PIN L20 IOSTANDARD LVCMOS33} [get_ports {pixelR[0]}]
+set_property -dict {PACKAGE_PIN M20 IOSTANDARD LVCMOS33} [get_ports {pixelR[1]}]
+set_property -dict {PACKAGE_PIN M19 IOSTANDARD LVCMOS33} [get_ports {pixelR[2]}]
+set_property -dict {PACKAGE_PIN P19 IOSTANDARD LVCMOS33} [get_ports {pixelG[0]}]
+set_property -dict {PACKAGE_PIN P20 IOSTANDARD LVCMOS33} [get_ports {pixelG[1]}]
+set_property -dict {PACKAGE_PIN N20 IOSTANDARD LVCMOS33} [get_ports {pixelG[2]}]
+set_property -dict {PACKAGE_PIN J19 IOSTANDARD LVCMOS33} [get_ports {pixelB[0]}]
+set_property -dict {PACKAGE_PIN T20 IOSTANDARD LVCMOS33} [get_ports {pixelB[1]}]
+set_property -dict {PACKAGE_PIN R19 IOSTANDARD LVCMOS33} [get_ports {pixelB[2]}]

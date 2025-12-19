@@ -68,6 +68,14 @@ module quasi_main
 		inout wire [15:0] sdram_dq,
 	`endif
 
+	//`ifdef VIDEO_EN
+	    output [2:0] pixelR,
+		output [2:0] pixelG,
+		output [2:0] pixelB,
+		output hsync,
+		output vsync,
+	//`endif
+
 	// `ifdef HDMI_EN
         output [2:0]TMDSp,
         output [2:0]TMDSn,
@@ -422,9 +430,9 @@ module quasi_main
 `ifdef VIDEO_EN
 	mkrvidor4000_top mkrvidor4000_top_inst(
 		.clk(clk_main),
-		.clk_pix(clk_hdmi_25),
-		.clk_tmds(clk_hdmi_250),
-		.clk_2x(clk_2x),
+		.clk_pix(clk_25),
+		.clk_tmds(clk_250),
+		.clk_2x(clk_50),
 		.rst(rst),
 
 		.a(video_a),
@@ -439,6 +447,7 @@ module quasi_main
 	);
 `else
 	`ifndef SIMULATION
+		//`ifndef VIDEOS_DEMO_EN
 		OBUFDS OBUFDS_red(
 			.I(0),
 			.O(TMDSp[2]),
@@ -459,6 +468,7 @@ module quasi_main
 			.O(TMDSp_clock),
 			.OB(TMDSn_clock)
 		);
+		//`endif
 	`endif
 	`ifdef LCD_EN
 	lcd_ili9486 lcd_ili9486_inst(
@@ -774,38 +784,8 @@ module quasi_main
 `endif
 `ifdef SDRAM_EN
 `ifndef NO_SDRAM
-	// sdram#(
-	// ) sdram_inst (
-	// 	.clk(clk_main),
-	// 	.rst(rst),
-
-	// 	.a(mainm_a),
-	// 	.d(mainm_d),
-	// 	.we(|mainm_web),
-	// 	.rd(mainm_rd),
-	// 	.spo(mainm_spo),
-	// 	.ready(mainm_ready), 
-
-	// 	.ck(sdram_clk),
-	// 	.ce(sdram_ce),
-	// 	.ba(sdram_ba),
-	// 	.addr(sdram_a),
-	// 	.cs_n(sdram_cs),
-	// 	.ras_n(sdram_ras),
-	// 	.cas_n(sdram_cas),
-	// 	.we_n(sdram_we),
-	// 	.dqm(),
-	// 	.dq(sdram_dq)
-	// );
-
-	wire [1:0]command;
-	wire [31:0]data_address;
-	wire [31:0]data_write;
-	wire [31:0]data_read;
-	wire data_read_valid;
-	wire data_write_done;
-
-	sdram_br #(.DATA_WIDTH(16)) sdram_br_inst (
+	sdram#(
+	) sdram_inst (
 		.clk(clk_main),
 		.rst(rst),
 
@@ -816,54 +796,84 @@ module quasi_main
 		.spo(mainm_spo),
 		.ready(mainm_ready), 
 
-		.command(command),
-		.data_address(data_address),
-		.data_write(data_write),
-		.data_read(data_read),
-		.data_read_valid(data_read_valid),
-		.data_write_done(data_write_done)
-	);
-
-	localparam SPEED_GRADE = 99;
-	sdram_controller #(
-		.CLK_RATE(CLOCK_FREQ),
-		.READ_BURST_LENGTH(32 / 16),
-		.WRITE_BURST(1),
-		.BANK_ADDRESS_WIDTH(2),
-		.ROW_ADDRESS_WIDTH(12),
-		.COLUMN_ADDRESS_WIDTH(8),
-		.DATA_WIDTH(16),
-		.DQM_WIDTH(2),
-		.CAS_LATENCY(3),
-		.ROW_CYCLE_TIME(SPEED_GRADE == 5 ? 55E-9 : SPEED_GRADE == 6 ? 60E-9 : 63E-9),
-		.RAS_TO_CAS_DELAY(SPEED_GRADE == 5 ? 15E-9 : SPEED_GRADE == 6 ? 18E-9 : 21E-9),
-		.PRECHARGE_TO_REFRESH_OR_ROW_ACTIVATE_SAME_BANK_TIME(SPEED_GRADE == 5 ? 15E-9 : SPEED_GRADE == 6 ? 18E-9 : 21E-9),
-		.ROW_ACTIVATE_TO_ROW_ACTIVATE_DIFFERENT_BANK_TIME(SPEED_GRADE == 5 ? 10E-9 : SPEED_GRADE == 6 ? 12E-9 : 14E-9),
-		.ROW_ACTIVATE_TO_PRECHARGE_SAME_BANK_TIME(SPEED_GRADE == 5 ? 40E-9 : SPEED_GRADE == 6 ? 42E-9 : 42E-9),
-		.MINIMUM_STABLE_CONDITION_TIME(200E-6), // 200 us
-		.MODE_REGISTER_SET_CYCLE_TIME(2.0 / CLOCK_FREQ), // 2 clocks
-		.WRITE_RECOVERY_TIME(2.0 / CLOCK_FREQ), // 2 clocks
-		.AVERAGE_REFRESH_INTERVAL_TIME(15.6E-6) // 15.6 us
-	) sdram_controller (
-		.clk(clk_main),
-		.command(command),
-		.data_address(data_address),
-		.data_write(data_write),
-		.data_read(data_read),
-		.data_read_valid(data_read_valid),
-		.data_write_done(data_write_done),
-		.clock_enable(sdram_ce),
-		.bank_activate(sdram_ba),
-		.address(sdram_a),
-		.chip_select(sdram_cs),
-		.row_address_strobe(sdram_ras),
-		.column_address_strobe(sdram_cas),
-		.write_enable(sdram_we),
+		.ck(sdram_clk),
+		.ce(sdram_ce),
+		.ba(sdram_ba),
+		.addr(sdram_a),
+		.cs_n(sdram_cs),
+		.ras_n(sdram_ras),
+		.cas_n(sdram_cas),
+		.we_n(sdram_we),
 		.dqm(),
 		.dq(sdram_dq)
 	);
 
-	assign sdram_clk = clk_main;
+	// wire [1:0]command;
+	// wire [31:0]data_address;
+	// wire [31:0]data_write;
+	// wire [31:0]data_read;
+	// wire data_read_valid;
+	// wire data_write_done;
+
+	// sdram_br #(.DATA_WIDTH(16)) sdram_br_inst (
+	// 	.clk(clk_main),
+	// 	.rst(rst),
+
+	// 	.a(mainm_a),
+	// 	.d(mainm_d),
+	// 	.we(|mainm_web),
+	// 	.rd(mainm_rd),
+	// 	.spo(mainm_spo),
+	// 	.ready(mainm_ready), 
+
+	// 	.command(command),
+	// 	.data_address(data_address),
+	// 	.data_write(data_write),
+	// 	.data_read(data_read),
+	// 	.data_read_valid(data_read_valid),
+	// 	.data_write_done(data_write_done)
+	// );
+
+	// localparam SPEED_GRADE = 99;
+	// sdram_controller #(
+	// 	.CLK_RATE(CLOCK_FREQ),
+	// 	.READ_BURST_LENGTH(32 / 16),
+	// 	.WRITE_BURST(1),
+	// 	.BANK_ADDRESS_WIDTH(2),
+	// 	.ROW_ADDRESS_WIDTH(13),
+	// 	.COLUMN_ADDRESS_WIDTH(9),
+	// 	.DATA_WIDTH(16),
+	// 	.DQM_WIDTH(2),
+	// 	.CAS_LATENCY(3),
+	// 	.ROW_CYCLE_TIME(SPEED_GRADE == 5 ? 55E-9 : SPEED_GRADE == 6 ? 60E-9 : 63E-9),
+	// 	.RAS_TO_CAS_DELAY(SPEED_GRADE == 5 ? 15E-9 : SPEED_GRADE == 6 ? 18E-9 : 21E-9),
+	// 	.PRECHARGE_TO_REFRESH_OR_ROW_ACTIVATE_SAME_BANK_TIME(SPEED_GRADE == 5 ? 15E-9 : SPEED_GRADE == 6 ? 18E-9 : 21E-9),
+	// 	.ROW_ACTIVATE_TO_ROW_ACTIVATE_DIFFERENT_BANK_TIME(SPEED_GRADE == 5 ? 10E-9 : SPEED_GRADE == 6 ? 12E-9 : 14E-9),
+	// 	.ROW_ACTIVATE_TO_PRECHARGE_SAME_BANK_TIME(SPEED_GRADE == 5 ? 40E-9 : SPEED_GRADE == 6 ? 42E-9 : 42E-9),
+	// 	.MINIMUM_STABLE_CONDITION_TIME(200E-6), // 200 us
+	// 	.MODE_REGISTER_SET_CYCLE_TIME(2.0 / CLOCK_FREQ), // 2 clocks
+	// 	.WRITE_RECOVERY_TIME(2.0 / CLOCK_FREQ), // 2 clocks
+	// 	.AVERAGE_REFRESH_INTERVAL_TIME(15.6E-6) // 15.6 us
+	// ) sdram_controller (
+	// 	.clk(clk_main),
+	// 	.command(command),
+	// 	.data_address(data_address),
+	// 	.data_write(data_write),
+	// 	.data_read(data_read),
+	// 	.data_read_valid(data_read_valid),
+	// 	.data_write_done(data_write_done),
+	// 	.clock_enable(sdram_ce),
+	// 	.bank_activate(sdram_ba),
+	// 	.address(sdram_a),
+	// 	.chip_select(sdram_cs),
+	// 	.row_address_strobe(sdram_ras),
+	// 	.column_address_strobe(sdram_cas),
+	// 	.write_enable(sdram_we),
+	// 	.dqm(),
+	// 	.dq(sdram_dq)
+	// );
+
+	// assign sdram_clk = clk_main;
 
 `endif
 `endif
@@ -1505,4 +1515,213 @@ module quasi_main
 
         .irq()
     );
+
+	`ifdef VIDEO_EN
+	    wire clk_25;
+		wire clk_250;
+		wire clk_50;
+	    wire clk_25_mmcm;
+		wire clk_250_mmcm;
+		wire clk_50_mmcm;
+		wire fb;
+		wire fb_buf;
+		wire locked;
+		MMCME2_ADV #(
+			.BANDWIDTH            ("OPTIMIZED"),
+			.CLKOUT4_CASCADE      ("FALSE"),
+			.COMPENSATION         ("ZHOLD"),
+			.STARTUP_WAIT         ("FALSE"),
+			.DIVCLK_DIVIDE        (1),
+			.CLKFBOUT_MULT_F      (30.000), // PLL 1000 MHz
+			.CLKFBOUT_PHASE       (0.000),
+			.CLKFBOUT_USE_FINE_PS ("FALSE"),
+			.CLKOUT0_DIVIDE_F     (40.000), // 25 MHz
+			.CLKOUT0_PHASE        (0.000),
+			.CLKOUT0_DUTY_CYCLE   (0.500),
+			.CLKOUT0_USE_FINE_PS  ("FALSE"),
+			.CLKOUT1_DIVIDE       (4), // 250 MHz
+			.CLKOUT1_PHASE        (0.000),
+			.CLKOUT1_DUTY_CYCLE   (0.500),
+			.CLKOUT1_USE_FINE_PS  ("FALSE"),
+			.CLKOUT2_DIVIDE       (20), // 50 MHz
+			.CLKOUT2_PHASE        (0.000),
+			.CLKOUT2_DUTY_CYCLE   (0.500),
+			.CLKOUT2_USE_FINE_PS  ("FALSE"),
+			.CLKIN1_PERIOD        (20.000)
+			) mmcm_adv_inst (
+			.CLKFBOUT            (fb),
+			.CLKFBOUTB           (),
+			.CLKOUT0             (clk_25_mmcm),
+			.CLKOUT0B            (),
+			.CLKOUT1             (clk_250_mmcm),
+			.CLKOUT1B            (),
+			.CLKOUT2             (clk_50_mmcm),
+			.CLKOUT2B            (),
+			.CLKOUT3             (),
+			.CLKOUT3B            (),
+			.CLKOUT4             (),
+			.CLKOUT5             (),
+			.CLKOUT6             (),
+			.CLKFBIN             (fb_buf),
+			.CLKIN1              (sysclk),
+			.CLKIN2              (1'b0),
+			.CLKINSEL            (1'b1),
+			.DADDR               (7'h0),
+			.DCLK                (1'b0),
+			.DEN                 (1'b0),
+			.DI                  (16'h0),
+			.DO                  (),
+			.DRDY                (),
+			.DWE                 (1'b0),
+			.PSCLK               (1'b0),
+			.PSEN                (1'b0),
+			.PSINCDEC            (1'b0),
+			.PSDONE              (),
+			.LOCKED              (locked),
+			.CLKINSTOPPED        (),
+			.CLKFBSTOPPED        (),
+			.PWRDWN              (1'b0),
+			.RST                 (rst));
+		BUFG clkf_buf
+			(.O (fb_buf),
+			.I (fb));
+		BUFG clkout0_buf
+			(.O  (clk_25),
+			.I   (clk_25_mmcm));
+		BUFG clkout1_buf
+			(.O  (clk_250),
+			.I   (clk_250_mmcm));
+		BUFG clkout2_buf
+			(.O  (clk_50),
+			.I   (clk_50_mmcm));
+		simple_vga_demo simple_vga_demo_inst(
+			.clk_25(clk_25),
+			.pixelR(pixelR),
+			.pixelG(pixelG),
+			.pixelB(pixelB),
+			.hsync(hsync),
+			.vsync(vsync)
+		);
+	`endif
+endmodule
+
+module simple_vga_demo(
+	input clk_25,
+	output reg [2:0] pixelR,
+	output reg [2:0] pixelG,
+	output reg [2:0] pixelB,
+	output hsync,
+	output vsync
+);
+	reg [31:0] cnt = 0;
+	always @(posedge clk_25) begin
+		cnt <= cnt + 1;
+	end
+	wire inDisplayArea;
+	wire [9:0] CounterX;
+	wire [8:0] CounterY;
+	wire [3:0] selector;
+
+	hvsync_generator hvsync(
+	.clk(clk_25),
+	.vga_h_sync(hsync),
+	.vga_v_sync(vsync),
+	.CounterX(CounterX),
+	.CounterY(CounterY),
+	.inDisplayArea(inDisplayArea)
+	);
+
+	// use this bits from CounterX to divide the
+	// horizontal screen in strips 64 bytes wide
+	assign selector = CounterX[9:6];
+
+	always @(posedge clk_25) begin
+		if (inDisplayArea) begin
+			if (CounterX[9:5] == 5'b00000) begin
+				{pixelR, pixelG, pixelB} <= cnt[30:22];
+			end else begin
+				/*
+				* I don't know if there is a smarter way to assign
+				* only one color for strip.
+				*
+				* Maybe using the selector signal as index?
+				*/
+				pixelR[2] <= selector == 4'b0000;
+				pixelR[1] <= selector == 4'b0001;
+				pixelR[0] <= selector == 4'b0010;
+				pixelG[2] <= selector == 4'b0011;
+				pixelG[1] <= selector == 4'b0100;
+				pixelG[0] <= selector == 4'b0101;
+				pixelB[2] <= selector == 4'b0110;
+				pixelB[1] <= selector == 4'b0111;
+				pixelB[0] <= selector == 4'b1000;
+			end
+		end
+		else begin// if it's not to display, go dark
+			pixelR <= 3'b000;
+			pixelG <= 3'b000;
+			pixelB <= 3'b000;
+		end
+	end
+endmodule
+
+// https://github.com/gipi/electronics-notes/tree/a174b8b88bf26b07f275b7da9413ee8ae7aa9267/fpga/mojo/VGA
+/*
+ VGA
+ ---
+ 
+ The VGA 640x480@60Hz is really a canvas of 800x525 pixels clocks (pc)
+ 
+ HSYNC                       VSYNC
+ -----                       -----
+ 
+ front porch: 16pc           10pc
+ sync pulse:  96pc           2pc
+ back porch:  48pc           33pc
+*/
+module hvsync_generator(
+    input clk,
+    output vga_h_sync,
+    output vga_v_sync,
+    output reg inDisplayArea,
+    output reg [9:0] CounterX,
+    output reg [9:0] CounterY
+  );
+reg vga_HS, vga_VS;
+
+wire CounterXmaxed = (CounterX == 800); // 16 + 48 + 96 + 640
+wire CounterYmaxed = (CounterY == 525); // 10 + 2 + 33 + 480
+
+  // Module get from <http://www.fpga4fun.com/PongGame.html>
+always @(posedge clk)
+if (CounterXmaxed)
+  CounterX <= 0;
+else
+  CounterX <= CounterX + 1;
+
+always @(posedge clk)
+begin
+  if (CounterXmaxed)
+  begin
+    if(CounterYmaxed)
+      CounterY <= 0;
+    else
+      CounterY <= CounterY + 1;
+  end
+end
+
+always @(posedge clk)
+begin
+  vga_HS <= (CounterX > (640 + 16) && (CounterX < (640 + 16 + 96)));   // active for 96 clocks
+  vga_VS <= (CounterY > (480 + 10) && (CounterY < (480 + 10 + 2)));   // active for 2 clocks
+end
+
+always @(posedge clk)
+begin
+	inDisplayArea <= (CounterX < 640) && (CounterY < 480);
+end
+
+assign vga_h_sync = ~vga_HS;
+assign vga_v_sync = ~vga_VS;
+
 endmodule
