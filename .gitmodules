@@ -1,3 +1,6 @@
 [submodule "rtl/3rdparty/UberDDR3"]
 	path = rtl/3rdparty/UberDDR3
 	url = https://github.com/AngeloJacobo/UberDDR3
+[submodule "sim/mmcmsim"]
+	path = sim/mmcmsim
+	url = https://github.com/regymm/mmcmsim
