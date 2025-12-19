@@ -213,7 +213,11 @@ module quasi_main
 `ifndef SIMULATION
 		.INIT("/home/petergu/quasiSoC/firmware/bootrom/bootrom.dat")
 `else
+	`ifdef SDCARD_SIM
+		.INIT("../firmware/bootrom/bootrom.dat")
+	`else
 		.INIT("../firmware/bootrom/bootrom_sim.dat")
+	`endif
 `endif
 	) bootrom(
 		.clk(clk_main),
