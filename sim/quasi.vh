@@ -9,6 +9,8 @@
 `ifdef SIMULATION
 	`define GPIO_EN
 	`define UART_EN
+	`define SDCARD_EN
+	`define SDCARD_SIM
 //	`define CACHE_EN
 //	`define MEM_SIMU_EN
 //	`define SERIALBOOT_EN

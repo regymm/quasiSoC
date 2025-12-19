@@ -60,6 +60,8 @@ void c_start()
 		/*uart_putchar('\n');*/
 		/*uart_putchar('\r');*/
 	/*}*/
+	/*uart_putchar(uart_getchar());*/
+	/*uart_putchar(uart_getchar());*/
 	for (i = 0; i < 512; i++) {
 		distram_base[i] = bootrom_base[i];
 		psram_base[i] = bootrom_base[i];

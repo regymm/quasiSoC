@@ -97,8 +97,10 @@ verilator -j 0 -DSIMULATION -DINTERACTIVE_SIM --top-module quasi_main \
 	../rtl/quasisoc/fifo.v \
 	../rtl/quasisoc/uart/uartsim.v \
 	../rtl/quasisoc/uart/uartreset.v \
-	--exe sim_main.cpp 
-make -C obj_dir -f Vquasi_main.mk  Vquasi_main
+	../rtl/quasisoc/sdcard/sdcard.v \
+	../rtl/quasisoc/sdcard/sd_controller.v \
+	--exe sim_main.cpp sdspisim.cpp --trace --timing
+	make -C obj_dir -f Vquasi_main.mk  Vquasi_main
 
 #iverilog -DSIMULATION -I./ \
 	#iv_simu.v \
@@ -127,6 +129,17 @@ make -C obj_dir -f Vquasi_main.mk  Vquasi_main
 
 echo -e "\033[37mLaunching simulation...\033[0m"
 #vvp -n a.out
-obj_dir/Vquasi_main $timeout
+# --trace 
+# --sdcard=sdcard.img
+TRACE_ARG=""
+SDCARD_ARG=""
+for arg in "$@"; do
+	if [[ "$arg" == "--trace" ]]; then
+		TRACE_ARG="--trace"
+	elif [[ "$arg" == --sdcard=* ]]; then
+		SDCARD_ARG="$arg"
+	fi
+done
+obj_dir/Vquasi_main $timeout $TRACE_ARG $SDCARD_ARG
 
 echo -e "\033[37mFinished.\033[0m"
